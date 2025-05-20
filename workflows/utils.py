@@ -7,6 +7,8 @@ from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
+from app import Workflow, WorkflowState
+
 
 def ptToTuple(pt):
     x, y = pt.x(), pt.y()
@@ -18,16 +20,15 @@ def tupleToPt(arry):
     return QPoint(x, y)
 
 
-def click(wkspace, state, **kwargs):
+def click(wkspace: Workflow, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
     br = ptToTuple(br)
     mid = (np.array(tl) + np.array(br)) / 2
     pyautogui.click(int(mid[0]), int(mid[1]))
-    return state
 
 
-def scan(wkspace, state, **kwargs):
+def scan(wkspace: Workflow, state: WorkflowState, **kwargs):
     parent = kwargs["parent"]
     ptl, pbr = parent.window.getBBox()
     dim = pbr - ptl
@@ -45,9 +46,9 @@ def scan(wkspace, state, **kwargs):
     dim = br - tl
     error = np.array([0.0, 0.0])
 
-    state = task.execute(state)
+    task.execute(state)
     if numScans == 1:
-        return state
+        return
 
     # We have (numScans - 1) * stepSz + windowLen = regionLen
     # Solve for stepSz given direction
@@ -76,14 +77,12 @@ def scan(wkspace, state, **kwargs):
 
         wkspace.setGeometry(QRect(newTl, newBr))
         QApplication.processEvents()
-        state = task.execute(state)
+        task.execute(state)
 
     wkspace.setGeometry(savedGeometry)
 
-    return state
 
-
-def scroll(wkspace, state, **kwargs):
+def scroll(wkspace: Workflow, state: WorkflowState, **kwargs):
     dir = kwargs["dir"]
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
@@ -111,8 +110,6 @@ def scroll(wkspace, state, **kwargs):
         else:
             pyautogui.moveTo(x2, ymid)
             pyautogui.dragTo(x1, ymid, scrollTime, scrollAnim, button=scrollClick)
-
-    return state
 
 
 def screenshot(region):
@@ -144,7 +141,7 @@ def combine_images_side_by_side_np(image1, image2):
     return combined_image
 
 
-def imageMatch(wkspace, state, **kwargs):
+def imageMatch(wkspace: Workflow, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.window.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
@@ -158,11 +155,11 @@ def imageMatch(wkspace, state, **kwargs):
     ss = alignImages(img, ss)
     score = computeSSIM(ss, img)
 
-    state["temp"]["result"] = score >= threshold
-    return state
+    tmp = state.getTemporaryState()
+    tmp["result"] = score >= threshold
 
 
-def filterNumbers(wkspace, state, **kwargs):
+def filterNumbers(wkspace: Workflow, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.window.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
@@ -273,27 +270,12 @@ def computeSSIM(img1, img2):
     return score
 
 
-# def filterColor(image, lower_bound, upper_bound):
-#     # Convert to HSV color space
-#     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-#
-#     # Create a mask for the specific color range
-#     mask = cv2.inRange(hsv, lower_bound, upper_bound)
-#
-#     # Invert the mask if you want to remove the color
-#     filtered_image = cv2.bitwise_and(image, image, mask=~mask)
-#
-#     return filtered_image
 def filterColor(image, lower_bound, upper_bound):
     # Convert to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Create a mask for the specific color range
     mask = cv2.inRange(hsv, lower_bound, upper_bound)
-    #
-    # # Create a binary black-and-white image
-    # # Pixels matching the color range will be white, others black
-    # bw_image = cv2.bitwise_not(mask)
 
     return mask
 

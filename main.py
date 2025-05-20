@@ -1,12 +1,11 @@
-from app import E7WorkflowApp
+from app import E7WorkflowApp, GlobalState
 
 if __name__ == "__main__":
     app = E7WorkflowApp()
-    from workflows.nav import homeWorkflow
-    from workflows.penguin import penguinWorkflow
-    from workflows.shop import shopWorkflow
+    from workflows.penguin import bindToApp as bindPenguinToApp
+    from workflows.shop import bindToApp as bindShopToApp
 
-    app.addWorkflow(shopWorkflow)
-    app.addWorkflow(penguinWorkflow)
-    app.addWorkflow(homeWorkflow)
+    state = GlobalState()
+    bindShopToApp(app, state)
+    bindPenguinToApp(app, state)
     app.exec()

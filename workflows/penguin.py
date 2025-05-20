@@ -1,9 +1,20 @@
 import time
 
-from app import Task, Workflow, Workspace, WorkspaceLayout
-from assets import getPenguinIcon, penguinTypes
+from app import (
+    E7WorkflowApp,
+    GlobalState,
+    Task,
+    Workflow,
+    WorkflowState,
+    Workspace,
+    WorkspaceLayout,
+    makeStatCards,
+)
+from assets import getPenguinIcon, penguinIconPaths, penguinTypes
 
 from .utils import click, filterNumbers, imageMatch, scan
+
+WORKFLOW = "Penguin"
 
 focusTask = Task()
 focusWS = Workspace("Focus")
@@ -18,41 +29,37 @@ confirmTask = Task()
 confirmWS = Workspace("Confirm")
 
 
-def findPenguin(wkspace, state, **kwargs):
+def findPenguin(wkspace: Workspace, state: WorkflowState, **kwargs):
     pType = kwargs["pType"]
     pgnIcon = getPenguinIcon(pType)
-    state = imageMatch(
+    imageMatch(
         wkspace,
         state,
         img=pgnIcon,
     )
-    if state["temp"]["result"]:
-        state["temp"]["resultType"] = pType
-    return state
+    tmp = state.getTemporaryState()
+    if tmp["result"]:
+        tmp["resultType"] = pType
 
 
-def findPenguins(wkspace, state, **kwargs):
+def findPenguins(wkspace: Workspace, state: WorkflowState, **kwargs):
     for pType in penguinTypes:
-        state = findPenguin(wkspace, state, pType=pType)
-    return state
+        findPenguin(wkspace, state, pType=pType)
 
 
-def getNumber(wkspace, state, **kwargs):
+def getNumber(wkspace: Workspace, state: WorkflowState, **kwargs):
     count = filterNumbers(
         wkspace, state, lBound=[200, 200, 200], uBound=[255, 255, 255]
     )
-    state["temp"]["result"] = count
-    return state
+    state.getTemporaryState()["result"] = count
 
 
-def updateStats(state):
-    if "penguinStats" not in state:
-        state["penguinStats"] = dict(zip(penguinTypes, [0] * len(penguinTypes)))
+def updateStats(state: WorkflowState):
+    tmp = state.getTemporaryState()
+    stats = state.getWorkflowStats()
 
-    pType = state["temp"]["resultType"]
-    state["penguinStats"][pType] += state["temp"]["result"]
-
-    return state
+    pType = tmp["resultType"]
+    stats[pType.name] += tmp["result"]
 
 
 penguinScanWS = Workspace("Scan")
@@ -80,13 +87,13 @@ for i in range(len(penguinTypes)):
 penguinScanAndCount = Task()
 
 
-def scanAndCount(wkspace, state, **kwargs):
+def scanAndCount(wkspace: Workspace, state: WorkflowState, **kwargs):
     for i in range(len(penguinTypes)):
-        state = penguinScanIcon[i].execute(state)
-        if state["temp"]["result"]:
-            state = penguinScanCount.execute(state)
-            state = updateStats(state)
-    return state
+        penguinScanIcon[i].execute(state)
+        tmp = state.getTemporaryState()
+        if tmp["result"]:
+            penguinScanCount.execute(state)
+            updateStats(state)
 
 
 penguinScanAndCount.setFunc(scanAndCount)
@@ -113,20 +120,33 @@ for i in range(len(clickTasks)):
     clickTasks[i].setFunc(click)
 
 
-def executeTasks(state):
-    state["temp"] = {}
+def executeTasks(state: GlobalState):
+    wkState = state.getWorkflowState(WORKFLOW)
     for i in range(len(clickTasks) - 1):
-        state = clickTasks[i].execute(state)
+        clickTasks[i].execute(wkState)
         time.sleep(0.2)
 
     time.sleep(0.2)
-    state = penguinScanAction.execute(state)
+    penguinScanAction.execute(wkState)
 
     time.sleep(0.4)
-    exitTask.execute(state)
+    exitTask.execute(wkState)
     time.sleep(0.2)
 
-    return state
+
+penguinWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
 
 
-penguinWorkflow = Workflow("Penguin", executeTasks, wkspaces)
+def bindToApp(app: E7WorkflowApp, state: GlobalState):
+    state.addWorkflowState(penguinWorkflow)
+    wkState = state.getWorkflowState(WORKFLOW)
+    stats = wkState.getWorkflowStats()
+    for i in range(len(penguinTypes)):
+        stats[penguinTypes[i].name] = 0
+
+    app.addWorkflow(penguinWorkflow, state)
+    penguinNames = [penguin.name for penguin in penguinTypes]
+    penguinStatCards = makeStatCards(
+        penguinNames, [0] * len(penguinNames), penguinIconPaths
+    )
+    app.getWindow(penguinWorkflow.name).initStat(penguinStatCards)

@@ -1,38 +1,50 @@
 import time
 
-from app import Task, Workflow, Workspace, WorkspaceLayout
-from assets import BookmarkType, bookmarkTypes, getBookMarkIcon, shopItemCnt
+from app import (
+    E7WorkflowApp,
+    GlobalState,
+    Task,
+    Workflow,
+    WorkflowState,
+    Workspace,
+    WorkspaceLayout,
+    makeStatCards,
+)
+from assets import (
+    BookmarkType,
+    bookmarkIconPaths,
+    bookmarkTypes,
+    getBookMarkIcon,
+    shopItemCnt,
+)
 
 from .utils import click, imageMatch, scroll
 
-
-def updateStats(state):
-
-    if "bmStats" not in state:
-        state["bmStats"] = dict(zip(bookmarkTypes, [0] * len(bookmarkTypes)))
-
-    if state["temp"]["result"]:
-        bType = state["temp"]["resultType"]
-        state["bmStats"][bType] += 1
-
-    return state
+WORKFLOW = "Shop Refresh"
 
 
-def findBookmark(wkspace, state, **kwargs):
+def updateStats(state: WorkflowState):
+    tmp = state.getTemporaryState()
+    if tmp["result"]:
+        bType = tmp["resultType"]
+        stats = state.getWorkflowStats()
+        stats[bType.name] += 1
+
+
+def findBookmark(wkspace: Workflow, state: WorkflowState, **kwargs):
     bmIcon = getBookMarkIcon(kwargs["bmType"])
-    state = imageMatch(wkspace, state, img=bmIcon)
-    if state["temp"]["result"]:
-        state["temp"]["resultType"] = kwargs["bmType"]
+    imageMatch(wkspace, state, img=bmIcon)
+    tmp = state.getTemporaryState()
+    if tmp["result"]:
+        tmp["resultType"] = kwargs["bmType"]
 
-    return state
 
-
-def findBookmarks(wkspace, state, **kwargs):
+def findBookmarks(wkspace: Workspace, state: WorkflowState, **kwargs):
     for bmType in kwargs["bmTypes"]:
-        state = findBookmark(wkspace, state, **{"bmType": bmType})
-        if state["temp"]["result"]:
+        findBookmark(wkspace, state, **{"bmType": bmType})
+        tmp = state.getTemporaryState()
+        if tmp["result"]:
             break
-    return state
 
 
 # Initialize Workspaces
@@ -97,40 +109,52 @@ for c in clickTasks:
     c.setFunc(click)
 
 
-def findAndBuy(i, state):
+def findAndBuy(i: int, state: WorkflowState):
     ft = findTasks[i]
     ct = buyTasks[i]
-    state = ft.execute(state)
+    ft.execute(state)
 
-    if state["temp"]["result"] != 0:
-        state = updateStats(state)
+    tmp = state.getTemporaryState()
+    if tmp["result"] != 0:
+        updateStats(state)
 
-        state["temp"]["result"] = 0
-        state = ct.execute(state)
+        tmp["result"] = 0
+        ct.execute(state)
         time.sleep(0.3)
-        state = confirmBuyTask.execute(state)
+        confirmBuyTask.execute(state)
         time.sleep(0.3)
 
-    return state
 
-
-def executeTasks(state):
-    state["temp"] = {"result": 0}
-    state = focusTask.execute(state)
+def executeTasks(state: GlobalState):
+    wkState = state.getWorkflowState(WORKFLOW)
+    focusTask.execute(wkState)
 
     for i in range(shopItemCnt - 2):
-        state = findAndBuy(i, state)
+        findAndBuy(i, wkState)
 
-    state = scrollTask.execute(state)
+    scrollTask.execute(wkState)
     for i in range(shopItemCnt - 2, shopItemCnt):
-        state = findAndBuy(i, state)
+        findAndBuy(i, wkState)
 
-    state = refreshTask.execute(state)
+    refreshTask.execute(wkState)
     time.sleep(0.3)
-    state = confirmRefreshTask.execute(state)
+    confirmRefreshTask.execute(wkState)
     time.sleep(1.2)
 
     return state
 
 
-shopWorkflow = Workflow("Shop Refresh", executeTasks, wkspaces)
+shopWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
+
+
+def bindToApp(app: E7WorkflowApp, state: GlobalState):
+    state.addWorkflowState(shopWorkflow)
+    wkState = state.getWorkflowState(WORKFLOW)
+    stats = wkState.getWorkflowStats()
+    for i in range(len(bookmarkTypes)):
+        stats[bookmarkTypes[i].name] = 0
+
+    app.addWorkflow(shopWorkflow, state)
+    bmNames = [bm.name for bm in bookmarkTypes]
+    shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
+    app.getWindow(shopWorkflow.name).initStat(shopStatCards)
