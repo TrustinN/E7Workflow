@@ -2,6 +2,8 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
+from PyQt5.QtCore import QPoint, QRect
+from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
 
@@ -10,12 +12,73 @@ def ptToTuple(pt):
     return (x, y)
 
 
+def tupleToPt(arry):
+    x, y = arry
+    return QPoint(x, y)
+
+
 def click(wkspace, state, **kwargs):
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
     br = ptToTuple(br)
     mid = (np.array(tl) + np.array(br)) / 2
     pyautogui.click(int(mid[0]), int(mid[1]))
+    return state
+
+
+def scan(wkspace, state, **kwargs):
+    parent = kwargs["parent"]
+    ptl, pbr = parent.window.getBBox()
+    dim = pbr - ptl
+    width, height = dim.x(), dim.y()
+
+    numScans = kwargs["count"]
+    dir = kwargs["dir"]
+    task = kwargs["task"]
+    task.setWorkspace(wkspace)
+
+    savedGeometry = wkspace.window.geometry()
+    bbox = wkspace.window.getBBox()
+    tl, br = bbox
+    tl, br = np.array(ptToTuple(tl)), np.array(ptToTuple(br))
+    dim = br - tl
+    error = np.array([0.0, 0.0])
+
+    state = task.execute(state)
+    if numScans == 1:
+        return state
+
+    # We have (numScans - 1) * stepSz + windowLen = regionLen
+    # Solve for stepSz given direction
+    if dir == "vertical":
+        windowLen = dim[1]
+        regionLen = height
+        yStep = 1.0 * (regionLen - windowLen) / (numScans - 1)
+        ds = np.array([0.0, yStep])
+
+    else:
+        windowLen = dim[0]
+        regionLen = width
+        xStep = 1.0 * (regionLen - windowLen) / (numScans - 1)
+        ds = np.array([xStep, 0.0])
+
+    for i in range(numScans - 1):
+        tl, br = tl + ds, br + ds
+        tl, br = tl + error, br + error
+        newTl = tl.astype(int)
+        newBr = br.astype(int)
+
+        error = tl - newTl
+
+        newTl = tupleToPt(newTl)
+        newBr = tupleToPt(newBr)
+
+        wkspace.setGeometry(QRect(newTl, newBr))
+        QApplication.processEvents()
+        state = task.execute(state)
+
+    wkspace.setGeometry(savedGeometry)
+
     return state
 
 
@@ -61,6 +124,20 @@ def screenshot(region):
         }
         screenshot = sct.grab(monitor)
         return np.array(screenshot)[:, :, :3]
+
+
+def imageMatch(wkspace, state, img):
+    tl, br = wkspace.getBBox()
+    frame = wkspace.window.frameGeometry()
+    region = (tl.x(), tl.y(), frame.width(), frame.height())
+
+    ss = screenshot(region)
+
+    ss = alignImages(img, ss)
+    score = computeSSIM(ss, img)
+
+    state["temp"]["result"] = score >= 0.8
+    return state
 
 
 def alignImages(img1, img2):

@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 
@@ -483,7 +484,26 @@ class WorkspaceLayout(Workspace):
             wks.importData(apply, subData)
 
 
-class Task:
+class Chainable:
+    def __init__(self):
+        self.next = None
+
+    def execute(self, state):
+        pass
+
+    def chain(self, chainable):
+        newChainable = copy.deepcopy(self)
+        prevExecute = newChainable.execute
+
+        def chainExecute(state):
+            prevExecute(state)
+            chainable.execute(state)
+
+        newChainable.execute = chainExecute
+        return newChainable
+
+
+class Task(Chainable):
     def __init__(self):
         self.args = None
         self.wkspace = None
@@ -503,7 +523,7 @@ class Task:
         self.wkspace = wkspace
 
 
-class Workflow:
+class Workflow(Chainable):
     def __init__(self, name, exec, wkspaces):
         self.name = name
         self.exec = exec
@@ -523,8 +543,8 @@ class Workflow:
     def unlock(self):
         self.wkspaceLayout.unlock()
 
-    def execute(self):
-        return self.exec()
+    def execute(self, state):
+        return self.exec(state)
 
     def exportData(self, extract):
         return self.wkspaceLayout.exportData(extract)
@@ -582,6 +602,7 @@ def fmtColorFile(wks):
 class WorkflowRunner:
     def __init__(self):
         self.iterations = 1
+        self.state = {}
 
     def setIterations(self, iterations):
         self.iterations = iterations
@@ -589,11 +610,14 @@ class WorkflowRunner:
     def bindWorkflow(self, wkflow):
         self.wkflow = wkflow
 
+    def setState(self, state):
+        self.state = state
+
     def run(self):
         self.wkflow.hide()
         QApplication.processEvents()
         for i in range(self.iterations):
-            self.wkflow.execute()
+            self.state = self.wkflow.execute(self.state)
         self.wkflow.show()
 
 

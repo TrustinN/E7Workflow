@@ -1,14 +1,11 @@
 from app import E7WorkflowApp
-from workflows.nav import buildHomeWorkflow
-from workflows.penguin import buildWorkflow as buildPenguinWorkflow
-from workflows.shop import buildWorkflow as buildShopWorkflow
 
 if __name__ == "__main__":
     app = E7WorkflowApp()
+    from workflows.nav import homeWorkflow
+    from workflows.penguin import penguinWorkflow
+    from workflows.shop import shopWorkflow
 
-    penguinWorkflow = buildPenguinWorkflow()
-    shopWorkflow = buildShopWorkflow()
-    homeWorkflow = buildHomeWorkflow()
     app.addWorkflow(shopWorkflow)
     app.addWorkflow(penguinWorkflow)
     app.addWorkflow(homeWorkflow)
