@@ -289,14 +289,61 @@ class WorkspaceLayout(Workspace):
     def disableSignals(self, slot):
         self.resizeSignal.disconnect(slot)
         self.moveSignal.disconnect(slot)
-        for wkspace in self.wkspaces:
-            wkspace.disableSignals(slot)
 
     def connectSignals(self, slot):
         self.resizeSignal.connect(slot)
         self.moveSignal.connect(slot)
-        for wkspace in self.wkspaces:
-            wkspace.connectSignals(slot)
+
+    def resize(self, newCorners):
+        oldCorners = self.getBBox()
+
+        # Account for padding
+        oldCornersPadded = applyPadding(oldCorners, -self.padding)
+        newCornersPadded = applyPadding(newCorners, -self.padding)
+
+        # Get dimensions of old and new frame
+        dimOld = oldCornersPadded[1] - oldCornersPadded[0]
+        dimNew = newCornersPadded[1] - newCornersPadded[0]
+
+        # Update child wkspace sizes resize displacement
+        def wksResize(wks):
+            oldTl, oldBr = wks.getBBox()
+
+            # linear interpolation
+            s0 = (1.0 * oldTl.x() - oldCornersPadded[0].x()) / dimOld.x()
+            t0 = (1.0 * oldTl.y() - oldCornersPadded[0].y()) / dimOld.y()
+            s1 = (1.0 * oldBr.x() - oldCornersPadded[1].x()) / dimOld.x()
+            t1 = (1.0 * oldBr.y() - oldCornersPadded[1].y()) / dimOld.y()
+
+            prevTlErr, prevBrErr = wks.window.resizeError
+            newTlx = dimNew.x() * s0 + newCornersPadded[0].x() + prevTlErr[0]
+            newTly = dimNew.y() * t0 + newCornersPadded[0].y() + prevTlErr[1]
+            newBrx = dimNew.x() * s1 + newCornersPadded[1].x() + prevBrErr[0]
+            newBry = dimNew.y() * t1 + newCornersPadded[1].y() + prevBrErr[1]
+
+            newTl = np.array([newTlx, newTly])
+            newBr = np.array([newBrx, newBry])
+
+            intNewTl = newTl.astype(int)
+            intNewBr = newBr.astype(int)
+
+            wks.window.resizeError = (newTl - intNewTl, newBr - intNewBr)
+
+            newTl = QPoint(intNewTl[0], intNewTl[1])
+            newBr = QPoint(intNewBr[0], intNewBr[1])
+
+            wks.setGeometry(QRect(newTl, newBr))
+
+        def recursiveResize(wkspace):
+            wksResize(wkspace)
+            if hasattr(wkspace, "wkspaces"):
+                for wks in wkspace.wkspaces:
+                    recursiveResize(wks)
+
+        for wks in self.wkspaces:
+            recursiveResize(wks)
+
+        self.window.setGeometry(QRect(newCorners[0], newCorners[1]))
 
     def mouseMoveEvent(self, event):
         if self.childFocused is not None:
@@ -307,7 +354,6 @@ class WorkspaceLayout(Workspace):
                 return
 
             if self.window.resizeMode:
-                oldCorners = self.getBBox()
                 newCorners = self.getBBox()
 
                 # Compute displacement
@@ -317,53 +363,7 @@ class WorkspaceLayout(Workspace):
                     else:
                         newCorners[i // 2].setY(event.globalPos().y())
 
-                # Account for padding
-                oldCornersPadded = applyPadding(oldCorners, -self.padding)
-                newCornersPadded = applyPadding(newCorners, -self.padding)
-
-                # Get dimensions of old and new frame
-                dimOld = oldCornersPadded[1] - oldCornersPadded[0]
-                dimNew = newCornersPadded[1] - newCornersPadded[0]
-
-                # Update child wkspace sizes resize displacement
-                def wksResize(wks):
-                    oldTl, oldBr = wks.getBBox()
-
-                    # linear interpolation
-                    s0 = (1.0 * oldTl.x() - oldCornersPadded[0].x()) / dimOld.x()
-                    t0 = (1.0 * oldTl.y() - oldCornersPadded[0].y()) / dimOld.y()
-                    s1 = (1.0 * oldBr.x() - oldCornersPadded[1].x()) / dimOld.x()
-                    t1 = (1.0 * oldBr.y() - oldCornersPadded[1].y()) / dimOld.y()
-
-                    prevTlErr, prevBrErr = wks.window.resizeError
-                    newTlx = dimNew.x() * s0 + newCornersPadded[0].x() + prevTlErr[0]
-                    newTly = dimNew.y() * t0 + newCornersPadded[0].y() + prevTlErr[1]
-                    newBrx = dimNew.x() * s1 + newCornersPadded[1].x() + prevBrErr[0]
-                    newBry = dimNew.y() * t1 + newCornersPadded[1].y() + prevBrErr[1]
-
-                    newTl = np.array([newTlx, newTly])
-                    newBr = np.array([newBrx, newBry])
-
-                    intNewTl = newTl.astype(int)
-                    intNewBr = newBr.astype(int)
-
-                    wks.window.resizeError = (newTl - intNewTl, newBr - intNewBr)
-
-                    newTl = QPoint(intNewTl[0], intNewTl[1])
-                    newBr = QPoint(intNewBr[0], intNewBr[1])
-
-                    wks.setGeometry(QRect(newTl, newBr))
-
-                def recursiveResize(wkspace):
-                    wksResize(wkspace)
-                    if hasattr(wkspace, "wkspaces"):
-                        for wks in wkspace.wkspaces:
-                            recursiveResize(wks)
-
-                for wks in self.wkspaces:
-                    recursiveResize(wks)
-
-                self.window.setGeometry(QRect(newCorners[0], newCorners[1]))
+                self.resize(newCorners)
 
             else:
                 # Save prev state
@@ -441,7 +441,12 @@ class WorkspaceLayout(Workspace):
                 br.setX(max(br.x(), curBr.x()))
                 br.setY(max(br.y(), curBr.y()))
 
-            self.setGeometry(QRect(tl, br))
+            self.window.setGeometry(QRect(tl, br))
+        self.resizeSignal.emit()
+
+    def setGeometry(self, rect):
+        newTl, newBr = rect.topLeft(), rect.bottomRight()
+        self.resize([newTl, newBr])
         self.resizeSignal.emit()
 
     def hide(self):

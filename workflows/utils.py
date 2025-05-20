@@ -2,6 +2,7 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
+import pytesseract
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
@@ -126,18 +127,76 @@ def screenshot(region):
         return np.array(screenshot)[:, :, :3]
 
 
-def imageMatch(wkspace, state, img):
+def combine_images_side_by_side_np(image1, image2):
+    # Resize to the same height if necessary
+    if image1.shape[0] != image2.shape[0]:
+        new_height = min(image1.shape[0], image2.shape[0])
+        image1 = cv2.resize(
+            image1, (int(image1.shape[1] * new_height / image1.shape[0]), new_height)
+        )
+        image2 = cv2.resize(
+            image2, (int(image2.shape[1] * new_height / image2.shape[0]), new_height)
+        )
+
+    # Combine horizontally
+    combined_image = np.hstack((image1, image2))
+
+    return combined_image
+
+
+def imageMatch(wkspace, state, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.window.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
 
     ss = screenshot(region)
+    threshold = 0.8
+    img = kwargs["img"]
+    if "threshold" in kwargs:
+        threshold = kwargs["threshold"]
 
     ss = alignImages(img, ss)
     score = computeSSIM(ss, img)
 
-    state["temp"]["result"] = score >= 0.8
+    state["temp"]["result"] = score >= threshold
     return state
+
+
+def filterNumbers(wkspace, state, **kwargs):
+    tl, br = wkspace.getBBox()
+    frame = wkspace.window.frameGeometry()
+    region = (tl.x(), tl.y(), frame.width(), frame.height())
+
+    image = screenshot(region)
+    image = filterColor(image, rgbToHsv(kwargs["lBound"]), rgbToHsv(kwargs["uBound"]))
+
+    # Denoise the image
+    image = cv2.fastNlMeansDenoising(image, None, 30, 7, 21)
+    _, image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Create a blank mask to draw on
+    filtered_mask = np.zeros_like(image)
+
+    # Filter contours by area
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)  # Get the bounding box
+        aspect_ratio = 1.0 * h / w
+        if 1.2 <= aspect_ratio:
+            cv2.drawContours(filtered_mask, [contour], -1, (255), thickness=cv2.FILLED)
+
+    # Resulting image
+    image = cv2.bitwise_and(image, filtered_mask)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    image = cv2.dilate(image, kernel, iterations=1)
+
+    text = pytesseract.image_to_string(image, config="--psm 6 digits")
+    try:
+        count = int(text)
+    except ValueError:
+        count = 1
+
+    return count
 
 
 def alignImages(img1, img2):
@@ -212,3 +271,34 @@ def computeSSIM(img1, img2):
     score, _ = ssim(img1, img2, full=True)
 
     return score
+
+
+# def filterColor(image, lower_bound, upper_bound):
+#     # Convert to HSV color space
+#     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+#
+#     # Create a mask for the specific color range
+#     mask = cv2.inRange(hsv, lower_bound, upper_bound)
+#
+#     # Invert the mask if you want to remove the color
+#     filtered_image = cv2.bitwise_and(image, image, mask=~mask)
+#
+#     return filtered_image
+def filterColor(image, lower_bound, upper_bound):
+    # Convert to HSV color space
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Create a mask for the specific color range
+    mask = cv2.inRange(hsv, lower_bound, upper_bound)
+    #
+    # # Create a binary black-and-white image
+    # # Pixels matching the color range will be white, others black
+    # bw_image = cv2.bitwise_not(mask)
+
+    return mask
+
+
+def rgbToHsv(rgb):
+    rgb = np.uint8([[rgb]])  # Convert RGB into OpenCV format
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    return hsv[0][0]  # Extract the HSV values

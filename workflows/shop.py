@@ -20,7 +20,7 @@ def updateStats(state):
 
 def findBookmark(wkspace, state, **kwargs):
     bmIcon = getBookMarkIcon(kwargs["bmType"])
-    state = imageMatch(wkspace, state, bmIcon)
+    state = imageMatch(wkspace, state, img=bmIcon)
     if state["temp"]["result"]:
         state["temp"]["resultType"] = kwargs["bmType"]
 

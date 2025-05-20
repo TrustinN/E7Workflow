@@ -1,13 +1,9 @@
 import time
 
-import cv2
-import pytesseract
-import skimage.io as skio
-
 from app import Task, Workflow, Workspace, WorkspaceLayout
 from assets import getPenguinIcon, penguinTypes
 
-from .utils import click, imageMatch, scan, screenshot
+from .utils import click, filterNumbers, imageMatch, scan
 
 focusTask = Task()
 focusWS = Workspace("Focus")
@@ -23,11 +19,15 @@ confirmWS = Workspace("Confirm")
 
 
 def findPenguin(wkspace, state, **kwargs):
-    pgnIcon = getPenguinIcon(kwargs["pType"])
-    state = imageMatch(wkspace, state, pgnIcon)
+    pType = kwargs["pType"]
+    pgnIcon = getPenguinIcon(pType)
+    state = imageMatch(
+        wkspace,
+        state,
+        img=pgnIcon,
+    )
     if state["temp"]["result"]:
-        state = getNumber(wkspace, state, **kwargs)
-        state = updateStats(state)
+        state["temp"]["resultType"] = pType
     return state
 
 
@@ -37,43 +37,11 @@ def findPenguins(wkspace, state, **kwargs):
     return state
 
 
-penguinScanTasks = [Task() for i in range(len(penguinTypes))]
-penguinScanStartWS = Workspace("Scan Start")
-penguinScanEndWS = Workspace("Scan End")
-penguinScanPath = WorkspaceLayout("Scan Path", [penguinScanStartWS, penguinScanEndWS])
-penguinScanPath.setPadding(0)
-
-scanTasks = [Task() for i in range(len(penguinTypes))]
-
-for i in range(len(penguinTypes)):
-    scanTasks[i].setFunc(findPenguins, pType=penguinTypes[i])
-    penguinScanTasks[i].setWorkspace(penguinScanStartWS)
-    penguinScanTasks[i].setFunc(
-        scan, parent=penguinScanPath, count=5, dir="horizontal", task=scanTasks[i]
-    )
-
-exitTask = Task()
-exitWS = Workspace("Exit")
-
-clickTasks = [focusTask, buyTask, maxTask, confirmTask, exitTask]
-wkspaces = [focusWS, buyWS, maxWS, confirmWS, exitWS, penguinScanPath]
-
-
 def getNumber(wkspace, state, **kwargs):
-    tl, br = wkspace.getBBox()
-    frame = wkspace.window.frameGeometry()
-    region = (tl.x(), tl.y(), frame.width(), frame.height())
-
-    image = screenshot(region)
-    pType = kwargs["pType"]
-    _, binaryImage = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
-    # skio.imsave(f"{pType.name} {region}.png", binaryImage)
-
-    text = pytesseract.image_to_string(binaryImage, config="--psm 6 digits")
-    if text == "":
-        text = "1"
-    state["temp"]["result"] = int(text)
-    state["temp"]["resultType"] = kwargs["pType"]
+    count = filterNumbers(
+        wkspace, state, lBound=[200, 200, 200], uBound=[255, 255, 255]
+    )
+    state["temp"]["result"] = count
     return state
 
 
@@ -87,6 +55,59 @@ def updateStats(state):
     return state
 
 
+penguinScanWS = Workspace("Scan")
+penguinCountWS = Workspace("Count")
+penguinScanAndCountWS = WorkspaceLayout("Scan Start", [penguinScanWS, penguinCountWS])
+penguinScanAndCountWS.setPadding(0)
+
+penguinScanEndWS = Workspace("Scan End")
+penguinScanPath = WorkspaceLayout(
+    "Scan Path", [penguinScanAndCountWS, penguinScanEndWS]
+)
+penguinScanPath.setPadding(0)
+
+penguinScanAction = Task()
+penguinScanAction.setWorkspace(penguinScanAndCountWS)
+penguinScanIcon = [Task() for i in range(len(penguinTypes))]
+penguinScanCount = Task()
+penguinScanCount.setFunc(getNumber)
+penguinScanCount.setWorkspace(penguinCountWS)
+
+for i in range(len(penguinTypes)):
+    penguinScanIcon[i].setWorkspace(penguinScanWS)
+    penguinScanIcon[i].setFunc(findPenguin, pType=penguinTypes[i])
+
+penguinScanAndCount = Task()
+
+
+def scanAndCount(wkspace, state, **kwargs):
+    for i in range(len(penguinTypes)):
+        state = penguinScanIcon[i].execute(state)
+        if state["temp"]["result"]:
+            state = penguinScanCount.execute(state)
+            state = updateStats(state)
+    return state
+
+
+penguinScanAndCount.setFunc(scanAndCount)
+
+
+for i in range(len(penguinTypes)):
+    penguinScanAction.setFunc(
+        scan,
+        parent=penguinScanPath,
+        count=5,
+        dir="horizontal",
+        task=penguinScanAndCount,
+    )
+
+exitTask = Task()
+exitWS = Workspace("Exit")
+
+clickTasks = [focusTask, buyTask, maxTask, confirmTask, exitTask]
+wkspaces = [focusWS, buyWS, maxWS, confirmWS, exitWS, penguinScanPath]
+
+
 for i in range(len(clickTasks)):
     clickTasks[i].setWorkspace(wkspaces[i])
     clickTasks[i].setFunc(click)
@@ -98,12 +119,11 @@ def executeTasks(state):
         state = clickTasks[i].execute(state)
         time.sleep(0.2)
 
-    for i in range(len(penguinTypes)):
-        state = penguinScanTasks[i].execute(state)
-        # print(state)
+    time.sleep(0.2)
+    state = penguinScanAction.execute(state)
 
-    # time.sleep(0.4)
-    # exitTask.execute(state)
+    time.sleep(0.4)
+    exitTask.execute(state)
     time.sleep(0.2)
 
     return state
