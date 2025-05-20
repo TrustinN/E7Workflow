@@ -1,0 +1,39 @@
+{
+  "config": [255, 255, 255, 10],
+  "children": {
+    "Entry 1": {
+      "config": [255, 255, 255, 10],
+      "children": {
+        "Icon 1": { "config": [255, 255, 255, 10], "children": {} },
+        "Buy 1": { "config": [255, 255, 255, 10], "children": {} }
+      }
+    },
+    "Entry 2": {
+      "config": [255, 255, 255, 10],
+      "children": {
+        "Icon 2": { "config": [255, 255, 255, 10], "children": {} },
+        "Buy 2": { "config": [255, 255, 255, 10], "children": {} }
+      }
+    },
+    "Entry 3": {
+      "config": [255, 255, 255, 10],
+      "children": {
+        "Icon 3": { "config": [255, 255, 255, 10], "children": {} },
+        "Buy 3": { "config": [255, 255, 255, 10], "children": {} }
+      }
+    },
+    "Entry 4": {
+      "config": [255, 255, 255, 10],
+      "children": {
+        "Icon 4": { "config": [255, 255, 255, 10], "children": {} },
+        "Buy 4": { "config": [255, 255, 255, 10], "children": {} }
+      }
+    },
+    "Focus": { "config": [255, 255, 255, 10], "children": {} },
+    "Confirm Refresh": { "config": [255, 255, 255, 10], "children": {} },
+    "Confirm Buy": { "config": [255, 255, 255, 10], "children": {} },
+    "Refresh": { "config": [255, 255, 255, 10], "children": {} },
+    "Scroll": { "config": [255, 255, 255, 10], "children": {} }
+  }
+}
+
