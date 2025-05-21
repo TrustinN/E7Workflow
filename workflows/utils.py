@@ -154,7 +154,7 @@ def imageMatch(wkspace: Workspace, state: WorkflowState, **kwargs):
     ss = alignImages(img, ss)
     score = computeSSIM(ss, img)
 
-    tmp = state.getTemporaryState()
+    tmp = state.getField("temp")
     tmp["result"] = score >= threshold
 
 

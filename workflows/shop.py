@@ -16,17 +16,17 @@ WORKFLOW_NAME = "Shop Refresh"
 
 
 def updateStats(state: WorkflowState):
-    tmp = state.getTemporaryState()
+    tmp = state.getField("temp")
     if tmp["result"]:
         bType = tmp["resultType"]
-        stats = state.getWorkflowStats()
+        stats = state.getField("stats")
         stats[bType.name] += 1
 
 
 def findBookmark(wkspace: Workspace, state: WorkflowState, **kwargs):
     bmIcon = getBookMarkIcon(kwargs["bmType"])
     imageMatch(wkspace, state, img=bmIcon)
-    tmp = state.getTemporaryState()
+    tmp = state.getField("temp")
     if tmp["result"]:
         tmp["resultType"] = kwargs["bmType"]
 
@@ -34,7 +34,7 @@ def findBookmark(wkspace: Workspace, state: WorkflowState, **kwargs):
 def findBookmarks(wkspace: Workspace, state: WorkflowState, **kwargs):
     for bmType in kwargs["bmTypes"]:
         findBookmark(wkspace, state, **{"bmType": bmType})
-        tmp = state.getTemporaryState()
+        tmp = state.getField("temp")
         if tmp["result"]:
             break
 
@@ -72,7 +72,7 @@ def buildWorkflow():
             ],
         )
 
-        tmp = state.getTemporaryState()
+        tmp = state.getField("temp")
         if tmp["result"] != 0:
             updateStats(state)
 
@@ -108,7 +108,8 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     shopWorkflow, shopWorkspace = buildWorkflow()
     state.addWorkflowState(shopWorkspace)
     wkState = state.getWorkflowState(WORKFLOW_NAME)
-    stats = wkState.getWorkflowStats()
+    wkState.addField("stats")
+    stats = wkState.getField("stats")
     for i in range(len(bookmarkTypes)):
         stats[bookmarkTypes[i].name] = 0
 
@@ -118,4 +119,6 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
     shopStats = StatWindow(shopStatCards)
 
-    addStatWindow(app, shopWorkspace, shopStats)
+    runner = app.getRunner(shopWorkspace.name)
+    window = app.getWindow(shopWorkspace.name)
+    addStatWindow(window, runner, shopWorkspace, shopStats)

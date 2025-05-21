@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from app import E7WorkflowApp, GlobalState, Workspace
+from app import GlobalState, WorkflowRunner, WorkflowWindow, Workspace
 
 
 class StatCard(QWidget):
@@ -33,8 +33,8 @@ class StatCard(QWidget):
             iconLabel.setPixmap(icon)
             iconLabel.setStyleSheet(
                 """
-                border: 2px solid #555555; 
-                border-radius: 10px; 
+                border: 2px solid #555555;
+                border-radius: 10px;
                 padding: 5px;
             """
             )
@@ -75,10 +75,10 @@ class StatWindow(QWidget):
         self.getCard(title).valueLabel.setText(str(value))
 
 
-def getStatUpdate(statWidget: StatWindow):
-    def statUpdate(state: GlobalState, wkspace: Workspace):
+def getStatUpdate(statWidget: StatWindow, wkspace: Workspace):
+    def statUpdate(state: GlobalState):
         wkState = state.getWorkflowState(wkspace.name)
-        stats = wkState.getWorkflowStats()
+        stats = wkState.getField("stats")
         for key in stats:
             statWidget.updateCard(key, stats[key])
         QApplication.processEvents()
@@ -86,9 +86,11 @@ def getStatUpdate(statWidget: StatWindow):
     return statUpdate
 
 
-def addStatWindow(app, wkspace: Workspace, statWindow: StatWindow):
-    win = app.getWindow(wkspace.name)
-    win.addWidget(statWindow)
-
-    runner = app.getRunner(wkspace.name)
-    runner.stepFinished.connect(getStatUpdate(statWindow))
+def addStatWindow(
+    window: WorkflowWindow,
+    runner: WorkflowRunner,
+    statWkspace: Workspace,
+    statWindow: StatWindow,
+):
+    window.addWidget(statWindow)
+    runner.stepFinished.connect(getStatUpdate(statWindow, statWkspace))

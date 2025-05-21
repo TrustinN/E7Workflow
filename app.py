@@ -305,6 +305,7 @@ class Workspace(QObject):
             childResize(wks)
 
         self.window.setGeometry(QRect(newCorners[0], newCorners[1]))
+        self.resizeSignal.emit()
 
     def mouseMoveEvent(self, event):
         if self.childFocused is not None:
@@ -478,13 +479,12 @@ class WorkflowState(dict):
     def __init__(self):
         super().__init__()
         self["temp"] = {}
-        self["stats"] = {}
 
-    def getTemporaryState(self):
-        return self["temp"]
+    def addField(self, name):
+        self[name] = {}
 
-    def getWorkflowStats(self):
-        return self["stats"]
+    def getField(self, name):
+        return self[name]
 
 
 class GlobalState(dict):
@@ -549,8 +549,8 @@ def fmtColorFile(wks):
 
 
 class WorkflowRunner(QObject):
-    stepFinished = pyqtSignal(GlobalState, Workspace)
-    executeFinish = pyqtSignal(GlobalState, Workspace)
+    stepFinished = pyqtSignal(GlobalState)
+    executeFinish = pyqtSignal(GlobalState)
 
     def __init__(self):
         super().__init__()
@@ -575,10 +575,10 @@ class WorkflowRunner(QObject):
         QApplication.processEvents()
         for i in range(self.iterations):
             self.wkflow(self.state)
-            self.stepFinished.emit(self.state, self.wkspace)
+            self.stepFinished.emit(self.state)
         self.wkspace.show()
 
-        self.executeFinish.emit(self.state, self.wkspace)
+        self.executeFinish.emit(self.state)
 
 
 class ConfirmButton(QWidget):

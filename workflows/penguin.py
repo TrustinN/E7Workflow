@@ -17,7 +17,7 @@ def findPenguin(wkspace: Workspace, state: WorkflowState, **kwargs):
         state,
         img=pgnIcon,
     )
-    tmp = state.getTemporaryState()
+    tmp = state.getField("temp")
     if tmp["result"]:
         tmp["resultType"] = pType
 
@@ -31,12 +31,12 @@ def getNumber(wkspace: Workspace, state: WorkflowState, **kwargs):
     count = filterNumbers(
         wkspace, state, lBound=[200, 200, 200], uBound=[255, 255, 255]
     )
-    state.getTemporaryState()["result"] = count
+    state.getField("temp")["result"] = count
 
 
 def updateStats(state: WorkflowState):
-    tmp = state.getTemporaryState()
-    stats = state.getWorkflowStats()
+    tmp = state.getField("temp")
+    stats = state.getField("stats")
 
     pType = tmp["resultType"]
     stats[pType.name] += tmp["result"]
@@ -62,7 +62,7 @@ def buildWorkflow():
     def scanAndCount(wkspace: Workspace, state: WorkflowState, **kwargs):
         for i in range(len(penguinTypes)):
             findPenguin(penguinScanWS, state, pType=penguinTypes[i])
-            tmp = state.getTemporaryState()
+            tmp = state.getField("temp")
             if tmp["result"]:
                 getNumber(penguinCountWS, state)
                 updateStats(state)
@@ -83,6 +83,7 @@ def buildWorkflow():
             task=scanAndCount,
         )
 
+        time.sleep(0.2)
         click(exitWS, wkState)
         time.sleep(0.2)
 
@@ -98,7 +99,8 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     penguinWorkflow, penguinWorkspace = buildWorkflow()
     state.addWorkflowState(penguinWorkspace)
     wkState = state.getWorkflowState(WORKFLOW_NAME)
-    stats = wkState.getWorkflowStats()
+    wkState.addField("stats")
+    stats = wkState.getField("stats")
     for i in range(len(penguinTypes)):
         stats[penguinTypes[i].name] = 0
 
@@ -110,4 +112,6 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     )
     penguinStats = StatWindow(penguinStatCards)
 
-    addStatWindow(app, penguinWorkspace, penguinStats)
+    runner = app.getRunner(penguinWorkspace.name)
+    window = app.getWindow(penguinWorkspace.name)
+    addStatWindow(window, runner, penguinWorkspace, penguinStats)
