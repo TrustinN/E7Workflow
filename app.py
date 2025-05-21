@@ -1,10 +1,9 @@
-import copy
 import json
 import os
 
 import numpy as np
 from PyQt5.QtCore import QObject, QPoint, QRect, Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QRegion
+from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -104,6 +103,15 @@ class SelectionWindow(QWidget):
 
         self.show()
 
+    def grabMouse(self) -> bool:
+        if not self.canMove():
+            return False
+        self.setFocus()
+        self.raise_()
+        self.activateWindow()
+        super().grabMouse()
+        return True
+
     def mouseMoveEvent(self, event):
         if not self.canMove():
             return
@@ -123,10 +131,7 @@ class SelectionWindow(QWidget):
         self.setGeometry(QRect(corners[0], corners[1]))
         self.resizeSignal.emit()
 
-    def mousePressEvent(self, event):
-        if self.canMove():
-            self.grabMouse()
-
+    def mousePressUpdate(self, event):
         self.dragPosition = event.globalPos() - self.frameGeometry().topLeft()
 
         threshold = 10
@@ -151,6 +156,12 @@ class SelectionWindow(QWidget):
         else:
             self.resizeMode = True
             self.resizeIndices = [i for i, x in enumerate(activeCnt) if x == 1]
+
+    def mousePressEvent(self, event):
+        self.mousePressUpdate(event)
+
+        if self.canMove():
+            self.grabMouse()
 
     def mouseReleaseEvent(self, event):
         self.releaseMouse()
@@ -208,7 +219,9 @@ class SelectionWindow(QWidget):
 
 
 class Workspace(QObject):
-    def __init__(self, name, wkspaces=[]):
+    focusParent = pyqtSignal(QMouseEvent)
+
+    def __init__(self, name, wkspaces: list["Workspace"] = []):
         super().__init__()
         self.name = name
         self.window = SelectionWindow(name)
@@ -219,11 +232,14 @@ class Workspace(QObject):
         self.moveSignal = self.window.moveSignal
         self.padding = 0
         self.wkspaces = wkspaces
-        for wkspace in self.wkspaces:
+        for i in range(len(self.wkspaces)):
+            wkspace = self.wkspaces[i]
             wkspace.connectSignals(self.updateGeometry)
+            wkspace.focusParent.connect(self.mousePressEvent)
         self.updateGeometry()
 
         self.oldMouseMoveEvent = self.window.mouseMoveEvent
+        self.oldMousePressUpdate = self.window.mousePressUpdate
         self.oldMousePressEvent = self.window.mousePressEvent
         self.oldMouseReleaseEvent = self.window.mouseReleaseEvent
 
@@ -298,8 +314,8 @@ class Workspace(QObject):
 
     def mouseMoveEvent(self, event):
         if self.childFocused is not None:
-            self.window.releaseMouse()
-            self.childFocused.window.grabMouse()
+            self.releaseMouse()
+            self.childFocused.grabMouse()
         else:
             if not self.canMove():
                 return
@@ -337,46 +353,67 @@ class Workspace(QObject):
                     if not unlockState[i]:
                         w.lock()
 
-    def mousePressEvent(self, event):
+    def grabMouse(self) -> bool:
+        if not self.canMove():
+            self.releaseMouse()
+            return False
 
-        self.oldMousePressEvent(event)
+        if self.childFocused:
+            self.childFocused.releaseMouse()
+            self.childFocused = None
+
+        self.window.setFocus()
+        self.window.raise_()
+        self.window.activateWindow()
+        self.window.grabMouse()
+        return True
+
+    def releaseMouse(self):
+        # self.window.lower()
         self.window.releaseMouse()
+        for w in self.wkspaces:
+            w.releaseMouse()
+
+    def mousePressUpdate(self, event):
+        self.oldMousePressUpdate(event)
+        self.releaseMouse()
+
+        for wkspace in self.wkspaces:
+            wkspace.mousePressUpdate(event)
+            wkspace.mouseReleaseEvent(event)
+
+    def mousePressEvent(self, event):
+        self.oldMousePressEvent(event)
+        self.mousePressUpdate(event)
+        if self.childFocused:
+            self.childFocused.mouseReleaseEvent(event)
+            self.childFocused = None
+
         mousePos = event.globalPos()
         x = mousePos.x()
         y = mousePos.y()
 
-        for wkspace in self.wkspaces:
-            wkspace.mousePressEvent(event)
-            wkspace.mouseReleaseEvent(event)
-
-        if self.childFocused:
-            self.childFocused.window.mouseReleaseEvent(event)
-            self.childFocused = None
-
-        for w in self.wkspaces:
+        for i in range(len(self.wkspaces)):
+            w = self.wkspaces[i]
             tl, br = w.getBBox()
-            if not w.canMove():
-                continue
 
             # Find child under mouse press
             if tl.x() < x and x < br.x():
                 if tl.y() < y and y < br.y():
                     self.childFocused = w
-                    self.childFocused.window.setFocus()
-                    self.childFocused.window.raise_()
-                    self.childFocused.window.activateWindow()
-                    self.childFocused.window.mousePressEvent(event)
-                    return
+                    success = w.grabMouse()
+                    if success:
+                        return
 
-        if self.canMove():
-            self.window.setFocus()
-            self.window.grabMouse()
+        success = self.grabMouse()
+        if not success:
+            self.focusParent.emit(event)
 
     def mouseReleaseEvent(self, event):
         if self.childFocused:
             self.childFocused.window.mouseReleaseEvent(event)
             self.childFocused = None
-        self.window.releaseMouse()
+        self.releaseMouse()
 
     def getBBox(self):
         return self.window.getBBox()
@@ -469,69 +506,6 @@ class GlobalState(dict):
 
     def getUserState(self):
         return self["userState"]
-
-
-# # This class shouldn't have to keep a list of wkspaces,
-# # A Workflow is something you run just passing the wkspaces into an
-# # exec function
-# class Workflow:
-#     def __init__(self, name, exec, wkspaces):
-#         self.name = name
-#         self.exec = exec
-#         self.wkspaces = wkspaces
-#         self.wkspaceLayout = Workspace(name, self.wkspaces)
-#         self.wkspaceLayout.setPadding(15)
-#         self.window = self.wkspaceLayout.window
-#
-#     def disableSignals(self, slot):
-#         self.window.resizeSignal.disconnect(slot)
-#         self.window.moveSignal.disconnect(slot)
-#
-#     def connectSignals(self, slot):
-#         self.window.resizeSignal.connect(slot)
-#         self.window.moveSignal.connect(slot)
-#
-#     def hide(self):
-#         self.wkspaceLayout.hide()
-#
-#     def show(self):
-#         self.wkspaceLayout.show()
-#
-#     def lock(self):
-#         self.wkspaceLayout.lock()
-#
-#     def unlock(self):
-#         self.wkspaceLayout.unlock()
-#
-#     def canMove(self):
-#         return self.window.canMove()
-#
-#     def getBBox(self):
-#         return self.wkspaceLayout.getBBox()
-#
-#     def setGeometry(self, rect):
-#         self.window.setGeometry(rect)
-#         self.window.resizeSignal.emit()
-#
-#     def mousePressEvent(self, event):
-#         self.window.mousePressEvent(event)
-#
-#     def mouseMoveEvent(self, event):
-#         self.window.mouseMoveEvent(event)
-#
-#     def mouseReleaseEvent(self, event):
-#         self.window.mouseReleaseEvent(event)
-#
-#     def execute(self, state: GlobalState):
-#         self.exec(state)
-#
-#     def exportData(self, extract):
-#         return self.wkspaceLayout.exportData(extract)
-#
-#     def importData(self, apply, config):
-#         if config:
-#             self.wkspaceLayout.importData(apply, config)
-#
 
 
 def exportData(wkflow, dest, extract):

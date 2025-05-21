@@ -16,7 +16,9 @@ def buildHomeWorkflow():
             click(wkspaces[i], state)
             time.sleep(delays[i])
 
-    return executeTasks, Workspace("Go Home", wkspaces)
+    wkspace = Workspace("Go Home", wkspaces)
+    wkspace.setPadding(15)
+    return executeTasks, wkspace
 
 
 def buildGrowthAltarWorkflow():
@@ -30,7 +32,9 @@ def buildGrowthAltarWorkflow():
             click(wkspaces[i], state)
             time.sleep(delays[i])
 
-    return executeTasks, Workspace("Go Growth Altar", wkspaces)
+    wkspace = Workspace("Go Growth Altar", wkspaces)
+    wkspace.setPadding(15)
+    return executeTasks, wkspace
 
 
 def buildShopWorkflow():
@@ -43,4 +47,6 @@ def buildShopWorkflow():
             click(wkspaces[i], state)
             time.sleep(delays[i])
 
-    return executeTasks, Workspace("Go Shop", wkspaces)
+    wkspace = Workspace("Go Shop", wkspaces)
+    wkspace.setPadding(15)
+    return executeTasks, wkspace

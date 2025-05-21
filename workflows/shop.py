@@ -99,7 +99,9 @@ def buildWorkflow():
         click(confirmRefreshWS, wkState)
         time.sleep(1.2)
 
-    return executeTasks, Workspace(WORKFLOW_NAME, wkspaces)
+    wkspace = Workspace(WORKFLOW_NAME, wkspaces)
+    wkspace.setPadding(15)
+    return executeTasks, wkspace
 
 
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
