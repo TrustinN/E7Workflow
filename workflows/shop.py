@@ -3,7 +3,6 @@ import time
 from app import (
     E7WorkflowApp,
     GlobalState,
-    Task,
     Workflow,
     WorkflowState,
     Workspace,
@@ -69,76 +68,43 @@ def buildWorkflow():
     wkspaces = entryWS
     wkspaces.extend(extraWS)
 
-    # Initialize tasks
-    findTasks = [Task() for i in range(shopItemCnt)]
-    for i in range(shopItemCnt):
-        ft = findTasks[i]
-        ft.setFunc(
-            findBookmarks,
-            **{
-                "bmTypes": [
-                    BookmarkType.MYSTIC,
-                    BookmarkType.COVENANT,
-                ]
-            },
-        )
-        ft.setWorkspace(iconWS[i])
-
-    buyTasks = [Task() for i in range(shopItemCnt)]
-    for i in range(shopItemCnt):
-        bt = buyTasks[i]
-        bt.setFunc(click)
-        bt.setWorkspace(buyWS[i])
-
-    focusTask = Task()
-    focusTask.setWorkspace(focusWS)
-
-    scrollTask = Task()
-    scrollTask.setWorkspace(scrollWS)
-    scrollTask.setFunc(scroll, **{"dir": "up"})
-
-    confirmBuyTask = Task()
-    confirmBuyTask.setWorkspace(confirmBuyWS)
-
-    refreshTask = Task()
-    refreshTask.setWorkspace(refreshWS)
-
-    confirmRefreshTask = Task()
-    confirmRefreshTask.setWorkspace(confirmRefreshWS)
-
-    clickTasks = [focusTask, confirmBuyTask, refreshTask, confirmRefreshTask]
-    for c in clickTasks:
-        c.setFunc(click)
-
     def findAndBuy(i: int, state: WorkflowState):
-        ft = findTasks[i]
-        ct = buyTasks[i]
-        ft.execute(state)
+        iWS = iconWS[i]
+        bWS = buyWS[i]
+        findBookmarks(
+            iWS,
+            state,
+            bmTypes=[
+                BookmarkType.MYSTIC,
+                BookmarkType.COVENANT,
+            ],
+        )
 
         tmp = state.getTemporaryState()
         if tmp["result"] != 0:
             updateStats(state)
 
             tmp["result"] = 0
-            ct.execute(state)
+            click(bWS, state)
             time.sleep(0.3)
-            confirmBuyTask.execute(state)
+            click(confirmBuyWS, state)
             time.sleep(0.3)
 
     def executeTasks(state: GlobalState):
         wkState = state.getWorkflowState(WORKFLOW)
-        focusTask.execute(wkState)
+        click(focusWS, wkState)
 
         for i in range(shopItemCnt - 2):
             findAndBuy(i, wkState)
 
-        scrollTask.execute(wkState)
+        scroll(scrollWS, wkState, dir="up")
+        time.sleep(0.3)
         for i in range(shopItemCnt - 2, shopItemCnt):
             findAndBuy(i, wkState)
 
-        refreshTask.execute(wkState)
+        click(refreshWS, wkState)
         time.sleep(0.3)
-        confirmRefreshTask.execute(wkState)
+        click(confirmRefreshWS, wkState)
         time.sleep(1.2)
 
     shopWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)

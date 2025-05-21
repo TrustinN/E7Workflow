@@ -37,7 +37,6 @@ def scan(wkspace: Workflow, state: WorkflowState, **kwargs):
     numScans = kwargs["count"]
     dir = kwargs["dir"]
     task = kwargs["task"]
-    task.setWorkspace(wkspace)
 
     savedGeometry = wkspace.window.geometry()
     bbox = wkspace.window.getBBox()
@@ -46,7 +45,7 @@ def scan(wkspace: Workflow, state: WorkflowState, **kwargs):
     dim = br - tl
     error = np.array([0.0, 0.0])
 
-    task.execute(state)
+    task(wkspace, state)
     if numScans == 1:
         return
 
@@ -77,7 +76,7 @@ def scan(wkspace: Workflow, state: WorkflowState, **kwargs):
 
         wkspace.setGeometry(QRect(newTl, newBr))
         QApplication.processEvents()
-        task.execute(state)
+        task(wkspace, state)
 
     wkspace.setGeometry(savedGeometry)
 

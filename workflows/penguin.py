@@ -3,7 +3,6 @@ import time
 from app import (
     E7WorkflowApp,
     GlobalState,
-    Task,
     Workflow,
     WorkflowState,
     Workspace,
@@ -15,18 +14,6 @@ from custom import StatWindow, addStatWindow, makeStatCards
 from .utils import click, filterNumbers, imageMatch, scan
 
 WORKFLOW = "Penguin"
-
-focusTask = Task()
-focusWS = Workspace("Focus")
-
-buyTask = Task()
-buyWS = Workspace("Buy")
-
-maxTask = Task()
-maxWS = Workspace("Max")
-
-confirmTask = Task()
-confirmWS = Workspace("Confirm")
 
 
 def findPenguin(wkspace: Workspace, state: WorkflowState, **kwargs):
@@ -76,59 +63,42 @@ def buildWorkflow():
     )
     penguinScanPath.setPadding(0)
 
-    penguinScanAction = Task()
-    penguinScanAction.setWorkspace(penguinScanAndCountWS)
-    penguinScanIcon = [Task() for i in range(len(penguinTypes))]
-    penguinScanCount = Task()
-    penguinScanCount.setFunc(getNumber)
-    penguinScanCount.setWorkspace(penguinCountWS)
-
-    for i in range(len(penguinTypes)):
-        penguinScanIcon[i].setWorkspace(penguinScanWS)
-        penguinScanIcon[i].setFunc(findPenguin, pType=penguinTypes[i])
-
-    penguinScanAndCount = Task()
+    focusWS = Workspace("Focus")
+    buyWS = Workspace("Buy")
+    maxWS = Workspace("Max")
+    confirmWS = Workspace("Confirm")
+    exitWS = Workspace("Exit")
+    clickWkspaces = [focusWS, buyWS, maxWS, confirmWS, exitWS]
 
     def scanAndCount(wkspace: Workspace, state: WorkflowState, **kwargs):
         for i in range(len(penguinTypes)):
-            penguinScanIcon[i].execute(state)
+            findPenguin(penguinScanWS, state, pType=penguinTypes[i])
             tmp = state.getTemporaryState()
             if tmp["result"]:
-                penguinScanCount.execute(state)
+                getNumber(penguinCountWS, state)
                 updateStats(state)
-
-    penguinScanAndCount.setFunc(scanAndCount)
-
-    for i in range(len(penguinTypes)):
-        penguinScanAction.setFunc(
-            scan,
-            parent=penguinScanPath,
-            count=5,
-            dir="horizontal",
-            task=penguinScanAndCount,
-        )
-
-    exitTask = Task()
-    exitWS = Workspace("Exit")
-
-    clickTasks = [focusTask, buyTask, maxTask, confirmTask, exitTask]
-    wkspaces = [focusWS, buyWS, maxWS, confirmWS, exitWS, penguinScanPath]
-
-    for i in range(len(clickTasks)):
-        clickTasks[i].setWorkspace(wkspaces[i])
-        clickTasks[i].setFunc(click)
 
     def executeTasks(state: GlobalState):
         wkState = state.getWorkflowState(WORKFLOW)
-        for i in range(len(clickTasks) - 1):
-            clickTasks[i].execute(wkState)
+        for i in range(len(clickWkspaces) - 1):
+            click(wkspaces[i], wkState)
             time.sleep(0.2)
 
         time.sleep(0.2)
-        penguinScanAction.execute(wkState)
+        scan(
+            penguinScanAndCountWS,
+            wkState,
+            parent=penguinScanPath,
+            count=5,
+            dir="horizontal",
+            task=scanAndCount,
+        )
 
-        exitTask.execute(wkState)
+        click(exitWS, wkState)
         time.sleep(0.2)
+
+    wkspaces = clickWkspaces
+    wkspaces.append(penguinScanPath)
 
     penguinWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
     return penguinWorkflow

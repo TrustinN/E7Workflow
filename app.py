@@ -538,26 +538,6 @@ class Chainable:
         return newChainable
 
 
-class Task(Chainable):
-    def __init__(self):
-        self.kwargs = None
-        self.wkspace = None
-
-    def execute(self, state):
-        assert self.func is not None
-        assert self.kwargs is not None
-        assert self.wkspace is not None
-
-        self.func(self.wkspace, state, **self.kwargs)
-
-    def setFunc(self, func, **kwargs):
-        self.func = func
-        self.kwargs = kwargs
-
-    def setWorkspace(self, wkspace):
-        self.wkspace = wkspace
-
-
 class Workflow:
     def __init__(self, name, exec, wkspaces):
         self.name = name
