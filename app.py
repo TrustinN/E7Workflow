@@ -208,66 +208,16 @@ class SelectionWindow(QWidget):
 
 
 class Workspace(QObject):
-    def __init__(self, name):
+    def __init__(self, name, wkspaces=[]):
         super().__init__()
         self.name = name
         self.window = SelectionWindow(name)
         self.window.setWindowTitle(name)
         self.window.show()
         self.resizeSignal = self.window.resizeSignal
+
         self.moveSignal = self.window.moveSignal
-
-    def disableSignals(self, slot):
-        self.resizeSignal.disconnect(slot)
-        self.moveSignal.disconnect(slot)
-
-    def connectSignals(self, slot):
-        self.resizeSignal.connect(slot)
-        self.moveSignal.connect(slot)
-
-    def hide(self):
-        self.window.hide()
-
-    def show(self):
-        self.window.show()
-
-    def lock(self):
-        self.window.lock()
-
-    def unlock(self):
-        self.window.unlock()
-
-    def canMove(self):
-        return self.window.canMove()
-
-    def getBBox(self):
-        return self.window.getBBox()
-
-    def setGeometry(self, rect):
-        self.window.setGeometry(rect)
-        self.resizeSignal.emit()
-
-    def mousePressEvent(self, event):
-        self.window.mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        self.window.mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        self.window.mouseReleaseEvent(event)
-
-    def exportData(self, extract):
-        return extract(self)
-
-    def importData(self, apply, data):
-        apply(self, data.config())
-
-
-class WorkspaceLayout(Workspace):
-
-    def __init__(self, name, wkspaces):
-        super().__init__(name)
-        self.padding = 15
+        self.padding = 0
         self.wkspaces = wkspaces
         for wkspace in self.wkspaces:
             wkspace.connectSignals(self.updateGeometry)
@@ -428,6 +378,9 @@ class WorkspaceLayout(Workspace):
             self.childFocused = None
         self.window.releaseMouse()
 
+    def getBBox(self):
+        return self.window.getBBox()
+
     def updateGeometry(self):
         if len(self.wkspaces) != 0:
             tl, br = self.wkspaces[0].getBBox()
@@ -543,7 +496,8 @@ class Workflow:
         self.name = name
         self.exec = exec
         self.wkspaces = wkspaces
-        self.wkspaceLayout = WorkspaceLayout(name, self.wkspaces)
+        self.wkspaceLayout = Workspace(name, self.wkspaces)
+        self.wkspaceLayout.setPadding(15)
         self.window = self.wkspaceLayout.window
 
     def disableSignals(self, slot):

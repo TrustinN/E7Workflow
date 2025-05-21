@@ -1,13 +1,6 @@
 import time
 
-from app import (
-    E7WorkflowApp,
-    GlobalState,
-    Workflow,
-    WorkflowState,
-    Workspace,
-    WorkspaceLayout,
-)
+from app import E7WorkflowApp, GlobalState, Workflow, WorkflowState, Workspace
 from assets import (
     BookmarkType,
     bookmarkIconPaths,
@@ -52,8 +45,7 @@ def buildWorkflow():
     buyWS = [Workspace(f"Buy {i + 1}") for i in range(shopItemCnt)]
 
     entryWS = [
-        WorkspaceLayout(f"Entry {i + 1}", [iconWS[i], buyWS[i]])
-        for i in range(shopItemCnt)
+        Workspace(f"Entry {i + 1}", [iconWS[i], buyWS[i]]) for i in range(shopItemCnt)
     ]
     for wks in entryWS:
         wks.setPadding(0)

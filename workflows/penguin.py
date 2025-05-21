@@ -1,13 +1,6 @@
 import time
 
-from app import (
-    E7WorkflowApp,
-    GlobalState,
-    Workflow,
-    WorkflowState,
-    Workspace,
-    WorkspaceLayout,
-)
+from app import E7WorkflowApp, GlobalState, Workflow, WorkflowState, Workspace
 from assets import getPenguinIcon, penguinIconPaths, penguinTypes
 from custom import StatWindow, addStatWindow, makeStatCards
 
@@ -52,15 +45,11 @@ def updateStats(state: WorkflowState):
 def buildWorkflow():
     penguinScanWS = Workspace("Scan")
     penguinCountWS = Workspace("Count")
-    penguinScanAndCountWS = WorkspaceLayout(
-        "Scan Start", [penguinScanWS, penguinCountWS]
-    )
+    penguinScanAndCountWS = Workspace("Scan Start", [penguinScanWS, penguinCountWS])
     penguinScanAndCountWS.setPadding(0)
 
     penguinScanEndWS = Workspace("Scan End")
-    penguinScanPath = WorkspaceLayout(
-        "Scan Path", [penguinScanAndCountWS, penguinScanEndWS]
-    )
+    penguinScanPath = Workspace("Scan Path", [penguinScanAndCountWS, penguinScanEndWS])
     penguinScanPath.setPadding(0)
 
     focusWS = Workspace("Focus")
