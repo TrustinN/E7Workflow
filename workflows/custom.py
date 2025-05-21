@@ -1,55 +1,54 @@
 import time
 
-from app import E7WorkflowApp, GlobalState, Workflow
+from app import E7WorkflowApp, GlobalState, Workspace
 from assets import bookmarkIconPaths, bookmarkTypes, penguinIconPaths, penguinTypes
 from custom import StatWindow, addStatWindow, makeStatCards
 from workflows.nav import buildGrowthAltarWorkflow, buildHomeWorkflow, buildShopWorkflow
 from workflows.penguin import buildWorkflow as buildPenguinWorkflow
 from workflows.shop import buildWorkflow as buildRefreshShopWorkflow
 
-WORKFLOW = "Shop Refresh and Resupply"
+WORKFLOW_NAME = "Shop Refresh and Resupply"
 
 
 def buildRefreshAndResupplyWorkflow():
-    shopWorkflow = buildShopWorkflow()
-    refreshShopWorkflow = buildRefreshShopWorkflow()
-    penguinWorkflow = buildPenguinWorkflow()
-    homeWorkflow = buildHomeWorkflow()
-    growthAltarWorkflow = buildGrowthAltarWorkflow()
-    wkflows = [
-        shopWorkflow,
-        refreshShopWorkflow,
-        penguinWorkflow,
-        homeWorkflow,
-        growthAltarWorkflow,
+    shopWorkflow, shopWorkspace = buildShopWorkflow()
+    refreshShopWorkflow, refreshShopWorkspace = buildRefreshShopWorkflow()
+    penguinWorkflow, penguinWorkspace = buildPenguinWorkflow()
+    homeWorkflow, homeWorkspace = buildHomeWorkflow()
+    growthAltarWorkflow, growthAltarWorkspace = buildGrowthAltarWorkflow()
+    wkspaces = [
+        shopWorkspace,
+        refreshShopWorkspace,
+        penguinWorkspace,
+        homeWorkspace,
+        growthAltarWorkspace,
     ]
     delay = 0.4
 
     def executeTasks(state: GlobalState):
-        homeWorkflow.execute(state)
+        homeWorkflow(state)
         time.sleep(delay)
 
-        shopWorkflow.execute(state)
+        shopWorkflow(state)
         time.sleep(delay)
 
-        refreshShopWorkflow.execute(state)
+        refreshShopWorkflow(state)
         time.sleep(delay)
-        homeWorkflow.execute(state)
-        time.sleep(delay)
-
-        growthAltarWorkflow.execute(state)
-        time.sleep(delay)
-        penguinWorkflow.execute(state)
+        homeWorkflow(state)
         time.sleep(delay)
 
-    refreshAndResupplyWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces=wkflows)
-    return refreshAndResupplyWorkflow
+        growthAltarWorkflow(state)
+        time.sleep(delay)
+        penguinWorkflow(state)
+        time.sleep(delay)
+
+    return executeTasks, Workspace(WORKFLOW_NAME, wkspaces)
 
 
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
-    refreshAndResupplyWorkflow = buildRefreshAndResupplyWorkflow()
-    state.addWorkflowState(refreshAndResupplyWorkflow)
-    app.addWorkflow(refreshAndResupplyWorkflow, state)
+    wkflow, wkspace = buildRefreshAndResupplyWorkflow()
+    state.addWorkflowState(wkspace)
+    app.addWorkflow(wkflow, wkspace, state)
 
     penguinNames = [penguin.name for penguin in penguinTypes]
     penguinStatCards = makeStatCards(
@@ -57,10 +56,10 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     )
     penguinStats = StatWindow(penguinStatCards)
 
-    addStatWindow(app, refreshAndResupplyWorkflow, penguinStats)
+    addStatWindow(app, wkspace, penguinStats)
 
     bmNames = [bm.name for bm in bookmarkTypes]
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
     shopStats = StatWindow(shopStatCards)
 
-    addStatWindow(app, refreshAndResupplyWorkflow, shopStats)
+    addStatWindow(app, wkspace, shopStats)

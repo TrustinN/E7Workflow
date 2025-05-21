@@ -1,12 +1,12 @@
 import time
 
-from app import E7WorkflowApp, GlobalState, Workflow, WorkflowState, Workspace
+from app import E7WorkflowApp, GlobalState, WorkflowState, Workspace
 from assets import getPenguinIcon, penguinIconPaths, penguinTypes
 from custom import StatWindow, addStatWindow, makeStatCards
 
 from .utils import click, filterNumbers, imageMatch, scan
 
-WORKFLOW = "Penguin"
+WORKFLOW_NAME = "Penguin"
 
 
 def findPenguin(wkspace: Workspace, state: WorkflowState, **kwargs):
@@ -68,7 +68,7 @@ def buildWorkflow():
                 updateStats(state)
 
     def executeTasks(state: GlobalState):
-        wkState = state.getWorkflowState(WORKFLOW)
+        wkState = state.getWorkflowState(WORKFLOW_NAME)
         for i in range(len(clickWkspaces) - 1):
             click(wkspaces[i], wkState)
             time.sleep(0.2)
@@ -89,19 +89,18 @@ def buildWorkflow():
     wkspaces = clickWkspaces
     wkspaces.append(penguinScanPath)
 
-    penguinWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
-    return penguinWorkflow
+    return executeTasks, Workspace(WORKFLOW_NAME, wkspaces)
 
 
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
-    penguinWorkflow = buildWorkflow()
-    state.addWorkflowState(penguinWorkflow)
-    wkState = state.getWorkflowState(WORKFLOW)
+    penguinWorkflow, penguinWorkspace = buildWorkflow()
+    state.addWorkflowState(penguinWorkspace)
+    wkState = state.getWorkflowState(WORKFLOW_NAME)
     stats = wkState.getWorkflowStats()
     for i in range(len(penguinTypes)):
         stats[penguinTypes[i].name] = 0
 
-    app.addWorkflow(penguinWorkflow, state)
+    app.addWorkflow(penguinWorkflow, penguinWorkspace, state)
 
     penguinNames = [penguin.name for penguin in penguinTypes]
     penguinStatCards = makeStatCards(
@@ -109,4 +108,4 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     )
     penguinStats = StatWindow(penguinStatCards)
 
-    addStatWindow(app, penguinWorkflow, penguinStats)
+    addStatWindow(app, penguinWorkspace, penguinStats)

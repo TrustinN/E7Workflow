@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from app import E7WorkflowApp, GlobalState, Workflow
+from app import E7WorkflowApp, GlobalState, Workspace
 
 
 class StatCard(QWidget):
@@ -75,9 +75,9 @@ class StatWindow(QWidget):
         self.getCard(title).valueLabel.setText(str(value))
 
 
-def getStatUpdate(app: E7WorkflowApp, statWidget: StatWindow):
-    def statUpdate(state: GlobalState, wkflow: Workflow):
-        wkState = state.getWorkflowState(wkflow.name)
+def getStatUpdate(statWidget: StatWindow):
+    def statUpdate(state: GlobalState, wkspace: Workspace):
+        wkState = state.getWorkflowState(wkspace.name)
         stats = wkState.getWorkflowStats()
         for key in stats:
             statWidget.updateCard(key, stats[key])
@@ -86,9 +86,9 @@ def getStatUpdate(app: E7WorkflowApp, statWidget: StatWindow):
     return statUpdate
 
 
-def addStatWindow(app, wkflow, statWindow):
-    win = app.getWindow(wkflow.name)
+def addStatWindow(app, wkspace: Workspace, statWindow: StatWindow):
+    win = app.getWindow(wkspace.name)
     win.addWidget(statWindow)
 
-    runner = app.getRunner(wkflow.name)
-    runner.stepFinished.connect(getStatUpdate(app, statWindow))
+    runner = app.getRunner(wkspace.name)
+    runner.stepFinished.connect(getStatUpdate(statWindow))

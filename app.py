@@ -443,21 +443,6 @@ class Workspace(QObject):
             wks.importData(apply, subData)
 
 
-class GlobalState(dict):
-    def __init__(self):
-        super().__init__()
-        self["userState"] = {}
-
-    def addWorkflowState(self, wkflow: "Workflow"):
-        self[wkflow.name] = WorkflowState()
-
-    def getWorkflowState(self, name: str) -> "WorkflowState":
-        return self[name]
-
-    def getUserState(self):
-        return self["userState"]
-
-
 class WorkflowState(dict):
     def __init__(self):
         super().__init__()
@@ -471,83 +456,82 @@ class WorkflowState(dict):
         return self["stats"]
 
 
-class Chainable:
-
+class GlobalState(dict):
     def __init__(self):
-        self.next = None
+        super().__init__()
+        self["userState"] = {}
 
-    def execute(self, state):
-        pass
+    def addWorkflowState(self, wkspace: Workspace):
+        self[wkspace.name] = WorkflowState()
 
-    def chain(self, chainable):
-        newChainable = copy.deepcopy(self)
-        prevExecute = newChainable.execute
+    def getWorkflowState(self, name: str) -> WorkflowState:
+        return self[name]
 
-        def chainExecute(state):
-            prevExecute(state)
-            chainable.execute(state)
-
-        newChainable.execute = chainExecute
-        return newChainable
+    def getUserState(self):
+        return self["userState"]
 
 
-class Workflow:
-    def __init__(self, name, exec, wkspaces):
-        self.name = name
-        self.exec = exec
-        self.wkspaces = wkspaces
-        self.wkspaceLayout = Workspace(name, self.wkspaces)
-        self.wkspaceLayout.setPadding(15)
-        self.window = self.wkspaceLayout.window
-
-    def disableSignals(self, slot):
-        self.window.resizeSignal.disconnect(slot)
-        self.window.moveSignal.disconnect(slot)
-
-    def connectSignals(self, slot):
-        self.window.resizeSignal.connect(slot)
-        self.window.moveSignal.connect(slot)
-
-    def hide(self):
-        self.wkspaceLayout.hide()
-
-    def show(self):
-        self.wkspaceLayout.show()
-
-    def lock(self):
-        self.wkspaceLayout.lock()
-
-    def unlock(self):
-        self.wkspaceLayout.unlock()
-
-    def canMove(self):
-        return self.window.canMove()
-
-    def getBBox(self):
-        return self.wkspaceLayout.getBBox()
-
-    def setGeometry(self, rect):
-        self.window.setGeometry(rect)
-        self.window.resizeSignal.emit()
-
-    def mousePressEvent(self, event):
-        self.window.mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        self.window.mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        self.window.mouseReleaseEvent(event)
-
-    def execute(self, state: GlobalState):
-        self.exec(state)
-
-    def exportData(self, extract):
-        return self.wkspaceLayout.exportData(extract)
-
-    def importData(self, apply, config):
-        if config:
-            self.wkspaceLayout.importData(apply, config)
+# # This class shouldn't have to keep a list of wkspaces,
+# # A Workflow is something you run just passing the wkspaces into an
+# # exec function
+# class Workflow:
+#     def __init__(self, name, exec, wkspaces):
+#         self.name = name
+#         self.exec = exec
+#         self.wkspaces = wkspaces
+#         self.wkspaceLayout = Workspace(name, self.wkspaces)
+#         self.wkspaceLayout.setPadding(15)
+#         self.window = self.wkspaceLayout.window
+#
+#     def disableSignals(self, slot):
+#         self.window.resizeSignal.disconnect(slot)
+#         self.window.moveSignal.disconnect(slot)
+#
+#     def connectSignals(self, slot):
+#         self.window.resizeSignal.connect(slot)
+#         self.window.moveSignal.connect(slot)
+#
+#     def hide(self):
+#         self.wkspaceLayout.hide()
+#
+#     def show(self):
+#         self.wkspaceLayout.show()
+#
+#     def lock(self):
+#         self.wkspaceLayout.lock()
+#
+#     def unlock(self):
+#         self.wkspaceLayout.unlock()
+#
+#     def canMove(self):
+#         return self.window.canMove()
+#
+#     def getBBox(self):
+#         return self.wkspaceLayout.getBBox()
+#
+#     def setGeometry(self, rect):
+#         self.window.setGeometry(rect)
+#         self.window.resizeSignal.emit()
+#
+#     def mousePressEvent(self, event):
+#         self.window.mousePressEvent(event)
+#
+#     def mouseMoveEvent(self, event):
+#         self.window.mouseMoveEvent(event)
+#
+#     def mouseReleaseEvent(self, event):
+#         self.window.mouseReleaseEvent(event)
+#
+#     def execute(self, state: GlobalState):
+#         self.exec(state)
+#
+#     def exportData(self, extract):
+#         return self.wkspaceLayout.exportData(extract)
+#
+#     def importData(self, apply, config):
+#         if config:
+#             self.wkspaceLayout.importData(apply, config)
+#
 
 
 def exportData(wkflow, dest, extract):
@@ -597,8 +581,8 @@ def fmtColorFile(wks):
 
 
 class WorkflowRunner(QObject):
-    stepFinished = pyqtSignal(GlobalState, Workflow)
-    executeFinish = pyqtSignal(GlobalState, Workflow)
+    stepFinished = pyqtSignal(GlobalState, Workspace)
+    executeFinish = pyqtSignal(GlobalState, Workspace)
 
     def __init__(self):
         super().__init__()
@@ -608,8 +592,9 @@ class WorkflowRunner(QObject):
     def setIterations(self, iterations):
         self.iterations = iterations
 
-    def bindWorkflow(self, wkflow):
+    def bindWorkflow(self, wkflow, wkspace):
         self.wkflow = wkflow
+        self.wkspace = wkspace
 
     def setState(self, state):
         self.state = state
@@ -618,14 +603,14 @@ class WorkflowRunner(QObject):
         self.state.update(state)
 
     def run(self):
-        self.wkflow.hide()
+        self.wkspace.hide()
         QApplication.processEvents()
         for i in range(self.iterations):
-            self.wkflow.execute(self.state)
-            self.stepFinished.emit(self.state, self.wkflow)
-        self.wkflow.show()
+            self.wkflow(self.state)
+            self.stepFinished.emit(self.state, self.wkspace)
+        self.wkspace.show()
 
-        self.executeFinish.emit(self.state, self.wkflow)
+        self.executeFinish.emit(self.state, self.wkspace)
 
 
 class ConfirmButton(QWidget):
@@ -734,13 +719,13 @@ class WorkflowWindow(QWidget):
         self.saveLayoutBtn = ConfirmButton("Save Layout")
         layout.addWidget(self.saveLayoutBtn)
         self.saveLayoutBtn.confirmClicked.connect(
-            lambda: exportData(self.wkflow, fmtLayoutFile(self), extractGeometry)
+            lambda: exportData(self.wkspace, fmtLayoutFile(self), extractGeometry)
         )
 
         self.loadLayoutBtn = QPushButton("Load Layout")
         layout.addWidget(self.loadLayoutBtn)
         self.loadLayoutBtn.clicked.connect(
-            lambda: self.wkflow.importData(
+            lambda: self.wkspace.importData(
                 applyGeometry, importData(fmtLayoutFile(self))
             )
         )
@@ -756,8 +741,8 @@ class WorkflowWindow(QWidget):
         self.execBtn = QPushButton("Execute")
         layout.addWidget(self.execBtn)
 
-    def bindWorkflow(self, wkflow):
-        self.wkflow = wkflow
+    def bindWorkspace(self, wkspace):
+        self.wkspace = wkspace
 
         def recursiveAdd(parent, wks):
             widget = self.treeLayout.addTreeItem(parent)
@@ -769,7 +754,7 @@ class WorkflowWindow(QWidget):
 
             return widget
 
-        recursiveAdd(self.treeLayout, wkflow)
+        recursiveAdd(self.treeLayout, self.wkspace)
         self.treeLayout.checkUpdated.connect(self.updateWorkspaceVisibility)
         self.treeLayout.lockUpdated.connect(self.updateWorkspaceMutability)
 
@@ -819,32 +804,32 @@ class E7WorkflowApp(QApplication):
         self.mainWindow.setCentralWidget(self.tabWidget)
         self.mainWindow.show()
 
-    def addWorkflow(self, wkflow, initialState=None):
+    def addWorkflow(self, wkflow, wkspace, initialState=None):
         if self.tabWidget.count() == 0:
-            wkflow.show()
+            wkspace.show()
         else:
-            wkflow.hide()
+            wkspace.hide()
 
-        win = WorkflowWindow(wkflow.name)
+        win = WorkflowWindow(wkspace.name)
 
         runner = WorkflowRunner()
         win.execCnt.valueChanged.connect(runner.setIterations)
         win.execBtn.clicked.connect(runner.run)
 
-        self.windows[wkflow.name] = win
-        self.wkflows[wkflow.name] = wkflow
-        self.runners[wkflow.name] = runner
+        self.windows[wkspace.name] = win
+        self.wkflows[wkspace.name] = (wkflow, wkspace)
+        self.runners[wkspace.name] = runner
 
-        runner.bindWorkflow(wkflow)
+        runner.bindWorkflow(wkflow, wkspace)
         if initialState:
             runner.updateState(initialState)
 
-        win.bindWorkflow(wkflow)
+        win.bindWorkspace(wkspace)
 
-        wkflowLayout = importData(f"{wkflow.name} Layout")
-        wkflow.importData(applyGeometry, wkflowLayout)
+        wksLayout = importData(f"{wkspace.name} Layout")
+        wkspace.importData(applyGeometry, wksLayout)
 
-        self.tabWidget.addTab(win, wkflow.name)
+        self.tabWidget.addTab(win, wkspace.name)
 
     def getWindow(self, name) -> WorkflowWindow:
         return self.windows[name]
@@ -852,14 +837,14 @@ class E7WorkflowApp(QApplication):
     def getRunner(self, name) -> WorkflowRunner:
         return self.runners[name]
 
-    def getWorkflow(self, name) -> Workflow:
+    def getWorkflow(self, name) -> (any, Workspace):
         return self.wkflows[name]
 
     def onTabChanged(self, index):
         activeTitle = self.tabWidget.tabText(index)
-        for w in self.wkflows:
-            wf = self.wkflows[w]
-            if w != activeTitle:
-                wf.hide()
+        for name in self.wkflows:
+            wkflow, wkspace = self.getWorkflow(name)
+            if name != activeTitle:
+                wkspace.hide()
             else:
-                wf.show()
+                wkspace.show()

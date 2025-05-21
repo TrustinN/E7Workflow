@@ -1,6 +1,6 @@
 import time
 
-from app import E7WorkflowApp, GlobalState, Workflow, WorkflowState, Workspace
+from app import E7WorkflowApp, GlobalState, WorkflowState, Workspace
 from assets import (
     BookmarkType,
     bookmarkIconPaths,
@@ -12,7 +12,7 @@ from custom import StatWindow, addStatWindow, makeStatCards
 
 from .utils import click, imageMatch, scroll
 
-WORKFLOW = "Shop Refresh"
+WORKFLOW_NAME = "Shop Refresh"
 
 
 def updateStats(state: WorkflowState):
@@ -23,7 +23,7 @@ def updateStats(state: WorkflowState):
         stats[bType.name] += 1
 
 
-def findBookmark(wkspace: Workflow, state: WorkflowState, **kwargs):
+def findBookmark(wkspace: Workspace, state: WorkflowState, **kwargs):
     bmIcon = getBookMarkIcon(kwargs["bmType"])
     imageMatch(wkspace, state, img=bmIcon)
     tmp = state.getTemporaryState()
@@ -83,7 +83,7 @@ def buildWorkflow():
             time.sleep(0.3)
 
     def executeTasks(state: GlobalState):
-        wkState = state.getWorkflowState(WORKFLOW)
+        wkState = state.getWorkflowState(WORKFLOW_NAME)
         click(focusWS, wkState)
 
         for i in range(shopItemCnt - 2):
@@ -99,22 +99,21 @@ def buildWorkflow():
         click(confirmRefreshWS, wkState)
         time.sleep(1.2)
 
-    shopWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
-    return shopWorkflow
+    return executeTasks, Workspace(WORKFLOW_NAME, wkspaces)
 
 
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
-    shopWorkflow = buildWorkflow()
-    state.addWorkflowState(shopWorkflow)
-    wkState = state.getWorkflowState(WORKFLOW)
+    shopWorkflow, shopWorkspace = buildWorkflow()
+    state.addWorkflowState(shopWorkspace)
+    wkState = state.getWorkflowState(WORKFLOW_NAME)
     stats = wkState.getWorkflowStats()
     for i in range(len(bookmarkTypes)):
         stats[bookmarkTypes[i].name] = 0
 
-    app.addWorkflow(shopWorkflow, state)
+    app.addWorkflow(shopWorkflow, shopWorkspace, state)
 
     bmNames = [bm.name for bm in bookmarkTypes]
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
     shopStats = StatWindow(shopStatCards)
 
-    addStatWindow(app, shopWorkflow, shopStats)
+    addStatWindow(app, shopWorkspace, shopStats)

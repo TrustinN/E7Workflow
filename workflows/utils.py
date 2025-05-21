@@ -7,7 +7,7 @@ from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
-from app import Workflow, WorkflowState
+from app import WorkflowState, Workspace
 
 
 def ptToTuple(pt):
@@ -20,7 +20,7 @@ def tupleToPt(arry):
     return QPoint(x, y)
 
 
-def click(wkspace: Workflow, state: WorkflowState, **kwargs):
+def click(wkspace: Workspace, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
     br = ptToTuple(br)
@@ -28,7 +28,7 @@ def click(wkspace: Workflow, state: WorkflowState, **kwargs):
     pyautogui.click(int(mid[0]), int(mid[1]))
 
 
-def scan(wkspace: Workflow, state: WorkflowState, **kwargs):
+def scan(wkspace: Workspace, state: WorkflowState, **kwargs):
     parent = kwargs["parent"]
     ptl, pbr = parent.window.getBBox()
     dim = pbr - ptl
@@ -81,7 +81,7 @@ def scan(wkspace: Workflow, state: WorkflowState, **kwargs):
     wkspace.setGeometry(savedGeometry)
 
 
-def scroll(wkspace: Workflow, state: WorkflowState, **kwargs):
+def scroll(wkspace: Workspace, state: WorkflowState, **kwargs):
     dir = kwargs["dir"]
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
@@ -140,7 +140,7 @@ def combine_images_side_by_side_np(image1, image2):
     return combined_image
 
 
-def imageMatch(wkspace: Workflow, state: WorkflowState, **kwargs):
+def imageMatch(wkspace: Workspace, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.window.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
@@ -158,7 +158,7 @@ def imageMatch(wkspace: Workflow, state: WorkflowState, **kwargs):
     tmp["result"] = score >= threshold
 
 
-def filterNumbers(wkspace: Workflow, state: WorkflowState, **kwargs):
+def filterNumbers(wkspace: Workspace, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.window.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())

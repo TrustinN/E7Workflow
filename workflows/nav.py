@@ -1,6 +1,6 @@
 import time
 
-from app import Workflow, Workspace
+from app import Workspace
 
 from .utils import click
 
@@ -16,8 +16,7 @@ def buildHomeWorkflow():
             click(wkspaces[i], state)
             time.sleep(delays[i])
 
-    homeWorkflow = Workflow("Go Home", executeTasks, wkspaces)
-    return homeWorkflow
+    return executeTasks, Workspace("Go Home", wkspaces)
 
 
 def buildGrowthAltarWorkflow():
@@ -31,8 +30,7 @@ def buildGrowthAltarWorkflow():
             click(wkspaces[i], state)
             time.sleep(delays[i])
 
-    gAWorkflow = Workflow("Go Growth Altar", executeTasks, wkspaces)
-    return gAWorkflow
+    return executeTasks, Workspace("Go Growth Altar", wkspaces)
 
 
 def buildShopWorkflow():
@@ -45,5 +43,4 @@ def buildShopWorkflow():
             click(wkspaces[i], state)
             time.sleep(delays[i])
 
-    workflow = Workflow("Go Shop", executeTasks, wkspaces)
-    return workflow
+    return executeTasks, Workspace("Go Shop", wkspaces)
