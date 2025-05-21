@@ -11,9 +11,9 @@ shopItemCnt = 6
 
 # Bookmark assets
 class BookmarkType(Enum):
-    COVENANT = ("Covenant", 5)
-    MYSTIC = ("Mystic", 10)
-    FRIENDSHIP = ("Friendship", 3)
+    COVENANT = ("Covenant", 184000)
+    MYSTIC = ("Mystic", 280000)
+    FRIENDSHIP = ("Friendship", 18000)
 
     def __init__(self, name, cost):
         self._name = name
@@ -83,3 +83,16 @@ penguinIcons = dict(zip(penguinTypes, penguinIcons))
 
 def getPenguinIcon(pType):
     return penguinIcons[pType]
+
+
+class ActiveWindow(Enum):
+    HOME = "Home"
+    GROWTH_ALTAR = "Growth Altar"
+    SHOP = "Shop"
+
+    def __init__(self, name):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name

@@ -8,7 +8,6 @@ from app import (
     WorkflowState,
     Workspace,
     WorkspaceLayout,
-    makeStatCards,
 )
 from assets import (
     BookmarkType,
@@ -17,6 +16,7 @@ from assets import (
     getBookMarkIcon,
     shopItemCnt,
 )
+from custom import StatWindow, addStatWindow, makeStatCards
 
 from .utils import click, imageMatch, scroll
 
@@ -47,107 +47,106 @@ def findBookmarks(wkspace: Workspace, state: WorkflowState, **kwargs):
             break
 
 
-# Initialize Workspaces
-iconWS = [Workspace(f"Icon {i + 1}") for i in range(shopItemCnt)]
-buyWS = [Workspace(f"Buy {i + 1}") for i in range(shopItemCnt)]
+def buildWorkflow():
+    # Initialize Workspaces
+    iconWS = [Workspace(f"Icon {i + 1}") for i in range(shopItemCnt)]
+    buyWS = [Workspace(f"Buy {i + 1}") for i in range(shopItemCnt)]
 
-entryWS = [
-    WorkspaceLayout(f"Entry {i + 1}", [iconWS[i], buyWS[i]]) for i in range(shopItemCnt)
-]
-for wks in entryWS:
-    wks.setPadding(0)
+    entryWS = [
+        WorkspaceLayout(f"Entry {i + 1}", [iconWS[i], buyWS[i]])
+        for i in range(shopItemCnt)
+    ]
+    for wks in entryWS:
+        wks.setPadding(0)
 
-focusWS = Workspace("Focus")
-confirmBuyWS = Workspace("Confirm Buy")
-refreshWS = Workspace("Refresh")
-confirmRefreshWS = Workspace("Confirm Refresh")
-scrollWS = Workspace("Scroll")
-extraWS = [focusWS, confirmRefreshWS, confirmBuyWS, refreshWS, scrollWS]
+    focusWS = Workspace("Focus")
+    confirmBuyWS = Workspace("Confirm Buy")
+    refreshWS = Workspace("Refresh")
+    confirmRefreshWS = Workspace("Confirm Refresh")
+    scrollWS = Workspace("Scroll")
+    extraWS = [focusWS, confirmRefreshWS, confirmBuyWS, refreshWS, scrollWS]
 
-wkspaces = entryWS
-wkspaces.extend(extraWS)
+    wkspaces = entryWS
+    wkspaces.extend(extraWS)
 
-# Initialize tasks
-findTasks = [Task() for i in range(shopItemCnt)]
-for i in range(shopItemCnt):
-    ft = findTasks[i]
-    ft.setFunc(
-        findBookmarks,
-        **{
-            "bmTypes": [
-                BookmarkType.MYSTIC,
-                BookmarkType.COVENANT,
-            ]
-        },
-    )
-    ft.setWorkspace(iconWS[i])
+    # Initialize tasks
+    findTasks = [Task() for i in range(shopItemCnt)]
+    for i in range(shopItemCnt):
+        ft = findTasks[i]
+        ft.setFunc(
+            findBookmarks,
+            **{
+                "bmTypes": [
+                    BookmarkType.MYSTIC,
+                    BookmarkType.COVENANT,
+                ]
+            },
+        )
+        ft.setWorkspace(iconWS[i])
 
-buyTasks = [Task() for i in range(shopItemCnt)]
-for i in range(shopItemCnt):
-    bt = buyTasks[i]
-    bt.setFunc(click)
-    bt.setWorkspace(buyWS[i])
+    buyTasks = [Task() for i in range(shopItemCnt)]
+    for i in range(shopItemCnt):
+        bt = buyTasks[i]
+        bt.setFunc(click)
+        bt.setWorkspace(buyWS[i])
 
-focusTask = Task()
-focusTask.setWorkspace(focusWS)
+    focusTask = Task()
+    focusTask.setWorkspace(focusWS)
 
-scrollTask = Task()
-scrollTask.setWorkspace(scrollWS)
-scrollTask.setFunc(scroll, **{"dir": "up"})
+    scrollTask = Task()
+    scrollTask.setWorkspace(scrollWS)
+    scrollTask.setFunc(scroll, **{"dir": "up"})
 
-confirmBuyTask = Task()
-confirmBuyTask.setWorkspace(confirmBuyWS)
+    confirmBuyTask = Task()
+    confirmBuyTask.setWorkspace(confirmBuyWS)
 
-refreshTask = Task()
-refreshTask.setWorkspace(refreshWS)
+    refreshTask = Task()
+    refreshTask.setWorkspace(refreshWS)
 
-confirmRefreshTask = Task()
-confirmRefreshTask.setWorkspace(confirmRefreshWS)
+    confirmRefreshTask = Task()
+    confirmRefreshTask.setWorkspace(confirmRefreshWS)
 
-clickTasks = [focusTask, confirmBuyTask, refreshTask, confirmRefreshTask]
-for c in clickTasks:
-    c.setFunc(click)
+    clickTasks = [focusTask, confirmBuyTask, refreshTask, confirmRefreshTask]
+    for c in clickTasks:
+        c.setFunc(click)
 
+    def findAndBuy(i: int, state: WorkflowState):
+        ft = findTasks[i]
+        ct = buyTasks[i]
+        ft.execute(state)
 
-def findAndBuy(i: int, state: WorkflowState):
-    ft = findTasks[i]
-    ct = buyTasks[i]
-    ft.execute(state)
+        tmp = state.getTemporaryState()
+        if tmp["result"] != 0:
+            updateStats(state)
 
-    tmp = state.getTemporaryState()
-    if tmp["result"] != 0:
-        updateStats(state)
+            tmp["result"] = 0
+            ct.execute(state)
+            time.sleep(0.3)
+            confirmBuyTask.execute(state)
+            time.sleep(0.3)
 
-        tmp["result"] = 0
-        ct.execute(state)
+    def executeTasks(state: GlobalState):
+        wkState = state.getWorkflowState(WORKFLOW)
+        focusTask.execute(wkState)
+
+        for i in range(shopItemCnt - 2):
+            findAndBuy(i, wkState)
+
+        scrollTask.execute(wkState)
+        for i in range(shopItemCnt - 2, shopItemCnt):
+            findAndBuy(i, wkState)
+
+        refreshTask.execute(wkState)
         time.sleep(0.3)
-        confirmBuyTask.execute(state)
-        time.sleep(0.3)
+        confirmRefreshTask.execute(wkState)
+        time.sleep(1.2)
 
-
-def executeTasks(state: GlobalState):
-    wkState = state.getWorkflowState(WORKFLOW)
-    focusTask.execute(wkState)
-
-    for i in range(shopItemCnt - 2):
-        findAndBuy(i, wkState)
-
-    scrollTask.execute(wkState)
-    for i in range(shopItemCnt - 2, shopItemCnt):
-        findAndBuy(i, wkState)
-
-    refreshTask.execute(wkState)
-    time.sleep(0.3)
-    confirmRefreshTask.execute(wkState)
-    time.sleep(1.2)
-
-    return state
-
-
-shopWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
+    shopWorkflow = Workflow(WORKFLOW, executeTasks, wkspaces)
+    return shopWorkflow
 
 
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
+    shopWorkflow = buildWorkflow()
     state.addWorkflowState(shopWorkflow)
     wkState = state.getWorkflowState(WORKFLOW)
     stats = wkState.getWorkflowStats()
@@ -155,6 +154,9 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
         stats[bookmarkTypes[i].name] = 0
 
     app.addWorkflow(shopWorkflow, state)
+
     bmNames = [bm.name for bm in bookmarkTypes]
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
-    app.getWindow(shopWorkflow.name).initStat(shopStatCards)
+    shopStats = StatWindow(shopStatCards)
+
+    addStatWindow(app, shopWorkflow, shopStats)

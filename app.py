@@ -3,17 +3,17 @@ import json
 import os
 
 import numpy as np
-from PyQt5.QtCore import QEventLoop, QObject, QPoint, QRect, Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPixmap, QRegion
+from PyQt5.QtCore import QObject, QPoint, QRect, Qt, pyqtSignal
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
     QHBoxLayout,
     QHeaderView,
-    QLabel,
     QMainWindow,
     QPushButton,
     QSpinBox,
+    QSplitter,
     QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
@@ -493,12 +493,16 @@ class WorkspaceLayout(Workspace):
 class GlobalState(dict):
     def __init__(self):
         super().__init__()
+        self["userState"] = {}
 
     def addWorkflowState(self, wkflow: "Workflow"):
         self[wkflow.name] = WorkflowState()
 
     def getWorkflowState(self, name: str) -> "WorkflowState":
         return self[name]
+
+    def getUserState(self):
+        return self["userState"]
 
 
 class WorkflowState(dict):
@@ -536,31 +540,39 @@ class Chainable:
 
 class Task(Chainable):
     def __init__(self):
-        self.args = None
+        self.kwargs = None
         self.wkspace = None
 
     def execute(self, state):
         assert self.func is not None
-        assert self.args is not None
+        assert self.kwargs is not None
         assert self.wkspace is not None
 
-        self.func(self.wkspace, state, **self.args)
+        self.func(self.wkspace, state, **self.kwargs)
 
     def setFunc(self, func, **kwargs):
         self.func = func
-        self.args = kwargs
+        self.kwargs = kwargs
 
     def setWorkspace(self, wkspace):
         self.wkspace = wkspace
 
 
-class Workflow(Chainable):
+class Workflow:
     def __init__(self, name, exec, wkspaces):
         self.name = name
         self.exec = exec
         self.wkspaces = wkspaces
         self.wkspaceLayout = WorkspaceLayout(name, self.wkspaces)
         self.window = self.wkspaceLayout.window
+
+    def disableSignals(self, slot):
+        self.window.resizeSignal.disconnect(slot)
+        self.window.moveSignal.disconnect(slot)
+
+    def connectSignals(self, slot):
+        self.window.resizeSignal.connect(slot)
+        self.window.moveSignal.connect(slot)
 
     def hide(self):
         self.wkspaceLayout.hide()
@@ -573,6 +585,25 @@ class Workflow(Chainable):
 
     def unlock(self):
         self.wkspaceLayout.unlock()
+
+    def canMove(self):
+        return self.window.canMove()
+
+    def getBBox(self):
+        return self.wkspaceLayout.getBBox()
+
+    def setGeometry(self, rect):
+        self.window.setGeometry(rect)
+        self.window.resizeSignal.emit()
+
+    def mousePressEvent(self, event):
+        self.window.mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        self.window.mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.window.mouseReleaseEvent(event)
 
     def execute(self, state: GlobalState):
         self.exec(state)
@@ -602,6 +633,7 @@ def importData(src):
         data = json.load(file)
         config = ConfigurationHierarchy()
         config.setData(data)
+        QApplication.processEvents()
         return config
 
 
@@ -631,7 +663,8 @@ def fmtColorFile(wks):
 
 
 class WorkflowRunner(QObject):
-    stepFinished = pyqtSignal(GlobalState)
+    stepFinished = pyqtSignal(GlobalState, Workflow)
+    executeFinish = pyqtSignal(GlobalState, Workflow)
 
     def __init__(self):
         super().__init__()
@@ -655,8 +688,10 @@ class WorkflowRunner(QObject):
         QApplication.processEvents()
         for i in range(self.iterations):
             self.wkflow.execute(self.state)
-            self.stepFinished.emit(self.state)
+            self.stepFinished.emit(self.state, self.wkflow)
         self.wkflow.show()
+
+        self.executeFinish.emit(self.state, self.wkflow)
 
 
 class ConfirmButton(QWidget):
@@ -745,76 +780,6 @@ class WorkspaceTreeWidget(QTreeWidget):
         return treeItem.checkState(column) == Qt.Checked
 
 
-class StatCard(QWidget):
-    def __init__(self, title, value, iconPath=None):
-        super().__init__()
-
-        textLayout = QVBoxLayout()
-        textWidget = QWidget()
-        textWidget.setLayout(textLayout)
-
-        self.title = title
-        self.value = value
-        self.titleLabel = QLabel(self.title)
-        self.valueLabel = QLabel(str(self.value))
-        self.titleLabel.setStyleSheet("font-size: 16px; color: gray;")
-        self.valueLabel.setStyleSheet("font-size: 24px; font-weight: bold;")
-
-        textLayout.addWidget(self.titleLabel)
-        textLayout.addWidget(self.valueLabel)
-
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        layout.setContentsMargins(10, 10, 10, 10)  # Padding inside the card
-
-        if iconPath:
-            icon = QPixmap(iconPath).scaled(80, 80, Qt.KeepAspectRatio)
-            iconLabel = QLabel()
-            iconLabel.setPixmap(icon)
-            iconLabel.setStyleSheet(
-                """
-                border: 2px solid #555555; 
-                border-radius: 10px; 
-                padding: 5px;
-            """
-            )
-            layout.addWidget(iconLabel)
-
-        layout.addWidget(textWidget)
-
-        self.setLayout(layout)
-
-
-def makeStatCards(titles, values, iconPaths=None):
-    cards = []
-    for i in range(len(titles)):
-        iconPath = None
-        if iconPaths:
-            iconPath = iconPaths[i]
-        cards.append(StatCard(titles[i], values[i], iconPath))
-    return cards
-
-
-class StatWindow(QWidget):
-    def __init__(self, cards=[]):
-        super().__init__()
-        self.cards = {}
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        for card in cards:
-            self.addCard(card)
-
-    def addCard(self, card):
-        self.cards[card.title] = card
-        self.layout.addWidget(card)
-
-    def getCard(self, title):
-        return self.cards[title]
-
-    def updateCard(self, title, value):
-        self.getCard(title).valueLabel.setText(str(value))
-
-
 class WorkflowWindow(QWidget):
     def __init__(self, name):
         super().__init__()
@@ -822,6 +787,15 @@ class WorkflowWindow(QWidget):
 
         layout = QVBoxLayout()
         self.setLayout(layout)
+
+        self.splitter = QSplitter()
+        layout.addWidget(self.splitter)
+
+        builtinWindow = QWidget()
+        layout = QVBoxLayout()
+        builtinWindow.setLayout(layout)
+        self.customWindow = None
+        self.splitter.addWidget(builtinWindow)
 
         self.saveLayoutBtn = ConfirmButton("Save Layout")
         layout.addWidget(self.saveLayoutBtn)
@@ -839,10 +813,6 @@ class WorkflowWindow(QWidget):
 
         self.treeLayout = WorkspaceTreeWidget(name)
         layout.addWidget(self.treeLayout)
-
-        self.stats = StatWindow()
-        self.stats.hide()
-        layout.addWidget(self.stats)
 
         self.execCnt = QSpinBox()
         self.execCnt.setValue(1)
@@ -885,14 +855,21 @@ class WorkflowWindow(QWidget):
         else:
             wks.unlock()
 
-    def initStat(self, cards):
-        self.stats.show()
-        for card in cards:
-            self.stats.addCard(card)
+    def addWidget(self, widget):
+        if self.customWindow is None:
+            self.customWindow = QWidget()
+            self.customLayout = QVBoxLayout()
+            self.customWindow.setLayout(self.customLayout)
+            self.splitter.addWidget(self.customWindow)
+            self.customWindow.show()
 
-    def setStats(self, stats):
-        for title in stats:
-            self.stats.updateCard(title, stats[title])
+        self.customLayout.addWidget(widget)
+
+    def getLayout(self):
+        return self.customLayout
+
+    def getWindow(self):
+        return self.customWindow
 
 
 class E7WorkflowApp(QApplication):
@@ -928,12 +905,6 @@ class E7WorkflowApp(QApplication):
         if initialState:
             runner.updateState(initialState)
 
-            def statUpdate(state: GlobalState):
-                wkState = state.getWorkflowState(wkflow.name)
-                stats = wkState.getWorkflowStats()
-                self.getWindow(wkflow.name).setStats(stats)
-
-            runner.stepFinished.connect(statUpdate)
         win.bindWorkflow(wkflow)
 
         wkflowLayout = importData(f"{wkflow.name} Layout")
@@ -943,6 +914,12 @@ class E7WorkflowApp(QApplication):
 
     def getWindow(self, name) -> WorkflowWindow:
         return self.windows[name]
+
+    def getRunner(self, name) -> WorkflowRunner:
+        return self.runners[name]
+
+    def getWorkflow(self, name) -> Workflow:
+        return self.wkflows[name]
 
     def onTabChanged(self, index):
         activeTitle = self.tabWidget.tabText(index)
