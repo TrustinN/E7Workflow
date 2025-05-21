@@ -273,7 +273,7 @@ class Workspace(QObject):
         dimNew = newCornersPadded[1] - newCornersPadded[0]
 
         # Update child wkspace sizes resize displacement
-        def wksResize(wks):
+        def childResize(wks):
             oldTl, oldBr = wks.getBBox()
 
             # linear interpolation
@@ -299,16 +299,10 @@ class Workspace(QObject):
             newTl = QPoint(intNewTl[0], intNewTl[1])
             newBr = QPoint(intNewBr[0], intNewBr[1])
 
-            wks.setGeometry(QRect(newTl, newBr))
-
-        def recursiveResize(wkspace):
-            wksResize(wkspace)
-            if hasattr(wkspace, "wkspaces"):
-                for wks in wkspace.wkspaces:
-                    recursiveResize(wks)
+            wks.resize([newTl, newBr])
 
         for wks in self.wkspaces:
-            recursiveResize(wks)
+            childResize(wks)
 
         self.window.setGeometry(QRect(newCorners[0], newCorners[1]))
 
