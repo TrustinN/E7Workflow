@@ -1,22 +1,37 @@
 import time
 
+from PyQt5.QtWidgets import QSpinBox
+
 from app import E7WorkflowApp, GlobalState, Workspace
 from assets import (
+    ActiveWindow,
     BookmarkType,
-    PenguinTypes,
+    CurrencyType,
     bookmarkIconPaths,
     bookmarkTypes,
+    getBookmarkType,
+    getPenguinType,
     penguinIconPaths,
     penguinTypes,
 )
-from custom import StatWindow, addStatWindow, makeStatCards
-from workflows.nav import buildGrowthAltarWorkflow, buildHomeWorkflow, buildShopWorkflow
+from custom import STATS, StatWindow, addStatWindow, makeStatCards
+from workflows.nav import (
+    ACTIVE_WINDOW,
+    buildGrowthAltarWorkflow,
+    buildHomeWorkflow,
+    buildShopWorkflow,
+)
 from workflows.penguin import WORKFLOW_NAME as PENGUIN_WORKFLOW_NAME
 from workflows.penguin import buildWorkflow as buildPenguinWorkflow
+from workflows.penguin import initState as initPenguinState
 from workflows.shop import WORKFLOW_NAME as BOOKMARK_WORKFLOW_NAME
 from workflows.shop import buildWorkflow as buildRefreshShopWorkflow
+from workflows.shop import initState as initShopState
 
 WORKFLOW_NAME = "Shop Refresh and Resupply"
+SKYSTONE = CurrencyType.SKYSTONE
+GOLD = CurrencyType.GOLD
+CURRENCY = "Currency"
 
 
 def buildRefreshAndResupplyWorkflow():
@@ -37,19 +52,20 @@ def buildRefreshAndResupplyWorkflow():
     def executeTasks(state: GlobalState):
         wkState = state.getWorkflowState(WORKFLOW_NAME)
 
-        cState = wkState.getField("currency")
-        if cState["Skystone"] < 3:
+        cState = wkState.getState(CURRENCY)
+        if cState[SKYSTONE] != -1 and cState[SKYSTONE] <= 3:
             return
 
-        if cState["Gold"] < BookmarkType.MYSTIC.cost:
-            if wkState["winActive"] != "GrowthAltar":
+        if cState[SKYSTONE] != -1:
+            cState[SKYSTONE] -= 3
+
+        if cState[GOLD] < BookmarkType.MYSTIC.cost:
+            if wkState[ACTIVE_WINDOW] != ActiveWindow.GROWTH_ALTAR:
 
                 homeWorkflow(state)
-                wkState["winActive"] = "Home"
                 time.sleep(delay)
 
                 growthAltarWorkflow(state)
-                wkState["winActive"] = "GrowthAltar"
                 time.sleep(delay)
 
             penguinWorkflow(state)
@@ -57,7 +73,7 @@ def buildRefreshAndResupplyWorkflow():
 
             newPenguins = {}
             penguinState = state.getWorkflowState(PENGUIN_WORKFLOW_NAME)
-            curStats = penguinState.getField("stats")
+            curStats = penguinState.getState(STATS)
             if "prevPenguinStats" in wkState:
                 prevPenguinStats = wkState["prevPenguinStats"]
                 for penguinName in prevPenguinStats:
@@ -71,25 +87,16 @@ def buildRefreshAndResupplyWorkflow():
             wkState["prevPenguinStats"] = curStats
             for penguinName in newPenguins:
                 count = newPenguins[penguinName]
-                print(penguinName, count)
-                if penguinName == PenguinTypes.EPIC.name:
-                    cState["Gold"] += count * PenguinTypes.EPIC.value
-
-                elif penguinName == PenguinTypes.EXPERIENCED.name:
-                    cState["Gold"] += count * PenguinTypes.EXPERIENCED.value
-
-                elif penguinName == PenguinTypes.NEWBIE.name:
-                    cState["Gold"] += count * PenguinTypes.NEWBIE.value
+                pType = getPenguinType(penguinName)
+                cState[GOLD] += count * pType.value
 
         else:
-            if wkState["winActive"] != "Shop":
+            if wkState[ACTIVE_WINDOW] != ActiveWindow.SHOP:
 
                 homeWorkflow(state)
-                wkState["winActive"] = "Home"
                 time.sleep(delay)
 
                 shopWorkflow(state)
-                wkState["winActive"] = "Shop"
                 time.sleep(delay)
 
             refreshShopWorkflow(state)
@@ -97,7 +104,7 @@ def buildRefreshAndResupplyWorkflow():
 
             newBookmarks = {}
             bookmarkState = state.getWorkflowState(BOOKMARK_WORKFLOW_NAME)
-            curStats = bookmarkState.getField("stats")
+            curStats = bookmarkState.getState(STATS)
             if "prevBookmarkStats" in wkState:
                 prevBookmarkStats = wkState["prevBookmarkStats"]
                 for bmName in prevBookmarkStats:
@@ -107,41 +114,40 @@ def buildRefreshAndResupplyWorkflow():
                 newBookmarks = curStats
 
             wkState["prevBookmarkStats"] = curStats
+            print(newBookmarks)
             for bmName in newBookmarks:
                 count = newBookmarks[bmName]
-                if bmName == BookmarkType.MYSTIC.name:
-                    cState["Gold"] -= count * BookmarkType.MYSTIC.cost
+                bType = getBookmarkType(bmName)
+                cState[GOLD] -= count * bType.cost
 
-                elif bmName == BookmarkType.COVENANT.name:
-                    cState["Gold"] -= count * BookmarkType.MYSTIC.cost
-
-                elif bmName == BookmarkType.FRIENDSHIP.name:
-                    cState["Gold"] -= count * BookmarkType.FRIENDSHIP.cost
+        print(cState[GOLD])
 
     wkspace = Workspace(WORKFLOW_NAME, wkspaces)
     wkspace.setPadding(15)
     return executeTasks, wkspace
 
 
+def initState(state: GlobalState):
+    state.addWorkflowState(WORKFLOW_NAME)
+    wkState = state.getWorkflowState(WORKFLOW_NAME)
+    wkState[ACTIVE_WINDOW] = ActiveWindow.SHOP
+    wkState.setState(CURRENCY, {})
+    cState = wkState.getState(CURRENCY)
+    cState[GOLD] = -1
+    cState[SKYSTONE] = -1
+
+    initShopState(state)
+    initPenguinState(state)
+
+
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
     wkflow, wkspace = buildRefreshAndResupplyWorkflow()
-    state.addWorkflowState(wkspace)
-    wkState = state.getWorkflowState(WORKFLOW_NAME)
-    wkState.addField("stats")
 
-    wkFlowWkspaces = {}
-    for wks in wkspace.wkspaces:
-        wkFlowWkspaces[wks.name] = wks
-
-    wkState["winActive"] = "Shop"
-    wkState.addField("currency")
-    cState = wkState.getField("currency")
-    cState["Gold"] = BookmarkType.COVENANT.cost
-    cState["Skystone"] = 10
+    initState(state)
 
     app.addWorkflow(wkflow, wkspace, state)
-    runner = app.getRunner(wkspace.name)
-    window = app.getWindow(wkspace.name)
+    runner = app.getRunner(WORKFLOW_NAME)
+    window = app.getWindow(WORKFLOW_NAME)
 
     penguinNames = [penguin.name for penguin in penguinTypes]
     penguinStatCards = makeStatCards(
@@ -149,12 +155,33 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     )
     penguinStats = StatWindow(penguinStatCards)
 
-    penguinWorkspace = wkFlowWkspaces[PENGUIN_WORKFLOW_NAME]
-    addStatWindow(window, runner, penguinWorkspace, penguinStats)
+    addStatWindow(window, runner, PENGUIN_WORKFLOW_NAME, penguinStats)
 
     bmNames = [bm.name for bm in bookmarkTypes]
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
     shopStats = StatWindow(shopStatCards)
 
-    bookmarkWorkspace = wkFlowWkspaces[BOOKMARK_WORKFLOW_NAME]
-    addStatWindow(window, runner, bookmarkWorkspace, shopStats)
+    addStatWindow(window, runner, BOOKMARK_WORKFLOW_NAME, shopStats)
+
+    goldCountWidget = QSpinBox()
+    goldCountWidget.setMinimum(-1)
+
+    skystoneCountWidget = QSpinBox()
+    skystoneCountWidget.setMinimum(-1)
+
+    wkState = state.getWorkflowState(WORKFLOW_NAME)
+    cState = wkState.getState(CURRENCY)
+
+    def setGoldAmount(value):
+        cState[GOLD] = value
+
+    def setSkystoneAmount(value):
+        cState[SKYSTONE] = value
+
+    goldCountWidget.valueChanged.connect(setGoldAmount)
+    skystoneCountWidget.valueChanged.connect(setSkystoneAmount)
+    goldCountWidget.setMaximum(1000000000)
+    skystoneCountWidget.setMaximum(1000000000)
+
+    window.addWidget(goldCountWidget)
+    window.addWidget(skystoneCountWidget)

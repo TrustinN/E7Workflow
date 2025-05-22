@@ -1,8 +1,11 @@
 import time
 
 from app import Workspace
+from assets import ActiveWindow
 
 from .utils import click
+
+ACTIVE_WINDOW = "winActive"
 
 
 def buildHomeWorkflow():
@@ -15,6 +18,7 @@ def buildHomeWorkflow():
         for i in range(len(wkspaces)):
             click(wkspaces[i], state)
             time.sleep(delays[i])
+        state[ACTIVE_WINDOW] = ActiveWindow.HOME
 
     wkspace = Workspace("Go Home", wkspaces)
     wkspace.setPadding(15)
@@ -31,6 +35,7 @@ def buildGrowthAltarWorkflow():
         for i in range(len(wkspaces)):
             click(wkspaces[i], state)
             time.sleep(delays[i])
+        state[ACTIVE_WINDOW] = ActiveWindow.GROWTH_ALTAR
 
     wkspace = Workspace("Go Growth Altar", wkspaces)
     wkspace.setPadding(15)
@@ -46,6 +51,7 @@ def buildShopWorkflow():
         for i in range(len(wkspaces)):
             click(wkspaces[i], state)
             time.sleep(delays[i])
+        state[ACTIVE_WINDOW] = ActiveWindow.SHOP
 
     wkspace = Workspace("Go Shop", wkspaces)
     wkspace.setPadding(15)

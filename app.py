@@ -101,8 +101,6 @@ class SelectionWindow(QWidget):
         self.resizeError = (np.array([0.0, 0.0]), np.array([0.0, 0.0]))
         self.fixed = False
 
-        self.show()
-
     def grabMouse(self) -> bool:
         if not self.canMove():
             return False
@@ -218,18 +216,12 @@ class SelectionWindow(QWidget):
         return not self.fixed
 
 
-class Workspace(QObject):
+class Workspace(SelectionWindow):
     focusParent = pyqtSignal(QMouseEvent)
+    mousePress = pyqtSignal()
 
     def __init__(self, name, wkspaces: list["Workspace"] = []):
-        super().__init__()
-        self.name = name
-        self.window = SelectionWindow(name)
-        self.window.setWindowTitle(name)
-        self.window.show()
-        self.resizeSignal = self.window.resizeSignal
-
-        self.moveSignal = self.window.moveSignal
+        super().__init__(name)
         self.padding = 0
         self.wkspaces = wkspaces
         for i in range(len(self.wkspaces)):
@@ -237,16 +229,6 @@ class Workspace(QObject):
             wkspace.connectSignals(self.updateGeometry)
             wkspace.focusParent.connect(self.mousePressEvent)
         self.updateGeometry()
-
-        self.oldMouseMoveEvent = self.window.mouseMoveEvent
-        self.oldMousePressUpdate = self.window.mousePressUpdate
-        self.oldMousePressEvent = self.window.mousePressEvent
-        self.oldMouseReleaseEvent = self.window.mouseReleaseEvent
-
-        self.window.mouseMoveEvent = self.mouseMoveEvent
-        self.window.mousePressEvent = self.mousePressEvent
-        self.window.mouseReleaseEvent = self.mouseReleaseEvent
-
         self.childFocused = None
 
     def setPadding(self, padding):
@@ -282,7 +264,7 @@ class Workspace(QObject):
             s1 = (1.0 * oldBr.x() - oldCornersPadded[1].x()) / dimOld.x()
             t1 = (1.0 * oldBr.y() - oldCornersPadded[1].y()) / dimOld.y()
 
-            prevTlErr, prevBrErr = wks.window.resizeError
+            prevTlErr, prevBrErr = wks.resizeError
             newTlx = dimNew.x() * s0 + newCornersPadded[0].x() + prevTlErr[0]
             newTly = dimNew.y() * t0 + newCornersPadded[0].y() + prevTlErr[1]
             newBrx = dimNew.x() * s1 + newCornersPadded[1].x() + prevBrErr[0]
@@ -294,7 +276,7 @@ class Workspace(QObject):
             intNewTl = newTl.astype(int)
             intNewBr = newBr.astype(int)
 
-            wks.window.resizeError = (newTl - intNewTl, newBr - intNewBr)
+            wks.resizeError = (newTl - intNewTl, newBr - intNewBr)
 
             newTl = QPoint(intNewTl[0], intNewTl[1])
             newBr = QPoint(intNewBr[0], intNewBr[1])
@@ -304,7 +286,7 @@ class Workspace(QObject):
         for wks in self.wkspaces:
             childResize(wks)
 
-        self.window.setGeometry(QRect(newCorners[0], newCorners[1]))
+        super().setGeometry(QRect(newCorners[0], newCorners[1]))
         self.resizeSignal.emit()
 
     def mouseMoveEvent(self, event):
@@ -315,11 +297,11 @@ class Workspace(QObject):
             if not self.canMove():
                 return
 
-            if self.window.resizeMode:
+            if self.resizeMode:
                 newCorners = self.getBBox()
 
                 # Compute displacement
-                for i in self.window.resizeIndices:
+                for i in self.resizeIndices:
                     if i % 2 == 0:
                         newCorners[i // 2].setX(event.globalPos().x())
                     else:
@@ -336,9 +318,10 @@ class Workspace(QObject):
                     unlockState.append(w.canMove())
                     w.unlock()
 
-                self.oldMouseMoveEvent(event)
+                # self.oldMouseMoveEvent(event)
+                super().mouseMoveEvent(event)
                 for wkspace in self.wkspaces:
-                    wkspace.window.mouseMoveEvent(event)
+                    wkspace.mouseMoveEvent(event)
 
                 # Recover children state
                 for i in range(len(self.wkspaces)):
@@ -357,20 +340,20 @@ class Workspace(QObject):
             self.childFocused.releaseMouse()
             self.childFocused = None
 
-        self.window.setFocus()
-        self.window.raise_()
-        self.window.activateWindow()
-        self.window.grabMouse()
+        self.setFocus()
+        self.raise_()
+        self.activateWindow()
+        super().grabMouse()
         return True
 
     def releaseMouse(self):
-        # self.window.lower()
-        self.window.releaseMouse()
+        super().releaseMouse()
         for w in self.wkspaces:
             w.releaseMouse()
 
     def mousePressUpdate(self, event):
-        self.oldMousePressUpdate(event)
+        # self.oldMousePressUpdate(event)
+        super().mousePressUpdate(event)
         self.releaseMouse()
 
         for wkspace in self.wkspaces:
@@ -378,7 +361,8 @@ class Workspace(QObject):
             wkspace.mouseReleaseEvent(event)
 
     def mousePressEvent(self, event):
-        self.oldMousePressEvent(event)
+        # self.oldMousePressEvent(event)
+        super().mousePressEvent(event)
         self.mousePressUpdate(event)
         if self.childFocused:
             self.childFocused.mouseReleaseEvent(event)
@@ -406,12 +390,9 @@ class Workspace(QObject):
 
     def mouseReleaseEvent(self, event):
         if self.childFocused:
-            self.childFocused.window.mouseReleaseEvent(event)
+            self.childFocused.mouseReleaseEvent(event)
             self.childFocused = None
         self.releaseMouse()
-
-    def getBBox(self):
-        return self.window.getBBox()
 
     def updateGeometry(self):
         if len(self.wkspaces) != 0:
@@ -427,7 +408,7 @@ class Workspace(QObject):
                 br.setX(max(br.x(), curBr.x()))
                 br.setY(max(br.y(), curBr.y()))
 
-            self.window.setGeometry(QRect(tl, br))
+            super().setGeometry(QRect(tl, br))
         self.resizeSignal.emit()
 
     def setGeometry(self, rect):
@@ -436,27 +417,24 @@ class Workspace(QObject):
         self.resizeSignal.emit()
 
     def hide(self):
-        self.window.hide()
+        super().hide()
         for wkspace in self.wkspaces:
             wkspace.hide()
 
     def show(self):
-        self.window.show()
+        super().show()
         for wkspace in self.wkspaces:
             wkspace.show()
 
     def lock(self):
-        self.window.lock()
+        super().lock()
         for wkspace in self.wkspaces:
             wkspace.lock()
 
     def unlock(self):
-        self.window.unlock()
+        super().unlock()
         for wkspace in self.wkspaces:
             wkspace.unlock()
-
-    def canMove(self):
-        return self.window.canMove()
 
     def exportData(self, extract):
         data = extract(self)
@@ -475,15 +453,31 @@ class Workspace(QObject):
             wks.importData(apply, subData)
 
 
+def buildWorkspace(map):
+    wksMap = {}
+
+    def recurseBuild(map, wksMap):
+        ret = []
+        for key in map:
+            wkspaces = recurseBuild(map[key], wksMap)
+            wks = Workspace(key, wkspaces)
+            ret.append(wks)
+            wksMap[key] = wks
+        return ret
+
+    recurseBuild(map, wksMap)
+
+    return wksMap
+
+
 class WorkflowState(dict):
     def __init__(self):
         super().__init__()
-        self["temp"] = {}
 
-    def addField(self, name):
-        self[name] = {}
+    def setState(self, name, value):
+        self[name] = value
 
-    def getField(self, name):
+    def getState(self, name):
         return self[name]
 
 
@@ -492,8 +486,8 @@ class GlobalState(dict):
         super().__init__()
         self["userState"] = {}
 
-    def addWorkflowState(self, wkspace: Workspace):
-        self[wkspace.name] = WorkflowState()
+    def addWorkflowState(self, name: str):
+        self[name] = WorkflowState()
 
     def getWorkflowState(self, name: str) -> WorkflowState:
         return self[name]
@@ -524,20 +518,20 @@ def importData(src):
 
 
 def applyGeometry(wks, config):
-    wks.window.setGeometry(layoutToBBox(config))
+    wks.setGeometry(layoutToBBox(config))
     QApplication.processEvents()
 
 
 def extractGeometry(wks):
-    return bboxToLayout(wks.window.getBBox())
+    return bboxToLayout(wks.getBBox())
 
 
 def applyColor(wks, config):
-    wks.window.setColor(listToColor(config))
+    wks.setColor(listToColor(config))
 
 
 def extractColor(wks):
-    return colorToList(wks.window.getColor())
+    return colorToList(wks.getColor())
 
 
 def fmtLayoutFile(wks):

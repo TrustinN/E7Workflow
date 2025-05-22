@@ -10,6 +10,10 @@ from skimage.metrics import structural_similarity as ssim
 from app import WorkflowState, Workspace
 
 
+class TaskData:
+    RESULT = "Result"
+
+
 def ptToTuple(pt):
     x, y = pt.x(), pt.y()
     return (x, y)
@@ -30,7 +34,7 @@ def click(wkspace: Workspace, state: WorkflowState, **kwargs):
 
 def scan(wkspace: Workspace, state: WorkflowState, **kwargs):
     parent = kwargs["parent"]
-    ptl, pbr = parent.window.getBBox()
+    ptl, pbr = parent.getBBox()
     dim = pbr - ptl
     width, height = dim.x(), dim.y()
 
@@ -38,8 +42,8 @@ def scan(wkspace: Workspace, state: WorkflowState, **kwargs):
     dir = kwargs["dir"]
     task = kwargs["task"]
 
-    savedGeometry = wkspace.window.geometry()
-    bbox = wkspace.window.getBBox()
+    savedGeometry = wkspace.geometry()
+    bbox = wkspace.getBBox()
     tl, br = bbox
     tl, br = np.array(ptToTuple(tl)), np.array(ptToTuple(br))
     dim = br - tl
@@ -142,7 +146,7 @@ def combine_images_side_by_side_np(image1, image2):
 
 def imageMatch(wkspace: Workspace, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
-    frame = wkspace.window.frameGeometry()
+    frame = wkspace.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
 
     ss = screenshot(region)
@@ -154,13 +158,12 @@ def imageMatch(wkspace: Workspace, state: WorkflowState, **kwargs):
     ss = alignImages(img, ss)
     score = computeSSIM(ss, img)
 
-    tmp = state.getField("temp")
-    tmp["result"] = score >= threshold
+    state.setState(TaskData.RESULT, score >= threshold)
 
 
 def filterNumbers(wkspace: Workspace, state: WorkflowState, **kwargs):
     tl, br = wkspace.getBBox()
-    frame = wkspace.window.frameGeometry()
+    frame = wkspace.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
 
     image = screenshot(region)

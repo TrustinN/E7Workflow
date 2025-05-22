@@ -2,7 +2,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from app import GlobalState, WorkflowRunner, WorkflowWindow, Workspace
+from app import GlobalState, WorkflowRunner, WorkflowWindow
+
+STATS = "Stats"
 
 
 class StatCard(QWidget):
@@ -75,10 +77,10 @@ class StatWindow(QWidget):
         self.getCard(title).valueLabel.setText(str(value))
 
 
-def getStatUpdate(statWidget: StatWindow, wkspace: Workspace):
+def getStatUpdate(statWidget: StatWindow, wksName: str):
     def statUpdate(state: GlobalState):
-        wkState = state.getWorkflowState(wkspace.name)
-        stats = wkState.getField("stats")
+        wkState = state.getWorkflowState(wksName)
+        stats = wkState.getState(STATS)
         for key in stats:
             statWidget.updateCard(key, stats[key])
         QApplication.processEvents()
@@ -89,7 +91,7 @@ def getStatUpdate(statWidget: StatWindow, wkspace: Workspace):
 def addStatWindow(
     window: WorkflowWindow,
     runner: WorkflowRunner,
-    statWkspace: Workspace,
+    statWkspace: str,
     statWindow: StatWindow,
 ):
     window.addWidget(statWindow)

@@ -28,6 +28,12 @@ class BookmarkType(Enum):
         return self._cost
 
 
+def getBookmarkType(name: str):
+    for bType in BookmarkType:
+        if name == bType.name:
+            return bType
+
+
 bookmarkTypes = [bookmark for bookmark in BookmarkType]
 bookmarkFilenames = ["cov_bm.png", "mys_bm.png", "frd_bm.png"]
 bookmarkIconPaths = [os.path.join(ASSETS_PATH, fname) for fname in bookmarkFilenames]
@@ -42,7 +48,7 @@ def getBookMarkIcon(bType):
 # Currency
 class CurrencyType(Enum):
     GOLD = "Gold"
-    SKYSTONES = "Skystones"
+    SKYSTONE = "Skystone"
 
     def __init__(self, name):
         self._name = name
@@ -56,7 +62,7 @@ currencyTypes = [currency for currency in CurrencyType]
 
 
 # Penguins
-class PenguinTypes(Enum):
+class PenguinType(Enum):
     NEWBIE = ("Newbie", 6000)
     EXPERIENCED = ("Experienced", 18000)
     EPIC = ("Epic", 54000)
@@ -74,7 +80,13 @@ class PenguinTypes(Enum):
         return self._value
 
 
-penguinTypes = [pType for pType in PenguinTypes]
+def getPenguinType(name: str):
+    for pType in PenguinType:
+        if name == pType.name:
+            return pType
+
+
+penguinTypes = [pType for pType in PenguinType]
 penguinFilenames = ["nwb_pgn.png", "exp_pgn.png", "epc_pgn.png"]
 penguinIconPaths = [os.path.join(ASSETS_PATH, fname) for fname in penguinFilenames]
 penguinIcons = [cv2.imread(imPath) for imPath in penguinIconPaths]

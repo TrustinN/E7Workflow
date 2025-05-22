@@ -8,34 +8,24 @@ from assets import (
     getBookMarkIcon,
     shopItemCnt,
 )
-from custom import StatWindow, addStatWindow, makeStatCards
+from custom import STATS, StatWindow, addStatWindow, makeStatCards
 
-from .utils import click, imageMatch, scroll
+from .utils import TaskData, click, imageMatch, scroll
 
 WORKFLOW_NAME = "Shop Refresh"
-
-
-def updateStats(state: WorkflowState):
-    tmp = state.getField("temp")
-    if tmp["result"]:
-        bType = tmp["resultType"]
-        stats = state.getField("stats")
-        stats[bType.name] += 1
 
 
 def findBookmark(wkspace: Workspace, state: WorkflowState, **kwargs):
     bmIcon = getBookMarkIcon(kwargs["bmType"])
     imageMatch(wkspace, state, img=bmIcon)
-    tmp = state.getField("temp")
-    if tmp["result"]:
-        tmp["resultType"] = kwargs["bmType"]
+    if state.getState(TaskData.RESULT):
+        state.setState(TaskData.RESULT, kwargs["bmType"])
 
 
 def findBookmarks(wkspace: Workspace, state: WorkflowState, **kwargs):
     for bmType in kwargs["bmTypes"]:
         findBookmark(wkspace, state, **{"bmType": bmType})
-        tmp = state.getField("temp")
-        if tmp["result"]:
+        if state.getState(TaskData.RESULT):
             break
 
 
@@ -69,14 +59,16 @@ def buildWorkflow():
             bmTypes=[
                 BookmarkType.MYSTIC,
                 BookmarkType.COVENANT,
+                BookmarkType.FRIENDSHIP,
             ],
         )
 
-        tmp = state.getField("temp")
-        if tmp["result"] != 0:
-            updateStats(state)
+        if state.getState(TaskData.RESULT) != 0:
+            bType = state.getState(TaskData.RESULT)
+            stats = state.getState(STATS)
+            stats[bType] += 1
+            state.setState(TaskData.RESULT, 0)
 
-            tmp["result"] = 0
             click(bWS, state)
             time.sleep(0.3)
             click(confirmBuyWS, state)
@@ -104,14 +96,20 @@ def buildWorkflow():
     return executeTasks, wkspace
 
 
-def bindToApp(app: E7WorkflowApp, state: GlobalState):
-    shopWorkflow, shopWorkspace = buildWorkflow()
-    state.addWorkflowState(shopWorkspace)
+def initState(state: GlobalState):
+    state.addWorkflowState(WORKFLOW_NAME)
     wkState = state.getWorkflowState(WORKFLOW_NAME)
-    wkState.addField("stats")
-    stats = wkState.getField("stats")
+
+    stats = {}
     for i in range(len(bookmarkTypes)):
         stats[bookmarkTypes[i].name] = 0
+
+    wkState.setState(STATS, stats)
+
+
+def bindToApp(app: E7WorkflowApp, state: GlobalState):
+    shopWorkflow, shopWorkspace = buildWorkflow()
+    initState(state)
 
     app.addWorkflow(shopWorkflow, shopWorkspace, state)
 
@@ -119,6 +117,6 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
     shopStats = StatWindow(shopStatCards)
 
-    runner = app.getRunner(shopWorkspace.name)
-    window = app.getWindow(shopWorkspace.name)
-    addStatWindow(window, runner, shopWorkspace, shopStats)
+    runner = app.getRunner(WORKFLOW_NAME)
+    window = app.getWindow(WORKFLOW_NAME)
+    addStatWindow(window, runner, WORKFLOW_NAME, shopStats)
