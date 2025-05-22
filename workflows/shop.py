@@ -1,95 +1,85 @@
 import time
 
-from app import E7WorkflowApp, GlobalState, WorkflowState, Workspace
-from assets import (
-    BookmarkType,
-    bookmarkIconPaths,
-    bookmarkTypes,
-    getBookMarkIcon,
-    shopItemCnt,
-)
-from custom import STATS, StatWindow, addStatWindow, makeStatCards
+from app import E7WorkflowApp, Workspace
+from assets import BookmarkType, bookmarkIconPaths, getBookMarkIcon, shopItemCnt
+from custom import StatWindow, addStatWindow, makeStatCards
 
+from .state.inventory.bookmark import bookmarkManager
+from .state.inventory.currency import CurrencyType, currencyManager
+from .state.state import GlobalState, WorkflowState
 from .utils import TaskData, click, imageMatch, scroll
 
 WORKFLOW_NAME = "Shop Refresh"
+RESULT = TaskData.RESULT
+SKYSTONE = CurrencyType.SKYSTONE
+GOLD = CurrencyType.GOLD
 
 
 def findBookmark(wkspace: Workspace, state: WorkflowState, **kwargs):
     bmIcon = getBookMarkIcon(kwargs["bmType"])
     imageMatch(wkspace, state, img=bmIcon)
-    if state.getState(TaskData.RESULT):
-        state.setState(TaskData.RESULT, kwargs["bmType"])
-
-
-def findBookmarks(wkspace: Workspace, state: WorkflowState, **kwargs):
-    for bmType in kwargs["bmTypes"]:
-        findBookmark(wkspace, state, **{"bmType": bmType})
-        if state.getState(TaskData.RESULT):
-            break
+    if state.getState(RESULT):
+        state.setState(RESULT, kwargs["bmType"])
 
 
 def buildWorkflow():
     # Initialize Workspaces
     iconWS = [Workspace(f"Icon {i + 1}") for i in range(shopItemCnt)]
     buyWS = [Workspace(f"Buy {i + 1}") for i in range(shopItemCnt)]
+    pairs = list(zip(iconWS, buyWS))
+    entryWS = [Workspace(f"Entry {i + 1}", list(pairs[i])) for i in range(len(pairs))]
 
-    entryWS = [
-        Workspace(f"Entry {i + 1}", [iconWS[i], buyWS[i]]) for i in range(shopItemCnt)
-    ]
-    for wks in entryWS:
-        wks.setPadding(0)
+    clickWSNames = ["Focus", "Confirm Buy", "Refresh", "Confirm Refresh"]
+    clickWS = {name: Workspace(name) for name in clickWSNames}
 
-    focusWS = Workspace("Focus")
-    confirmBuyWS = Workspace("Confirm Buy")
-    refreshWS = Workspace("Refresh")
-    confirmRefreshWS = Workspace("Confirm Refresh")
     scrollWS = Workspace("Scroll")
-    extraWS = [focusWS, confirmRefreshWS, confirmBuyWS, refreshWS, scrollWS]
 
-    wkspaces = entryWS
-    wkspaces.extend(extraWS)
-
-    def findAndBuy(i: int, state: WorkflowState):
-        iWS = iconWS[i]
-        bWS = buyWS[i]
-        findBookmarks(
-            iWS,
-            state,
-            bmTypes=[
-                BookmarkType.MYSTIC,
-                BookmarkType.COVENANT,
-                BookmarkType.FRIENDSHIP,
-            ],
-        )
-
-        if state.getState(TaskData.RESULT) != 0:
-            bType = state.getState(TaskData.RESULT)
-            stats = state.getState(STATS)
-            stats[bType] += 1
-            state.setState(TaskData.RESULT, 0)
-
-            click(bWS, state)
-            time.sleep(0.3)
-            click(confirmBuyWS, state)
-            time.sleep(0.3)
+    wkspaces = []
+    wkspaces.extend(entryWS)
+    wkspaces.extend(clickWS.values())
+    wkspaces.append(scrollWS)
 
     def executeTasks(state: GlobalState):
+
         wkState = state.getWorkflowState(WORKFLOW_NAME)
-        click(focusWS, wkState)
+
+        def findAndBuy(i: int):
+            iWS = iconWS[i]
+            bWS = buyWS[i]
+            buyType = None
+            for bmType in BookmarkType:
+                findBookmark(iWS, wkState, bmType=bmType)
+                if wkState.getState(RESULT):
+                    buyType = bmType
+                    break
+
+            if buyType:
+                click(bWS, wkState)
+                time.sleep(0.3)
+
+                click(clickWS["Confirm Buy"], wkState)
+                time.sleep(0.3)
+
+                bookmarkManager.addAmount(state, buyType, 1)
+                currencyManager.subtractAmount(state, GOLD, buyType.cost)
+
+        click(clickWS["Focus"], wkState)
 
         for i in range(shopItemCnt - 2):
-            findAndBuy(i, wkState)
+            findAndBuy(i)
 
         scroll(scrollWS, wkState, dir="up")
         time.sleep(0.3)
         for i in range(shopItemCnt - 2, shopItemCnt):
-            findAndBuy(i, wkState)
+            findAndBuy(i)
 
-        click(refreshWS, wkState)
+        click(clickWS["Refresh"], wkState)
         time.sleep(0.3)
-        click(confirmRefreshWS, wkState)
-        time.sleep(1.2)
+
+        click(clickWS["Confirm Refresh"], wkState)
+        time.sleep(1.0)
+
+        currencyManager.subtractAmount(state, SKYSTONE, 3)
 
     wkspace = Workspace(WORKFLOW_NAME, wkspaces)
     wkspace.setPadding(15)
@@ -98,13 +88,6 @@ def buildWorkflow():
 
 def initState(state: GlobalState):
     state.addWorkflowState(WORKFLOW_NAME)
-    wkState = state.getWorkflowState(WORKFLOW_NAME)
-
-    stats = {}
-    for i in range(len(bookmarkTypes)):
-        stats[bookmarkTypes[i].name] = 0
-
-    wkState.setState(STATS, stats)
 
 
 def bindToApp(app: E7WorkflowApp, state: GlobalState):
@@ -113,10 +96,10 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
 
     app.addWorkflow(shopWorkflow, shopWorkspace, state)
 
-    bmNames = [bm.name for bm in bookmarkTypes]
+    bmNames = [bm.name for bm in BookmarkType]
     shopStatCards = makeStatCards(bmNames, [0] * len(bmNames), bookmarkIconPaths)
     shopStats = StatWindow(shopStatCards)
 
     runner = app.getRunner(WORKFLOW_NAME)
     window = app.getWindow(WORKFLOW_NAME)
-    addStatWindow(window, runner, WORKFLOW_NAME, shopStats)
+    addStatWindow(window, runner, bookmarkManager, shopStats)

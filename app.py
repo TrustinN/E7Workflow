@@ -20,6 +20,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from workflows.state.state import GlobalState
+
 CONFIG_PATH = "config"
 
 
@@ -318,7 +320,6 @@ class Workspace(SelectionWindow):
                     unlockState.append(w.canMove())
                     w.unlock()
 
-                # self.oldMouseMoveEvent(event)
                 super().mouseMoveEvent(event)
                 for wkspace in self.wkspaces:
                     wkspace.mouseMoveEvent(event)
@@ -352,17 +353,13 @@ class Workspace(SelectionWindow):
             w.releaseMouse()
 
     def mousePressUpdate(self, event):
-        # self.oldMousePressUpdate(event)
         super().mousePressUpdate(event)
-        self.releaseMouse()
 
         for wkspace in self.wkspaces:
             wkspace.mousePressUpdate(event)
             wkspace.mouseReleaseEvent(event)
 
     def mousePressEvent(self, event):
-        # self.oldMousePressEvent(event)
-        super().mousePressEvent(event)
         self.mousePressUpdate(event)
         if self.childFocused:
             self.childFocused.mouseReleaseEvent(event)
@@ -468,32 +465,6 @@ def buildWorkspace(map):
     recurseBuild(map, wksMap)
 
     return wksMap
-
-
-class WorkflowState(dict):
-    def __init__(self):
-        super().__init__()
-
-    def setState(self, name, value):
-        self[name] = value
-
-    def getState(self, name):
-        return self[name]
-
-
-class GlobalState(dict):
-    def __init__(self):
-        super().__init__()
-        self["userState"] = {}
-
-    def addWorkflowState(self, name: str):
-        self[name] = WorkflowState()
-
-    def getWorkflowState(self, name: str) -> WorkflowState:
-        return self[name]
-
-    def getUserState(self):
-        return self["userState"]
 
 
 def exportData(wkflow, dest, extract):
@@ -766,7 +737,7 @@ class E7WorkflowApp(QApplication):
         self.mainWindow.setCentralWidget(self.tabWidget)
         self.mainWindow.show()
 
-    def addWorkflow(self, wkflow, wkspace, initialState=None):
+    def addWorkflow(self, wkflow, wkspace, initialState):
         if self.tabWidget.count() == 0:
             wkspace.show()
         else:
@@ -783,8 +754,7 @@ class E7WorkflowApp(QApplication):
         self.runners[wkspace.name] = runner
 
         runner.bindWorkflow(wkflow, wkspace)
-        if initialState:
-            runner.updateState(initialState)
+        runner.updateState(initialState)
 
         win.bindWorkspace(wkspace)
 

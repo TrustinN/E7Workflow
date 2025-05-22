@@ -1,11 +1,10 @@
 import time
 
 from app import Workspace
-from assets import ActiveWindow
 
+from .state.state import GlobalState
+from .state.window import ActiveWindow, windowManager
 from .utils import click
-
-ACTIVE_WINDOW = "winActive"
 
 
 def buildHomeWorkflow():
@@ -14,11 +13,11 @@ def buildHomeWorkflow():
     wkspaces = [Workspace(n) for n in wsNames]
     delays = [0.2] * len(wsNames)
 
-    def executeTasks(state):
+    def executeTasks(state: GlobalState):
         for i in range(len(wkspaces)):
             click(wkspaces[i], state)
             time.sleep(delays[i])
-        state[ACTIVE_WINDOW] = ActiveWindow.HOME
+        windowManager.setActiveWindow(state, ActiveWindow.HOME)
 
     wkspace = Workspace("Go Home", wkspaces)
     wkspace.setPadding(15)
@@ -31,11 +30,11 @@ def buildGrowthAltarWorkflow():
     wkspaces = [Workspace(n) for n in wsNames]
     delays = [0.2, 3.0, 0.5, 0.5]
 
-    def executeTasks(state):
+    def executeTasks(state: GlobalState):
         for i in range(len(wkspaces)):
             click(wkspaces[i], state)
             time.sleep(delays[i])
-        state[ACTIVE_WINDOW] = ActiveWindow.GROWTH_ALTAR
+        windowManager.setActiveWindow(state, ActiveWindow.GROWTH_ALTAR)
 
     wkspace = Workspace("Go Growth Altar", wkspaces)
     wkspace.setPadding(15)
@@ -47,12 +46,29 @@ def buildShopWorkflow():
     wkspaces = [Workspace(n) for n in wsNames]
     delays = [0.2] * len(wkspaces)
 
-    def executeTasks(state):
+    def executeTasks(state: GlobalState):
         for i in range(len(wkspaces)):
             click(wkspaces[i], state)
             time.sleep(delays[i])
-        state[ACTIVE_WINDOW] = ActiveWindow.SHOP
+        windowManager.setActiveWindow(state, ActiveWindow.SECRET_SHOP)
 
     wkspace = Workspace("Go Shop", wkspaces)
+    wkspace.setPadding(15)
+    return executeTasks, wkspace
+
+
+def buildCurrencyInventoryWorkflow():
+    wsNames = ["Focus", "Inventory", "Currency", "Growth"]
+    wkspaces = [Workspace(n) for n in wsNames]
+    delays = [0.2] * len(wkspaces)
+
+    def executeTasks(state: GlobalState):
+        for i in range(len(wkspaces)):
+            click(wkspaces[i], state)
+            time.sleep(delays[i])
+
+        windowManager.setActiveWindow(state, ActiveWindow.INVENTORY)
+
+    wkspace = Workspace("Go Currency", wkspaces)
     wkspace.setPadding(15)
     return executeTasks, wkspace

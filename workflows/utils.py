@@ -7,7 +7,8 @@ from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
-from app import WorkflowState, Workspace
+from app import Workspace
+from workflows.state.state import WorkflowState
 
 
 class TaskData:
