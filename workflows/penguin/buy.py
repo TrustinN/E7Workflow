@@ -60,6 +60,8 @@ def buildWorkflow():
                     pType = wkState.getState(RESULT)
                     getNumber(penguinCountWS, wkState)
                     count = wkState.getState(RESULT)
+                    if count == 0:
+                        count = 1
 
                     penguinManager.addAmount(state, pType, count)
 
