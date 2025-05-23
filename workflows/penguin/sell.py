@@ -63,7 +63,7 @@ def buildWorkflow():
             click(clickWS["Confirm"], wkState)
             time.sleep(delay)
 
-            penguinManager.subtractAmount(state, pType, goldCount / pType.value)
+            penguinManager.subtractAmount(state, pType, goldCount // pType.value)
             currencyManager.addAmount(state, GOLD, goldCount)
 
         click(clickWS["Focus"], wkState)
