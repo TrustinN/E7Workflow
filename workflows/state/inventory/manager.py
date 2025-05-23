@@ -1,7 +1,6 @@
 from enum import Enum
 
-from app import GlobalState
-from workflows.state.state import StateManager
+from workflows.state import GlobalState, StateManager
 
 
 class InventoryManager(StateManager):

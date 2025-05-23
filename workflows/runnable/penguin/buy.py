@@ -3,9 +3,9 @@ import time
 from app import E7WorkflowApp, Workspace
 from assets import getPenguinIcon, penguinIconPaths
 from custom import StatWindow, addStatWindow, makeStatCards
-from workflows.state.inventory.penguin import PenguinType, penguinManager
-from workflows.state.state import GlobalState, WorkflowState
-from workflows.utils import TaskData, click, filterNumbers, imageMatch, scan
+from workflows import Task, TaskData
+from workflows.helpers import click, filterNumbers, imageMatch, scan
+from workflows.state import GlobalState, PenguinType, WorkflowState, penguinManager
 
 WORKFLOW_NAME = "Buy Penguin"
 RESULT = TaskData.RESULT
@@ -90,7 +90,7 @@ def buildWorkflow():
 
     wkspace = Workspace(WORKFLOW_NAME, wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def initState(state: GlobalState):

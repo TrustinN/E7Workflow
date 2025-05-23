@@ -1,10 +1,16 @@
 import time
 
 from app import Workspace
-from workflows.state.inventory.currency import CurrencyType, currencyManager
-from workflows.state.inventory.penguin import PenguinType, penguinManager
-from workflows.state.state import GlobalState, WorkflowState
-from workflows.utils import TaskData, click, filterNumbers
+from workflows import Task, TaskData
+from workflows.helpers import click, filterNumbers
+from workflows.state import (
+    CurrencyType,
+    GlobalState,
+    PenguinType,
+    WorkflowState,
+    currencyManager,
+    penguinManager,
+)
 
 WORKFLOW_NAME = "Sell Penguin"
 RESULT = TaskData.RESULT
@@ -73,7 +79,7 @@ def buildWorkflow():
             sellPenguin(pType)
 
     wkspace = Workspace(WORKFLOW_NAME, wkspaces)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def initState(state: GlobalState):

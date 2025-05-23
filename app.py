@@ -2,7 +2,7 @@ import json
 import os
 
 import numpy as np
-from PyQt5.QtCore import QObject, QPoint, QRect, Qt, pyqtSignal
+from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import (
     QApplication,
@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from workflows.state.state import GlobalState
+from workflows.workflow import WorkflowRunner
 
 CONFIG_PATH = "config"
 
@@ -511,39 +511,6 @@ def fmtLayoutFile(wks):
 
 def fmtColorFile(wks):
     return f"{wks.name} Color"
-
-
-class WorkflowRunner(QObject):
-    stepFinished = pyqtSignal(GlobalState)
-    executeFinish = pyqtSignal(GlobalState)
-
-    def __init__(self):
-        super().__init__()
-        self.iterations = 1
-        self.state = GlobalState()
-
-    def setIterations(self, iterations):
-        self.iterations = iterations
-
-    def bindWorkflow(self, wkflow, wkspace):
-        self.wkflow = wkflow
-        self.wkspace = wkspace
-
-    def setState(self, state):
-        self.state = state
-
-    def updateState(self, state):
-        self.state.update(state)
-
-    def run(self):
-        self.wkspace.hide()
-        QApplication.processEvents()
-        for i in range(self.iterations):
-            self.wkflow(self.state)
-            self.stepFinished.emit(self.state)
-        self.wkspace.show()
-
-        self.executeFinish.emit(self.state)
 
 
 class ConfirmButton(QWidget):

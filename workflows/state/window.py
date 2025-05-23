@@ -1,6 +1,6 @@
 from enum import Enum
 
-from .state import GlobalState, StateManager
+from workflows.state import GlobalState, StateManager
 
 SCOPE = "Window Scope"
 ACTIVE_WINDOW = "Active Window"

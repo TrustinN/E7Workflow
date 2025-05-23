@@ -1,10 +1,9 @@
 import time
 
 from app import Workspace
-
-from .state.state import GlobalState
-from .state.window import ActiveWindow, windowManager
-from .utils import click
+from workflows import Task
+from workflows.helpers import click
+from workflows.state import ActiveWindow, GlobalState, windowManager
 
 
 def buildHomeWorkflow():
@@ -21,7 +20,7 @@ def buildHomeWorkflow():
 
     wkspace = Workspace("Go Home", wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def buildGrowthAltarWorkflow():
@@ -38,7 +37,7 @@ def buildGrowthAltarWorkflow():
 
     wkspace = Workspace("Go Growth Altar", wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def buildShopWorkflow():
@@ -54,7 +53,7 @@ def buildShopWorkflow():
 
     wkspace = Workspace("Go Shop", wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def buildCurrencyInventoryWorkflow():
@@ -71,4 +70,4 @@ def buildCurrencyInventoryWorkflow():
 
     wkspace = Workspace("Go Currency", wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace

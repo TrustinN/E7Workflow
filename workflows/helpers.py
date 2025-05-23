@@ -4,21 +4,14 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
-import pytesseract
-import skimage.io as skio
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
 from app import Workspace
 from assets import getDigitIcon
-from workflows.state.state import WorkflowState
-
-# reader = easyocr.Reader(["en"])
-
-
-class TaskData:
-    RESULT = "Result"
+from workflows import TaskData
+from workflows.state import WorkflowState
 
 
 def ptToTuple(pt):

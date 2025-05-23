@@ -3,11 +3,15 @@ import time
 from app import E7WorkflowApp, Workspace
 from assets import BookmarkType, bookmarkIconPaths, getBookMarkIcon, shopItemCnt
 from custom import StatWindow, addStatWindow, makeStatCards
-
-from .state.inventory.bookmark import bookmarkManager
-from .state.inventory.currency import CurrencyType, currencyManager
-from .state.state import GlobalState, WorkflowState
-from .utils import TaskData, click, imageMatch, scroll
+from workflows import Task, TaskData
+from workflows.helpers import click, imageMatch, scroll
+from workflows.state import (
+    CurrencyType,
+    GlobalState,
+    WorkflowState,
+    bookmarkManager,
+    currencyManager,
+)
 
 WORKFLOW_NAME = "Shop Refresh"
 RESULT = TaskData.RESULT
@@ -83,7 +87,7 @@ def buildWorkflow():
 
     wkspace = Workspace(WORKFLOW_NAME, wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def initState(state: GlobalState):

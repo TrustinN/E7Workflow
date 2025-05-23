@@ -5,24 +5,32 @@ from PyQt5.QtWidgets import QSpinBox
 from app import E7WorkflowApp, Workspace
 from assets import bookmarkIconPaths, penguinIconPaths
 from custom import StatWindow, addStatWindow, makeStatCards
-from workflows.penguin.buy import buildWorkflow as buildBuyPenguinWorkflow
-from workflows.penguin.buy import initState as initBuyPenguinState
-from workflows.penguin.sell import buildWorkflow as buildSellPenguinWorkflow
-from workflows.penguin.sell import initState as initSellPenguinState
-from workflows.shop import buildWorkflow as buildRefreshShopWorkflow
-from workflows.shop import initState as initShopState
-from workflows.window import (
+from workflows import Task
+from workflows.runnable.penguin import (
+    buildBuyPenguinWorkflow,
+    buildSellPenguinWorkflow,
+    initBuyPenguinState,
+    initSellPenguinState,
+)
+from workflows.runnable.shop import buildWorkflow as buildRefreshShopWorkflow
+from workflows.runnable.shop import initState as initShopState
+from workflows.runnable.window import (
     buildCurrencyInventoryWorkflow,
     buildGrowthAltarWorkflow,
     buildHomeWorkflow,
     buildShopWorkflow,
 )
-
-from .state.inventory.bookmark import BookmarkType, bookmarkManager
-from .state.inventory.currency import CurrencyType, currencyManager
-from .state.inventory.penguin import PenguinType, penguinManager
-from .state.state import GlobalState
-from .state.window import ActiveWindow, windowManager
+from workflows.state import (
+    ActiveWindow,
+    BookmarkType,
+    CurrencyType,
+    GlobalState,
+    PenguinType,
+    bookmarkManager,
+    currencyManager,
+    penguinManager,
+    windowManager,
+)
 
 WORKFLOW_NAME = "Shop Refresh and Resupply"
 SKYSTONE = CurrencyType.SKYSTONE
@@ -91,7 +99,7 @@ def buildRefreshAndResupplyWorkflow():
 
     wkspace = Workspace(WORKFLOW_NAME, wkspaces)
     wkspace.setPadding(15)
-    return executeTasks, wkspace
+    return Task(executeTasks), wkspace
 
 
 def initState(state: GlobalState):
@@ -131,9 +139,9 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
     skystoneCountWidget = QSpinBox()
     skystoneCountWidget.setMinimum(-1)
 
-    def setCurrencyAmount(currencyType):
-        def setter(value):
-            currencyManager.setAmount(state, currencyType, value)
+    def setCurrencyAmount(currencyType, widget):
+        def setter(state: GlobalState):
+            currencyManager.setAmount(state, currencyType, widget.value())
 
         return setter
 
