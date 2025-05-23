@@ -1,14 +1,20 @@
 import cv2
+
+# import easyocr
 import mss
 import numpy as np
 import pyautogui
 import pytesseract
+import skimage.io as skio
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
 from app import Workspace
+from assets import getDigitIcon
 from workflows.state.state import WorkflowState
+
+# reader = easyocr.Reader(["en"])
 
 
 class TaskData:
@@ -174,27 +180,61 @@ def filterNumbers(wkspace: Workspace, state: WorkflowState, **kwargs):
     image = cv2.fastNlMeansDenoising(image, None, 30, 7, 21)
     _, image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # Create a blank mask to draw on
-    filtered_mask = np.zeros_like(image)
 
-    # Filter contours by area
+    # Create a blank mask to draw on
+    filteredMask = np.zeros_like(image)
+
+    # Removing noisy regions and commas from image
+    if len(contours) > 0:
+        yMin = min(cv2.boundingRect(contour)[1] for contour in contours)
+        yMax = max(
+            cv2.boundingRect(contour)[1] + cv2.boundingRect(contour)[3]
+            for contour in contours
+        )
+        yMid = (yMin + yMax) / 2
+
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)  # Get the bounding box
-        aspect_ratio = 1.0 * h / w
-        if 1.2 <= aspect_ratio:
-            cv2.drawContours(filtered_mask, [contour], -1, (255), thickness=cv2.FILLED)
+        aspect = 1.0 * h / w
+        if 1.2 <= aspect and y <= yMid:
+            cv2.drawContours(filteredMask, [contour], -1, (255), thickness=cv2.FILLED)
 
-    # Resulting image
-    image = cv2.bitwise_and(image, filtered_mask)
+    # Cleaned image
+    image = cv2.bitwise_and(image, filteredMask)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    image = cv2.dilate(image, kernel, iterations=1)
+    # Extract individual digits and match with digitIcon assets
+    cnts = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    count = 0
+    if len(cnts) > 0:
+        digits = []
+        for c, num in zip(cnts, range(len(cnts))):
+            x, y, w, h = cv2.boundingRect(c)
+            ROI = 255 - image[y : y + h, x : x + w]
+            maxScore = -np.inf
+            digit = -1
 
-    text = pytesseract.image_to_string(image, config="--psm 6 digits")
-    try:
-        count = int(text)
-    except ValueError:
-        count = 1
+            # Ensure image size is large enough for ssim
+            if w < 7 or h < 7:
+                continue
+
+            for i in range(10):
+                digitIcon = getDigitIcon(i)
+                digitIcon = cv2.resize(
+                    digitIcon,
+                    (ROI.shape[1], ROI.shape[0]),
+                    interpolation=cv2.INTER_NEAREST,
+                )
+
+                simScore, _ = ssim(digitIcon, ROI, full=True)
+                if simScore > maxScore:
+                    maxScore = simScore
+                    digit = i
+
+            digits.append(digit)
+
+        digits = digits[::-1]
+        count = int("".join(map(str, digits)))
 
     return count
 

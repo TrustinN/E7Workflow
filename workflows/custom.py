@@ -48,7 +48,7 @@ def buildRefreshAndResupplyWorkflow():
         growthAltarWorkspace,
         currencyInventoryWorkspace,
     ]
-    delay = 1.0
+    delay = 1.2
 
     def executeTasks(state: GlobalState):
 

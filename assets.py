@@ -29,3 +29,15 @@ penguinIcons = dict(zip(PenguinType, penguinIcons))
 
 def getPenguinIcon(pType):
     return penguinIcons[pType]
+
+
+digitsFilenames = [str(i) for i in range(10)]
+digitsFilePaths = [
+    os.path.join(ASSETS_PATH, "digits", f"{fname}.png") for fname in digitsFilenames
+]
+digitIcons = [cv2.imread(imPath, cv2.IMREAD_GRAYSCALE) for imPath in digitsFilePaths]
+
+
+def getDigitIcon(digit):
+    assert 0 <= digit and digit <= 9
+    return digitIcons[digit]
