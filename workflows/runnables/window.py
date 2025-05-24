@@ -30,10 +30,12 @@ def initNavHomeWorkspaces() -> dict[str, Workspace]:
 
     wkspaces = mainWSChildren[:]
     wkspaces.append(workflowWS)
+
+    wkspaces = {ws.name: ws for ws in wkspaces}
     return wkspaces
 
 
-def buildHomeWorkflow(wkspaces: dict[str, Workspace]):
+def initNavHomeWorkflow(wkspaces: dict[str, Workspace]):
 
     def executeTasks(state: GlobalState):
         clickOrder = [FOCUS_WS, MENU_WS, HOME_WS]
@@ -41,7 +43,7 @@ def buildHomeWorkflow(wkspaces: dict[str, Workspace]):
         for c in clickOrder:
             execAndSleep(click, wkspaces[c], state)
 
-        windowManager.setActiveWindow(state, ActiveWindow.HOME)
+        windowManager.setActiveWindow(ActiveWindow.HOME)
 
     return Task(executeTasks)
 
@@ -54,10 +56,12 @@ def initNavGrowthAltarWorkspaces() -> dict[str, Workspace]:
 
     wkspaces = mainWSChildren[:]
     wkspaces.append(workflowWS)
+
+    wkspaces = {ws.name: ws for ws in wkspaces}
     return wkspaces
 
 
-def buildGrowthAltarWorkflow(wkspaces: dict[str, Workspace]):
+def initNavGrowthAltarWorkflow(wkspaces: dict[str, Workspace]):
 
     delays = [0.2, 3.0, 0.5, 0.5]
 
@@ -66,9 +70,9 @@ def buildGrowthAltarWorkflow(wkspaces: dict[str, Workspace]):
         clickOrder = [FOCUS_WS, SANCTUARY_WS, FOREST_OF_SOULS_WS, GROWTH_ALTAR_WS]
         for i in range(len(clickOrder)):
             wsName = clickOrder[i]
-            execAndSleep(click, wkspaces[wsName], state, delays[i])
+            execAndSleep(click, wkspaces[wsName], state, sleep=delays[i])
 
-        windowManager.setActiveWindow(state, ActiveWindow.GROWTH_ALTAR)
+        windowManager.setActiveWindow(ActiveWindow.GROWTH_ALTAR)
 
     return Task(executeTasks)
 
@@ -76,15 +80,17 @@ def buildGrowthAltarWorkflow(wkspaces: dict[str, Workspace]):
 def initNavSecretShopWorkspaces() -> dict[str, Workspace]:
     wsNames = [FOCUS_WS, SECRET_SHOP_WS]
     mainWSChildren = [Workspace(n) for n in wsNames]
-    workflowWS = Workspace(NAV_GROWTH_ALTAR_WORKFLOW, mainWSChildren)
+    workflowWS = Workspace(NAV_SECRET_SHOP_WORKFLOW, mainWSChildren)
     workflowWS.setPadding(15)
 
     wkspaces = mainWSChildren[:]
     wkspaces.append(workflowWS)
+
+    wkspaces = {ws.name: ws for ws in wkspaces}
     return wkspaces
 
 
-def buildShopWorkflow(wkspaces: dict[str, Workspace]):
+def initNavSecretShopWorkflow(wkspaces: dict[str, Workspace]):
 
     def executeTasks(state: GlobalState):
 
@@ -92,24 +98,26 @@ def buildShopWorkflow(wkspaces: dict[str, Workspace]):
         for c in clickOrder:
             execAndSleep(click, wkspaces[c], state)
 
-        windowManager.setActiveWindow(state, ActiveWindow.SECRET_SHOP)
+        windowManager.setActiveWindow(ActiveWindow.SECRET_SHOP)
 
     return Task(executeTasks)
 
 
-def initNavGrowthIngredientsWorkflow() -> dict[str, Workspace]:
+def initNavGrowthIngredientsWorkspaces() -> dict[str, Workspace]:
 
     wsNames = [FOCUS_WS, INVENTORY_WS, ITEMS_WS, GROWTH_INGREDIENTS_WS]
     mainWSChildren = [Workspace(n) for n in wsNames]
-    workflowWS = Workspace(NAV_GROWTH_INGREDIENTS_WORKFLOW)
+    workflowWS = Workspace(NAV_GROWTH_INGREDIENTS_WORKFLOW, mainWSChildren)
     workflowWS.setPadding(15)
 
     wkspaces = mainWSChildren[:]
     wkspaces.append(workflowWS)
+
+    wkspaces = {ws.name: ws for ws in wkspaces}
     return wkspaces
 
 
-def buildCurrencyInventoryWorkflow(wkspaces: dict[str, Workspace]):
+def initNavGrowthIngredientsWorkflow(wkspaces: dict[str, Workspace]):
 
     def executeTasks(state: GlobalState):
 
@@ -118,6 +126,6 @@ def buildCurrencyInventoryWorkflow(wkspaces: dict[str, Workspace]):
         for c in clickOrder:
             execAndSleep(click, wkspaces[c], state)
 
-        windowManager.setActiveWindow(state, ActiveWindow.INVENTORY)
+        windowManager.setActiveWindow(ActiveWindow.INVENTORY)
 
     return Task(executeTasks)

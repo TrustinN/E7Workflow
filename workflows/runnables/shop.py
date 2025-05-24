@@ -128,7 +128,7 @@ def initWorkflow(wkspaces: dict[str, Workspace]) -> tuple[Task, Workspace]:
 
 
 def initWidgets(task: Task, wkspaces: dict[str, Workspace]) -> list[QWidget]:
-    shopStats = StatWindow(bookmarkCards.values())
+    bmStats = StatWindow(bookmarkCards.values())
 
     goldCountWidget = QSpinBox()
     goldCountWidget.setMinimum(-1)
@@ -164,4 +164,4 @@ def initWidgets(task: Task, wkspaces: dict[str, Workspace]) -> list[QWidget]:
     task.addTask(updateSkystoneWidget)
     task.addTask(updateBookmarkCards)
 
-    return [shopStats, goldCountWidget, skystoneCountWidget]
+    return [bmStats, goldCountWidget, skystoneCountWidget]

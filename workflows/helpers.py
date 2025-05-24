@@ -27,8 +27,8 @@ def tupleToPt(arry):
 DEFAULT_SLEEP_TIME = 0.3
 
 
-def execAndSleep(task, ws, state, sleep=DEFAULT_SLEEP_TIME, **kwargs):
-    task(ws, state, **kwargs)
+def execAndSleep(func, *args, sleep=DEFAULT_SLEEP_TIME, **kwargs):
+    func(*args, **kwargs)
     time.sleep(sleep)
 
 

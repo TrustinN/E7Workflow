@@ -2,7 +2,7 @@ import time
 
 from app import Workspace
 from workflows import Task, TaskData
-from workflows.helpers import click, filterNumbers
+from workflows.helpers import click, execAndSleep, filterNumbers
 from workflows.state import (
     CurrencyType,
     GlobalState,
@@ -11,6 +11,13 @@ from workflows.state import (
     currencyManager,
     penguinManager,
 )
+
+FOCUS_WS = "Focus"
+SELL_WS = "Sell"
+SELECT_WS = "Select"
+CONFIRM_WS = "Confirm"
+AMOUNT_WS_SUFFIX = "Amount"
+COUNT_WS = "Count"
 
 WORKFLOW_NAME = "Sell Penguin"
 RESULT = TaskData.RESULT
@@ -24,63 +31,67 @@ def getNumber(wkspace: Workspace, state: WorkflowState, **kwargs):
     state.setState(RESULT, count)
 
 
-def buildWorkflow():
-    clickWSNames = ["Focus", "Sell", "Select", "Confirm"]
-    clickWS = {name: Workspace(name) for name in clickWSNames}
+def getAmountWSName(pType):
+    return f"{pType.name} {AMOUNT_WS_SUFFIX}"
 
-    selectWSNames = [pType.name for pType in PenguinType]
-    selectWS = {name: Workspace(name) for name in selectWSNames}
 
-    amtWSNames = [f"{pType.name} Amount" for pType in PenguinType]
-    amtWS = {name: Workspace(name) for name in amtWSNames}
+def getSelectPenguinWSName(pType):
+    return pType.name
 
-    scanWSNames = ["Count"]
-    scanWS = Workspace(scanWSNames[0])
 
-    wkspaces = []
-    wkspaces.extend(clickWS.values())
-    wkspaces.extend(selectWS.values())
-    wkspaces.extend(amtWS.values())
-    wkspaces.append(scanWS)
+def initState(state: GlobalState):
+    state.addWorkflowState(WORKFLOW_NAME)
 
-    delay = 0.2
+
+def initWorkspaces() -> list[str, Workspace]:
+    clickWSNames = [FOCUS_WS, SELL_WS, SELECT_WS, CONFIRM_WS]
+    clickWS = [Workspace(name) for name in clickWSNames]
+
+    selectPenguinWSNames = [getSelectPenguinWSName(pType) for pType in PenguinType]
+    selectWS = [Workspace(name) for name in selectPenguinWSNames]
+
+    amtWSNames = [getAmountWSName(pType) for pType in PenguinType]
+    amtWS = [Workspace(name) for name in amtWSNames]
+
+    countWS = Workspace(COUNT_WS)
+
+    mainWSChildren = []
+    mainWSChildren.extend(clickWS)
+    mainWSChildren.extend(selectWS)
+    mainWSChildren.extend(amtWS)
+    mainWSChildren.append(countWS)
+
+    workflowWS = Workspace(WORKFLOW_NAME, mainWSChildren)
+    workflowWS.setPadding(15)
+
+    wkspaces = mainWSChildren[:]
+    wkspaces.append(workflowWS)
+
+    wkspaces = {ws.name: ws for ws in wkspaces}
+    return wkspaces
+
+
+def initWorkflow(wkspaces: dict[str, Workspace]) -> Task:
 
     def executeTasks(state: GlobalState):
 
         wkState = state.getWorkflowState(WORKFLOW_NAME)
 
         def sellPenguin(pType):
-            click(selectWS[pType.name], wkState)
-            time.sleep(delay)
+            execAndSleep(click, wkspaces[getSelectPenguinWSName(pType)], wkState)
+            execAndSleep(click, wkspaces[SELL_WS], wkState)
+            execAndSleep(click, wkspaces[getAmountWSName(pType)], wkState)
+            execAndSleep(click, wkspaces[SELECT_WS], wkState)
+            execAndSleep(getNumber, wkspaces[COUNT_WS], wkState)
+            execAndSleep(click, wkspaces[CONFIRM_WS], wkState)
 
-            click(clickWS["Sell"], wkState)
-            time.sleep(delay)
-
-            click(amtWS[f"{pType.name} Amount"], wkState)
-            time.sleep(delay)
-
-            click(clickWS["Select"], wkState)
-            time.sleep(delay)
-
-            getNumber(scanWS, wkState)
             goldCount = wkState.getState(RESULT)
-            time.sleep(delay)
+            penguinManager.subtractAmount(pType, goldCount // pType.value)
+            currencyManager.addAmount(GOLD, goldCount)
 
-            click(clickWS["Confirm"], wkState)
-            time.sleep(delay)
-
-            penguinManager.subtractAmount(state, pType, goldCount // pType.value)
-            currencyManager.addAmount(state, GOLD, goldCount)
-
-        click(clickWS["Focus"], wkState)
-        time.sleep(delay)
+        execAndSleep(click, wkspaces[FOCUS_WS], wkState)
 
         for pType in PenguinType:
             sellPenguin(pType)
 
-    wkspace = Workspace(WORKFLOW_NAME, wkspaces)
-    return Task(executeTasks), wkspace
-
-
-def initState(state: GlobalState):
-    state.addWorkflowState(WORKFLOW_NAME)
+    return Task(executeTasks)

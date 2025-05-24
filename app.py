@@ -752,7 +752,7 @@ class E7WorkflowApp(QApplication):
     def activeWindow(self) -> WorkflowWindow:
         idx = self.tabWidget.currentIndex()
         name = self.tabWidget.tabText(idx)
-        return self.window[name]
+        return self.windows[name]
 
     def activeWorkflow(self) -> tuple[Task, Workspace]:
         idx = self.tabWidget.currentIndex()
