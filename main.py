@@ -3,7 +3,13 @@ from workflows.state import GlobalState
 
 if __name__ == "__main__":
     app = E7WorkflowApp()
-    from workflows.runnable.custom import bindToApp as bindShopAndPenguinToApp
+    from workflows.runnables.shop import (
+        WORKFLOW_NAME,
+        initState,
+        initWidgets,
+        initWorkflow,
+        initWorkspaces,
+    )
     from workflows.state import (
         bookmarkManager,
         currencyManager,
@@ -15,9 +21,17 @@ if __name__ == "__main__":
 
     state = GlobalState()
     for m in managers:
-        m.initState(state)
+        m.attachState(state)
+        m.initState()
 
-    # bindShopToApp(app, state)
-    # bindPenguinToApp(app, state)
-    bindShopAndPenguinToApp(app, state)
+    initState(state)
+    wkspaces = initWorkspaces()
+    wkflow = initWorkflow(wkspaces)
+    widgets = initWidgets(wkflow, wkspaces)
+
+    app.addWorkflow(wkflow, wkspaces[WORKFLOW_NAME], state)
+    window = app.getWindow(WORKFLOW_NAME)
+    for w in widgets:
+        window.addWidget(w)
+
     app.exec()

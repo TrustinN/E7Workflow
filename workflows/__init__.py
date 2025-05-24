@@ -1,1 +1,1 @@
-from .workflow import Task, TaskData, WorkflowRunner
+from .workflow import Task, TaskData, Worker

@@ -24,8 +24,11 @@ class StateManager:
     def __init__(self, scope):
         self.scope = scope
 
-    def initState(self, state: GlobalState):
-        state.addWorkflowState(self.scope)
+    def initState(self):
+        self.state.addWorkflowState(self.scope)
+
+    def attachState(self, state):
+        self.state = state
 
     def getScope(self):
         return self.scope

@@ -2,7 +2,7 @@ import json
 import os
 
 import numpy as np
-from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
+from PyQt5.QtCore import QPoint, QRect, Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import (
     QApplication,
@@ -20,7 +20,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from workflows.workflow import WorkflowRunner
+from workflows import Task, Worker
+from workflows.state import GlobalState
 
 CONFIG_PATH = "config"
 
@@ -697,6 +698,7 @@ class E7WorkflowApp(QApplication):
         self.windows = {}
         self.wkflows = {}
         self.runners = {}
+        self.iterations = {}
 
         self.mainWindow = QMainWindow()
         self.tabWidget = QTabWidget()
@@ -704,7 +706,7 @@ class E7WorkflowApp(QApplication):
         self.mainWindow.setCentralWidget(self.tabWidget)
         self.mainWindow.show()
 
-    def addWorkflow(self, wkflow, wkspace, initialState):
+    def addWorkflow(self, wkflow: Task, wkspace: Workspace, initialState: GlobalState):
         if self.tabWidget.count() == 0:
             wkspace.show()
         else:
@@ -712,17 +714,11 @@ class E7WorkflowApp(QApplication):
 
         win = WorkflowWindow(wkspace.name)
 
-        runner = WorkflowRunner()
-        win.execCnt.valueChanged.connect(runner.setIterations)
-        win.execBtn.clicked.connect(runner.run)
-
         self.windows[wkspace.name] = win
         self.wkflows[wkspace.name] = (wkflow, wkspace)
-        self.runners[wkspace.name] = runner
+        self.state = initialState
 
-        runner.bindWorkflow(wkflow, wkspace)
-        runner.updateState(initialState)
-
+        win.execBtn.clicked.connect(self.runTask)
         win.bindWorkspace(wkspace)
 
         wksLayout = importData(f"{wkspace.name} Layout")
@@ -730,16 +726,46 @@ class E7WorkflowApp(QApplication):
 
         self.tabWidget.addTab(win, wkspace.name)
 
-    def getWindow(self, name) -> WorkflowWindow:
-        return self.windows[name]
+    def runTask(self):
+        wkflow, wkspace = self.activeWorkflow()
+        window = self.activeWindow()
+        iterations = window.execCnt.value()
 
-    def getRunner(self, name) -> WorkflowRunner:
-        return self.runners[name]
+        wkspace.hide()
 
-    def getWorkflow(self, name) -> (any, Workspace):
+        self.worker = Worker()
+        self.worker.setTask(wkflow)
+        self.worker.setState(self.state)
+        self.worker.setIterations(iterations)
+
+        self.thread = QThread()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.finished.connect(wkspace.show)
+
+        self.thread.start()
+
+    def activeWindow(self) -> WorkflowWindow:
+        idx = self.tabWidget.currentIndex()
+        name = self.tabWidget.tabText(idx)
+        return self.window[name]
+
+    def activeWorkflow(self) -> tuple[Task, Workspace]:
+        idx = self.tabWidget.currentIndex()
+        name = self.tabWidget.tabText(idx)
         return self.wkflows[name]
 
-    def onTabChanged(self, index):
+    def getWindow(self, name: str) -> WorkflowWindow:
+        return self.windows[name]
+
+    def getWorkflow(self, name: str) -> (any, Workspace):
+        return self.wkflows[name]
+
+    def onTabChanged(self, index: int):
         activeTitle = self.tabWidget.tabText(index)
         for name in self.wkflows:
             wkflow, wkspace = self.getWorkflow(name)

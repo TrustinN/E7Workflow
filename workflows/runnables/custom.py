@@ -145,8 +145,8 @@ def bindToApp(app: E7WorkflowApp, state: GlobalState):
 
         return setter
 
-    goldCountWidget.valueChanged.connect(setCurrencyAmount(GOLD))
-    skystoneCountWidget.valueChanged.connect(setCurrencyAmount(SKYSTONE))
+    # goldCountWidget.valueChanged.connect(setCurrencyAmount(GOLD))
+    # skystoneCountWidget.valueChanged.connect(setCurrencyAmount(SKYSTONE))
     goldCountWidget.setMaximum(1000000000)
     skystoneCountWidget.setMaximum(1000000000)
 

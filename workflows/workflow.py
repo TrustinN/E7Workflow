@@ -1,5 +1,4 @@
 from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QApplication
 
 from workflows.state import GlobalState
 
@@ -11,20 +10,27 @@ class TaskData:
 class Task:
     def __init__(self, stateHandler):
         self.exec = stateHandler
-        self.callback = None
+        self.callback = []
 
     def chain(self, task):
-        self.callback = task
+        newTask = Task(self.exec)
+        newTask.callback = self.callback[:]
+        newTask.callback.append(task)
+        return newTask
+
+    def addTask(self, task):
+        self.callback.append(task)
+        return self
 
     def __call__(self, state: GlobalState):
         self.exec(state)
-        if self.callback:
-            self.callback(state)
+        for task in self.callback:
+            task(state)
 
 
-class WorkflowRunner(QObject):
-    stepFinished = pyqtSignal(GlobalState)
-    executeFinish = pyqtSignal(GlobalState)
+class Worker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -34,22 +40,15 @@ class WorkflowRunner(QObject):
     def setIterations(self, iterations):
         self.iterations = iterations
 
-    def bindWorkflow(self, wkflow, wkspace):
+    def setTask(self, wkflow):
         self.wkflow = wkflow
-        self.wkspace = wkspace
 
     def setState(self, state):
         self.state = state
 
-    def updateState(self, state):
-        self.state.update(state)
-
     def run(self):
-        self.wkspace.hide()
-        QApplication.processEvents()
         for i in range(self.iterations):
             self.wkflow(self.state)
-            self.stepFinished.emit(self.state)
-        self.wkspace.show()
+            self.progress.emit(i)
 
-        self.executeFinish.emit(self.state)
+        self.finished.emit()

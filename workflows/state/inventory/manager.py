@@ -1,6 +1,6 @@
 from enum import Enum
 
-from workflows.state import GlobalState, StateManager
+from workflows.state import StateManager
 
 
 class InventoryManager(StateManager):
@@ -9,32 +9,32 @@ class InventoryManager(StateManager):
         super().__init__(scope)
         self.items = items
 
-    def initState(self, state: GlobalState):
-        super().initState(state)
-        mState = state.getWorkflowState(self.scope)
+    def initState(self):
+        super().initState()
+        mState = self.state.getWorkflowState(self.scope)
         for item in self.items:
             mState.setState(item, 0)
 
-    def subtractAmount(self, state: GlobalState, item, amount):
+    def subtractAmount(self, item, amount):
         assert amount >= 0
 
-        mState = state.getWorkflowState(self.scope)
+        mState = self.state.getWorkflowState(self.scope)
         curAmt = mState.getState(item)
         curAmt -= amount
         mState.setState(item, curAmt)
 
-    def addAmount(self, state: GlobalState, item, amount):
+    def addAmount(self, item, amount):
         assert amount >= 0
 
-        mState = state.getWorkflowState(self.scope)
+        mState = self.state.getWorkflowState(self.scope)
         curAmt = mState.getState(item)
         curAmt += amount
         mState.setState(item, curAmt)
 
-    def getAmount(self, state: GlobalState, item):
-        mState = state.getWorkflowState(self.scope)
+    def getAmount(self, item):
+        mState = self.state.getWorkflowState(self.scope)
         return mState.getState(item)
 
-    def setAmount(self, state: GlobalState, item, amount):
-        mState = state.getWorkflowState(self.scope)
+    def setAmount(self, item, amount):
+        mState = self.state.getWorkflowState(self.scope)
         mState.setState(item, amount)

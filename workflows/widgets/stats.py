@@ -1,13 +1,26 @@
+from typing import Iterable
+
+import numpy as np
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from app import WorkflowRunner, WorkflowWindow
-from workflows.state.state import GlobalState, StateManager
+from assets import BookmarkType, PenguinType, bookmarkIcons, penguinIcons
+from workflows.state import GlobalState, StateManager, bookmarkManager, penguinManager
+
+
+def npToQImage(arr: np.ndarray) -> QImage:
+    qimage = None
+    height, width, channels = arr.shape
+    if channels == 3:  # RGB
+        qimage = QImage(arr.data, width, height, QImage.Format_RGB888)
+    elif channels == 4:  # RGBA
+        qimage = QImage(arr.data, width, height, QImage.Format_RGBA888)
+    return qimage
 
 
 class StatCard(QWidget):
-    def __init__(self, title, value, iconPath=None):
+    def __init__(self, title, value, icon: np.ndarray = None):
         super().__init__()
 
         textLayout = QVBoxLayout()
@@ -26,10 +39,11 @@ class StatCard(QWidget):
 
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        layout.setContentsMargins(10, 10, 10, 10)  # Padding inside the card
+        layout.setContentsMargins(10, 10, 10, 10)
 
-        if iconPath:
-            icon = QPixmap(iconPath).scaled(80, 80, Qt.KeepAspectRatio)
+        if icon is not None:
+            icon = npToQImage(icon)
+            icon = QPixmap(icon).scaled(80, 80, Qt.KeepAspectRatio)
             iconLabel = QLabel()
             iconLabel.setPixmap(icon)
             iconLabel.setStyleSheet(
@@ -45,8 +59,11 @@ class StatCard(QWidget):
 
         self.setLayout(layout)
 
+    def updateValue(self, value):
+        self.valueLabel.setText(str(value))
 
-def makeStatCards(titles, values, iconPaths=None):
+
+def makeStatCards(titles, values, iconPaths=None) -> list[StatCard]:
     cards = []
     for i in range(len(titles)):
         iconPath = None
@@ -57,23 +74,27 @@ def makeStatCards(titles, values, iconPaths=None):
 
 
 class StatWindow(QWidget):
-    def __init__(self, cards=[]):
+    def __init__(self, cards: Iterable[StatCard] = []):
         super().__init__()
-        self.cards = {}
+        self.cards: dict[str, StatCard] = {}
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         for card in cards:
             self.addCard(card)
 
-    def addCard(self, card):
+    def addCard(self, card: StatCard):
         self.cards[card.title] = card
         self.layout.addWidget(card)
 
-    def getCard(self, title):
+    def addCards(self, cards: list[StatCard]):
+        for c in cards:
+            self.addCard(c)
+
+    def getCard(self, title: str) -> StatCard:
         return self.cards[title]
 
-    def updateCard(self, title, value):
-        self.getCard(title).valueLabel.setText(str(value))
+    def updateCard(self, title: str, value: any):
+        self.getCard(title).updateValue(str(value))
 
 
 def getStatUpdate(statWidget: StatWindow, manager: StateManager):
@@ -81,16 +102,25 @@ def getStatUpdate(statWidget: StatWindow, manager: StateManager):
         wkState = state.getWorkflowState(manager.getScope())
         for key in wkState:
             statWidget.updateCard(key.name, wkState[key])
-        QApplication.processEvents()
 
     return statUpdate
 
 
-def addStatWindow(
-    window: WorkflowWindow,
-    runner: WorkflowRunner,
-    manager: StateManager,
-    statWindow: StatWindow,
-):
-    window.addWidget(statWindow)
-    runner.stepFinished.connect(getStatUpdate(statWindow, manager))
+bookmarkCards = {
+    bType: StatCard(bType.name, 0, bookmarkIcons[bType]) for bType in BookmarkType
+}
+
+
+def updateBookmarkCards(state: GlobalState):
+    for bType in BookmarkType:
+        bookmarkCards[bType].updateValue(bookmarkManager.getAmount(bType))
+
+
+penguinCards = {
+    pType: StatCard(pType.name, 0, penguinIcons[pType]) for pType in PenguinType
+}
+
+
+def updatePenguinCards(state: GlobalState):
+    for pType in PenguinType:
+        penguinCards[pType].updateValue(penguinManager.getAmount(pType))

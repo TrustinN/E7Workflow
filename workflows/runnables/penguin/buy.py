@@ -1,8 +1,9 @@
 import time
 
+from custom import StatWindow, addStatWindow, makeStatCards
+
 from app import E7WorkflowApp, Workspace
 from assets import getPenguinIcon, penguinIconPaths
-from custom import StatWindow, addStatWindow, makeStatCards
 from workflows import Task, TaskData
 from workflows.helpers import click, filterNumbers, imageMatch, scan
 from workflows.state import GlobalState, PenguinType, WorkflowState, penguinManager

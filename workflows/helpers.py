@@ -1,6 +1,6 @@
-import cv2
+import time
 
-# import easyocr
+import cv2
 import mss
 import numpy as np
 import pyautogui
@@ -22,6 +22,14 @@ def ptToTuple(pt):
 def tupleToPt(arry):
     x, y = arry
     return QPoint(x, y)
+
+
+DEFAULT_SLEEP_TIME = 0.3
+
+
+def execAndSleep(task, ws, state, sleep=DEFAULT_SLEEP_TIME, **kwargs):
+    task(ws, state, **kwargs)
+    time.sleep(sleep)
 
 
 def click(wkspace: Workspace, state: WorkflowState, **kwargs):
