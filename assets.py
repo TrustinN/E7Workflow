@@ -2,7 +2,6 @@ import os
 from enum import Enum
 
 import cv2
-import skimage.io as skio
 
 ASSETS_PATH = "assets"
 BOOKMARK_DIR = "bookmarks"
@@ -82,6 +81,15 @@ digitsFilePaths = [
     os.path.join(ASSETS_PATH, DIGITS_DIR, f"{fname}.png") for fname in digitsFilenames
 ]
 digitIcons = [cv2.imread(imPath, cv2.IMREAD_GRAYSCALE) for imPath in digitsFilePaths]
+
+UPSCALE_FACTOR = 8
+for i in range(10):
+    img = digitIcons[i]
+    h, w = img.shape
+
+    digitIcons[i] = cv2.resize(
+        img, (w * UPSCALE_FACTOR, h * UPSCALE_FACTOR), cv2.INTER_LANCZOS4
+    )
 
 
 def getDigitIcon(digit):

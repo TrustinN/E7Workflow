@@ -4,6 +4,7 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
+import skimage.io as skio
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
@@ -206,6 +207,7 @@ def filterNumbers(wkspace: Workspace, state: WorkflowState, **kwargs):
     # Extract individual digits and match with digitIcon assets
     cnts = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    cnts = sorted(cnts, key=lambda c: cv2.boundingRect(c)[0])
     count = 0
     if len(cnts) > 0:
         digits = []
@@ -221,20 +223,19 @@ def filterNumbers(wkspace: Workspace, state: WorkflowState, **kwargs):
 
             for i in range(10):
                 digitIcon = getDigitIcon(i)
-                digitIcon = cv2.resize(
-                    digitIcon,
-                    (ROI.shape[1], ROI.shape[0]),
-                    interpolation=cv2.INTER_NEAREST,
+                roi = cv2.resize(
+                    ROI,
+                    (digitIcon.shape[1], digitIcon.shape[0]),
+                    interpolation=cv2.INTER_LANCZOS4,
                 )
 
-                simScore, _ = ssim(digitIcon, ROI, full=True)
+                simScore, _ = ssim(digitIcon, roi, full=True)
                 if simScore > maxScore:
                     maxScore = simScore
                     digit = i
 
             digits.append(digit)
 
-        digits = digits[::-1]
         count = int("".join(map(str, digits)))
 
     return count
