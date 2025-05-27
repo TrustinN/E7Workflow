@@ -19,6 +19,7 @@ NAV_HOME_WORKFLOW = "Nav Home"
 NAV_GROWTH_ALTAR_WORKFLOW = "Nav Growth Altar"
 NAV_SECRET_SHOP_WORKFLOW = "Nav Secret Shop"
 NAV_GROWTH_INGREDIENTS_WORKFLOW = "Nav Growth Ingredients"
+NAV_BACK_WORKFLOW = "Nav Back"
 
 
 def initNavHomeWorkspaces() -> dict[str, Workspace]:
@@ -127,5 +128,30 @@ def initNavGrowthIngredientsWorkflow(wkspaces: dict[str, Workspace]):
             execAndSleep(click, wkspaces[c], state)
 
         windowManager.setActiveWindow(ActiveWindow.INVENTORY)
+
+    return Task(executeTasks)
+
+
+def initNavBackWorkspaces() -> dict[str, Workspace]:
+    wsNames = [FOCUS_WS]
+    mainWSChildren = [Workspace(n) for n in wsNames]
+    workflowWS = Workspace(NAV_BACK_WORKFLOW, mainWSChildren)
+    workflowWS.setPadding(15)
+
+    wkspaces = mainWSChildren[:]
+    wkspaces.append(workflowWS)
+
+    wkspaces = {ws.name: ws for ws in wkspaces}
+    return wkspaces
+
+
+def initNavBackWorkflow(wkspaces: dict[str, Workspace]):
+
+    def executeTasks(state: GlobalState):
+
+        clickOrder = [FOCUS_WS]
+
+        for c in clickOrder:
+            execAndSleep(click, wkspaces[c], state)
 
     return Task(executeTasks)

@@ -80,7 +80,10 @@ def initWorkflow(wkspaces: dict[str, Workspace]) -> Task:
         def sellPenguin(pType):
             execAndSleep(click, wkspaces[getSelectPenguinWSName(pType)], wkState)
             execAndSleep(click, wkspaces[SELL_WS], wkState)
-            execAndSleep(click, wkspaces[getAmountWSName(pType)], wkState)
+
+            for i in range(penguinManager.getAmount(pType) - 1):
+                execAndSleep(click, wkspaces[getAmountWSName(pType)], wkState)
+
             execAndSleep(click, wkspaces[SELECT_WS], wkState)
             execAndSleep(getNumber, wkspaces[COUNT_WS], wkState)
             execAndSleep(click, wkspaces[CONFIRM_WS], wkState)
@@ -92,6 +95,7 @@ def initWorkflow(wkspaces: dict[str, Workspace]) -> Task:
         execAndSleep(click, wkspaces[FOCUS_WS], wkState)
 
         for pType in PenguinType:
-            sellPenguin(pType)
+            if penguinManager.getAmount(pType):
+                sellPenguin(pType)
 
     return Task(executeTasks)
