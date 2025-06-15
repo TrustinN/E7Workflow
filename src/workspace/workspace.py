@@ -1,29 +1,7 @@
-import json
-import os
-
 import numpy as np
-from PyQt5.QtCore import QPoint, QRect, Qt, QThread, pyqtSignal
+from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen, QRegion
-from PyQt5.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QHBoxLayout,
-    QHeaderView,
-    QMainWindow,
-    QPushButton,
-    QSpinBox,
-    QSplitter,
-    QTabWidget,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
-
-from workflows import Task, Worker
-from workflows.state import GlobalState
-
-CONFIG_PATH = "config"
+from PyQt5.QtWidgets import QApplication, QWidget
 
 
 def bboxToLayout(bbox):
@@ -78,6 +56,9 @@ class ConfigurationHierarchy(dict):
             self["children"][name] = config
         else:
             self["children"][name] = ConfigurationHierarchy(config)
+
+    def getChildConfig(self, name):
+        return self["children"][name]
 
     def children(self):
         return self["children"]
@@ -434,59 +415,19 @@ class Workspace(SelectionWindow):
         for wkspace in self.wkspaces:
             wkspace.unlock()
 
-    def exportData(self, extract):
-        data = extract(self)
-        config = ConfigurationHierarchy(data)
-        for wks in self.wkspaces:
-            config.addChildConfig(wks.name, wks.exportData(extract))
-        return config
 
-    def importData(self, apply, data):
-        apply(self, data.config())
-        childData = data.children()
-        for wks in self.wkspaces:
-            if wks.name not in childData:
-                continue
-            subData = childData[wks.name]
-            wks.importData(apply, subData)
+def exportData(wks: Workspace, extract_):
+    data = ConfigurationHierarchy(config=extract_(wks))
+    for child in wks.wkspaces:
+        data.addChildConfig(child.name, exportData(child, extract_))
+
+    return data
 
 
-def buildWorkspace(map):
-    wksMap = {}
-
-    def recurseBuild(map, wksMap):
-        ret = []
-        for key in map:
-            wkspaces = recurseBuild(map[key], wksMap)
-            wks = Workspace(key, wkspaces)
-            ret.append(wks)
-            wksMap[key] = wks
-        return ret
-
-    recurseBuild(map, wksMap)
-
-    return wksMap
-
-
-def exportData(wkflow, dest, extract):
-    data = wkflow.exportData(extract)
-    configPath = os.path.join(CONFIG_PATH, f"{dest}.json")
-    with open(configPath, "w") as file:
-        json.dump(data, file)
-
-
-def importData(src):
-    configPath = os.path.join(CONFIG_PATH, f"{src}.json")
-    if not os.path.exists(configPath):
-        print("Config file does not exist")
-        return None
-
-    with open(configPath, "r") as file:
-        data = json.load(file)
-        config = ConfigurationHierarchy()
-        config.setData(data)
-        QApplication.processEvents()
-        return config
+def importData(wks: Workspace, config: ConfigurationHierarchy, import_):
+    import_(wks, config)
+    for child in wks.wkspaces:
+        importData(child, config.getChildConfig(child.name), import_)
 
 
 def applyGeometry(wks, config):
@@ -504,272 +445,3 @@ def applyColor(wks, config):
 
 def extractColor(wks):
     return colorToList(wks.getColor())
-
-
-def fmtLayoutFile(wks):
-    return f"{wks.name} Layout"
-
-
-def fmtColorFile(wks):
-    return f"{wks.name} Color"
-
-
-class ConfirmButton(QWidget):
-    confirmClicked = pyqtSignal()
-
-    def __init__(self, name):
-        super().__init__()
-        self.layout = QHBoxLayout()
-        self.checkbox = QCheckBox()
-        self.btn = QPushButton(name)
-
-        self.layout.addWidget(self.checkbox)
-        self.layout.addWidget(self.btn)
-
-        self.setLayout(self.layout)
-
-        self.btn.clicked.connect(self.confirmClickedEmit)
-
-    def confirmClickedEmit(self):
-        if self.checkbox.isChecked():
-            self.confirmClicked.emit()
-
-
-class WorkspaceTreeWidget(QTreeWidget):
-    checkUpdated = pyqtSignal(QTreeWidgetItem, object)
-    lockUpdated = pyqtSignal(QTreeWidgetItem, object)
-
-    def __init__(self, name):
-        super().__init__()
-        self.itemChanged.connect(self.onItemChanged)
-        self.nextId = 0
-        self.treeItemToEntryMap = {}
-        self.setColumnCount(2)
-        self.setHeaderLabels([name, "Locked"])
-        header = self.header()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header.setStretchLastSection(False)
-
-        self.columnCascadeUpdates = {
-            0: self.cascadeCheckState,
-            1: self.cascadeCheckState,
-        }
-        self.columnCascadeFinishSig = {
-            0: self.checkUpdated,
-            1: self.lockUpdated,
-        }
-        self.columnUpdateCnts = {0: 0, 1: 0}
-
-    def onItemChanged(self, item, column):
-        onFinish = self.columnCascadeFinishSig[column]
-        cascadeUpdate = self.columnCascadeUpdates[column]
-
-        self.columnUpdateCnts[column] += 1
-        cascadeUpdate(item)
-        self.columnUpdateCnts[column] -= 1
-        if self.columnUpdateCnts[column] == 0:
-            onFinish.emit(item, column)
-
-    def cascadeCheckState(self, item):
-        checkState = item.checkState(0)
-        for i in range(item.childCount()):
-            child = item.child(i)
-            childCheckState = child.checkState(0)
-            if childCheckState != checkState:
-                child.setCheckState(0, checkState)
-
-    def addTreeItem(self, parent):
-        widget = QTreeWidgetItem(parent)
-        widget.setCheckState(0, Qt.Checked)
-        widget.setCheckState(1, Qt.Unchecked)
-        self.setItemId(widget)
-        return widget
-
-    def setItemId(self, item):
-        item.id = self.nextId
-        self.nextId += 1
-
-    def getEntry(self, treeItem):
-        return self.treeItemToEntryMap[treeItem.id]
-
-    def setEntry(self, treeItem, entry):
-        self.treeItemToEntryMap[treeItem.id] = entry
-
-    def isChecked(self, treeItem, column):
-        return treeItem.checkState(column) == Qt.Checked
-
-
-class WorkflowWindow(QWidget):
-    def __init__(self, name):
-        super().__init__()
-        self.name = name
-
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        self.splitter = QSplitter()
-        layout.addWidget(self.splitter)
-
-        builtinWindow = QWidget()
-        layout = QVBoxLayout()
-        builtinWindow.setLayout(layout)
-        self.customWindow = None
-        self.splitter.addWidget(builtinWindow)
-
-        self.saveLayoutBtn = ConfirmButton("Save Layout")
-        layout.addWidget(self.saveLayoutBtn)
-        self.saveLayoutBtn.confirmClicked.connect(
-            lambda: exportData(self.wkspace, fmtLayoutFile(self), extractGeometry)
-        )
-
-        self.loadLayoutBtn = QPushButton("Load Layout")
-        layout.addWidget(self.loadLayoutBtn)
-        self.loadLayoutBtn.clicked.connect(
-            lambda: self.wkspace.importData(
-                applyGeometry, importData(fmtLayoutFile(self))
-            )
-        )
-
-        self.treeLayout = WorkspaceTreeWidget(name)
-        layout.addWidget(self.treeLayout)
-
-        self.execCnt = QSpinBox()
-        self.execCnt.setValue(1)
-        layout.addWidget(self.execCnt)
-
-        # Add pane locking, colored panes
-        self.execBtn = QPushButton("Execute")
-        layout.addWidget(self.execBtn)
-
-    def bindWorkspace(self, wkspace):
-        self.wkspace = wkspace
-
-        def recursiveAdd(parent, wks):
-            widget = self.treeLayout.addTreeItem(parent)
-            widget.setText(0, wks.name)
-            self.treeLayout.setEntry(widget, wks)
-            if hasattr(wks, "wkspaces"):
-                for childWks in wks.wkspaces:
-                    recursiveAdd(widget, childWks)
-
-            return widget
-
-        recursiveAdd(self.treeLayout, self.wkspace)
-        self.treeLayout.checkUpdated.connect(self.updateWorkspaceVisibility)
-        self.treeLayout.lockUpdated.connect(self.updateWorkspaceMutability)
-
-    def updateWorkspaceVisibility(self, item, column):
-        checked = self.treeLayout.isChecked(item, column)
-        wks = self.treeLayout.getEntry(item)
-        if checked:
-            wks.show()
-        else:
-            wks.hide()
-
-    def updateWorkspaceMutability(self, item, column):
-        locked = self.treeLayout.isChecked(item, column)
-        wks = self.treeLayout.getEntry(item)
-        if locked:
-            wks.lock()
-        else:
-            wks.unlock()
-
-    def addWidget(self, widget):
-        if self.customWindow is None:
-            self.customWindow = QWidget()
-            self.customLayout = QVBoxLayout()
-            self.customWindow.setLayout(self.customLayout)
-            self.splitter.addWidget(self.customWindow)
-            self.customWindow.show()
-
-        self.customLayout.addWidget(widget)
-
-    def getLayout(self):
-        return self.customLayout
-
-    def getWindow(self):
-        return self.customWindow
-
-
-class E7WorkflowApp(QApplication):
-    def __init__(self):
-        super().__init__([])
-        self.windows = {}
-        self.wkflows = {}
-        self.runners = {}
-        self.iterations = {}
-
-        self.mainWindow = QMainWindow()
-        self.tabWidget = QTabWidget()
-        self.tabWidget.currentChanged.connect(self.onTabChanged)
-        self.mainWindow.setCentralWidget(self.tabWidget)
-        self.mainWindow.show()
-
-    def addWorkflow(self, wkflow: Task, wkspace: Workspace, initialState: GlobalState):
-        if self.tabWidget.count() == 0:
-            wkspace.show()
-        else:
-            wkspace.hide()
-
-        win = WorkflowWindow(wkspace.name)
-
-        self.windows[wkspace.name] = win
-        self.wkflows[wkspace.name] = (wkflow, wkspace)
-        self.state = initialState
-
-        win.execBtn.clicked.connect(self.runTask)
-        win.bindWorkspace(wkspace)
-
-        wksLayout = importData(f"{wkspace.name} Layout")
-        wkspace.importData(applyGeometry, wksLayout)
-
-        self.tabWidget.addTab(win, wkspace.name)
-
-    def runTask(self):
-        wkflow, wkspace = self.activeWorkflow()
-        window = self.activeWindow()
-        iterations = window.execCnt.value()
-
-        wkspace.hide()
-
-        self.worker = Worker()
-        self.worker.setTask(wkflow)
-        self.worker.setState(self.state)
-        self.worker.setIterations(iterations)
-
-        self.thread = QThread()
-        self.worker.moveToThread(self.thread)
-
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.finished.connect(wkspace.show)
-
-        self.thread.start()
-
-    def activeWindow(self) -> WorkflowWindow:
-        idx = self.tabWidget.currentIndex()
-        name = self.tabWidget.tabText(idx)
-        return self.windows[name]
-
-    def activeWorkflow(self) -> tuple[Task, Workspace]:
-        idx = self.tabWidget.currentIndex()
-        name = self.tabWidget.tabText(idx)
-        return self.wkflows[name]
-
-    def getWindow(self, name: str) -> WorkflowWindow:
-        return self.windows[name]
-
-    def getWorkflow(self, name: str) -> (any, Workspace):
-        return self.wkflows[name]
-
-    def onTabChanged(self, index: int):
-        activeTitle = self.tabWidget.tabText(index)
-        for name in self.wkflows:
-            wkflow, wkspace = self.getWorkflow(name)
-            if name != activeTitle:
-                wkspace.hide()
-            else:
-                wkspace.show()
