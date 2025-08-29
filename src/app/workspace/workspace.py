@@ -1,7 +1,15 @@
 import numpy as np
-from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
+from PyQt5.QtCore import QPoint, QPointF, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen, QRegion
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QWidget
+
+
+def qpointToList(point: QPointF):
+    return [point.x(), point.y()]
+
+
+def listToQPoint(arr):
+    return QPointF(arr[0], arr[1])
 
 
 def bboxToLayout(bbox):
@@ -71,14 +79,15 @@ class SelectionWindow(QWidget):
     resizeSignal = pyqtSignal()
     moveSignal = pyqtSignal()
 
-    def __init__(self, name):
+    def __init__(self, name=None, color=QColor(255, 255, 255, 10)):
         super().__init__()
         self.name = name
 
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.color = QColor(255, 255, 255, 10)
+        self.color = color
 
+        super().setGeometry(500, 500, 500, 300)
         self.dragPosition = QPoint()
         self.resizeMode = False
         self.resizeIndices = None
@@ -155,12 +164,6 @@ class SelectionWindow(QWidget):
         )
         self.setMask(maskedRegion)
 
-    def setColor(self, color):
-        self.color = color
-
-    def getColor(self):
-        return self.color
-
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -170,25 +173,32 @@ class SelectionWindow(QWidget):
         rect = self.rect()
         painter.drawRect(rect.adjusted(2, 2, -2, -2))
 
-        # Set text color and font for the title
-        painter.setPen(QPen(QColor(255, 255, 255), 1))
-        font = painter.font()
-        font.setPointSize(12)
-        font.setBold(True)
-        painter.setFont(font)
+        if self.name is not None:
+            painter.setPen(QPen(QColor(255, 255, 255), 1))
+            font = painter.font()
+            font.setPointSize(12)
+            font.setBold(True)
+            painter.setFont(font)
 
-        # Add padding to the top
-        padding_top = 10  # Adjust padding as needed
-        text_rect = rect.adjusted(0, padding_top, 0, 0)
-
-        # Draw the title text
-        painter.drawText(text_rect, Qt.AlignTop | Qt.AlignHCenter, self.name)
+            paddingTop = 10
+            textRect = rect.adjusted(0, paddingTop, 0, 0)
+            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)
 
     def getBBox(self):
         return [
             self.frameGeometry().topLeft(),
             self.frameGeometry().bottomRight(),
         ]
+
+    def setName(self, name):
+        self.name = name
+        self.repaint()
+
+    def setColor(self, color):
+        self.color = color
+
+    def getColor(self):
+        return self.color
 
     def lock(self):
         self.fixed = True
@@ -203,17 +213,55 @@ class SelectionWindow(QWidget):
 class Workspace(SelectionWindow):
     focusParent = pyqtSignal(QMouseEvent)
     mousePress = pyqtSignal()
+    onDelete = pyqtSignal()
 
-    def __init__(self, name, wkspaces: list["Workspace"] = []):
+    def __init__(self, id, name=None):
         super().__init__(name)
         self.padding = 0
-        self.wkspaces = wkspaces
-        for i in range(len(self.wkspaces)):
-            wkspace = self.wkspaces[i]
-            wkspace.connectSignals(self.updateGeometry)
-            wkspace.focusParent.connect(self.mousePressEvent)
-        self.updateGeometry()
+        self.wkspaces = []
         self.childFocused = None
+        self.id = id
+        self.parentID = None
+
+    def isChild(self):
+        return len(self.wkspaces) == 0
+
+    def deleteLater(self):
+        while len(self.wkspaces) > 0:
+            self.wkspaces[0].deleteLater()
+
+        self.onDelete.emit()
+        super().deleteLater()
+
+    def deleteChild(self, wks):
+        self.wkspaces.pop(self.wkspaces.index(wks))
+        if wks == self.childFocused:
+            self.childFocused = None
+
+    def addChild(self, wks):
+        self.wkspaces.append(wks)
+        wks.parentID = self.id
+        wks.connectSignals(self.updateGeometry)
+        wks.onDelete.connect(lambda: self.deleteChild(wks))
+        wks.focusParent.connect(self.mousePressEvent)
+        self.updateGeometry()
+
+    def setChild(self, idx, wks):
+        self.wkspaces[idx] = wks
+        wks.connectSignals(self.updateGeometry)
+        wks.onDelete.connect(lambda: self.deleteChild(wks))
+        wks.focusParent.connect(self.mousePressEvent)
+        self.updateGeometry()
+
+    def childAt(self, idx):
+        return self.wkspaces[idx]
+
+    def removeChild(self, idx):
+        wks = self.wkspaces[idx]
+        self.wkspaces[idx] = None
+        wks.disableSignals(self.updateGeometry)
+        wks.focusParent.disconnect(self.mousePressEvent)
+        self.updateGeometry()
 
     def setPadding(self, padding):
         self.padding = padding
@@ -327,6 +375,7 @@ class Workspace(SelectionWindow):
         self.raise_()
         self.activateWindow()
         super().grabMouse()
+        self.mousePress.emit()
         return True
 
     def releaseMouse(self):
@@ -417,22 +466,24 @@ class Workspace(SelectionWindow):
 
 
 def exportData(wks: Workspace, extract_):
-    data = ConfigurationHierarchy(config=extract_(wks))
+    data = dict(config=extract_(wks), children={})
+    children = data["children"]
     for child in wks.wkspaces:
-        data.addChildConfig(child.name, exportData(child, extract_))
+        children[child.id] = exportData(child, extract_)
 
     return data
 
 
-def importData(wks: Workspace, config: ConfigurationHierarchy, import_):
-    import_(wks, config)
+def importData(wks: Workspace, data, import_):
+    import_(wks, data["config"])
+    children = data["children"]
     for child in wks.wkspaces:
-        importData(child, config.getChildConfig(child.name), import_)
+        childData = children[child.id]
+        importData(child, childData, import_)
 
 
 def applyGeometry(wks, config):
     wks.setGeometry(layoutToBBox(config))
-    QApplication.processEvents()
 
 
 def extractGeometry(wks):

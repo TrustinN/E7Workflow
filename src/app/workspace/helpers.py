@@ -4,15 +4,13 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
-import skimage.io as skio
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
 
-from app import Workspace
-from assets import getDigitIcon
-from workflows import TaskData
-from workflows.state import WorkflowState
+from assets.assets import getDigitIcon
+
+from .workspace import Workspace
 
 
 def ptToTuple(pt):
@@ -33,7 +31,7 @@ def execAndSleep(func, *args, sleep=DEFAULT_SLEEP_TIME, **kwargs):
     time.sleep(sleep)
 
 
-def click(wkspace: Workspace, state: WorkflowState, **kwargs):
+def click(wkspace: Workspace, **kwargs):
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
     br = ptToTuple(br)
@@ -41,7 +39,7 @@ def click(wkspace: Workspace, state: WorkflowState, **kwargs):
     pyautogui.click(int(mid[0]), int(mid[1]))
 
 
-def scan(wkspace: Workspace, state: WorkflowState, **kwargs):
+def scan(wkspace: Workspace, **kwargs):
     parent = kwargs["parent"]
     ptl, pbr = parent.getBBox()
     dim = pbr - ptl
@@ -58,7 +56,7 @@ def scan(wkspace: Workspace, state: WorkflowState, **kwargs):
     dim = br - tl
     error = np.array([0.0, 0.0])
 
-    task(wkspace, state)
+    task(wkspace)
     if numScans == 1:
         return
 
@@ -89,12 +87,12 @@ def scan(wkspace: Workspace, state: WorkflowState, **kwargs):
 
         wkspace.setGeometry(QRect(newTl, newBr))
         QApplication.processEvents()
-        task(wkspace, state)
+        task(wkspace)
 
     wkspace.setGeometry(savedGeometry)
 
 
-def scroll(wkspace: Workspace, state: WorkflowState, **kwargs):
+def scroll(wkspace: Workspace, **kwargs):
     dir = kwargs["dir"]
     tl, br = wkspace.getBBox()
     tl = ptToTuple(tl)
@@ -153,7 +151,7 @@ def combine_images_side_by_side_np(image1, image2):
     return combined_image
 
 
-def imageMatch(wkspace: Workspace, state: WorkflowState, **kwargs):
+def imageMatch(wkspace: Workspace, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
@@ -167,10 +165,10 @@ def imageMatch(wkspace: Workspace, state: WorkflowState, **kwargs):
     ss = alignImages(img, ss)
     score = computeSSIM(ss, img)
 
-    state.setState(TaskData.RESULT, score >= threshold)
+    return score >= threshold
 
 
-def filterNumbers(wkspace: Workspace, state: WorkflowState, **kwargs):
+def filterNumbers(wkspace: Workspace, **kwargs):
     tl, br = wkspace.getBBox()
     frame = wkspace.frameGeometry()
     region = (tl.x(), tl.y(), frame.width(), frame.height())
