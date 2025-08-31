@@ -11,7 +11,6 @@ class StateWidget(QWidget):
         self.setLayout(self.layout)
 
         self.display = QTextEdit()
-        self.display.textChanged.connect(self.onTextEdit)
 
         self.layout.addWidget(self.display)
 

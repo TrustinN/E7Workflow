@@ -107,8 +107,13 @@ class GraphEditor(QWidget):
         super().__init__()
         self.isListen = False
 
-    def addNode(self, scene: InteractiveGraphScene, id):
+    def addNode(self, scene: InteractiveGraphScene, id, name=None):
         scene.newSceneNode(id)
+        node = scene.node(id)
+        if name:
+            node.setDisplayText(name)
+
+        return node
 
     def addEdge(self, scene: InteractiveGraphScene):
         if self.isListen:
