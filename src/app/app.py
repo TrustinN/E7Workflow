@@ -18,11 +18,19 @@ from .workspace.helpers import actions
 from .workspace.workspace import layoutToBBox
 
 
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+    def closeEvent(self, event):
+        QApplication.quit()
+
+
 class App(QApplication):
     def __init__(self):
         super().__init__([])
 
-        self.window = QMainWindow()
+        self.window = MainWindow()
         self.widget = QWidget()
         self.layout = QHBoxLayout()
         self.col2Layout = QVBoxLayout()

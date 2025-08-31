@@ -56,7 +56,7 @@ class RunnerWidget(QWidget):
         self.setEntrypointBtn = QPushButton("Set Entrypoint")
 
         self.stateUpdate_.connect(self.stateView.renderState)
-        self.runBtn.clicked.connect(self.run)
+        self.runBtn.clicked.connect(lambda: self.run())
         self.updateStateBtn.clicked.connect(self.stateView.recompileState)
         self.stateView.stateModified_.connect(self.setState)
         self.setEntrypointBtn.clicked.connect(self.getEntrypoint)
