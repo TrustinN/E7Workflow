@@ -36,7 +36,7 @@ class Serializer:
         return LogEntry(replay, params)
 
     def serializeLogs(self):
-        return json.dumps([self.serializeLog(log) for log in self.logs])
+        return json.dumps([self.serializeLog(log) for log in self.logs], indent=2)
 
     def deserializeLogs(self, data):
         logData = json.loads(data)

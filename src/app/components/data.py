@@ -1,11 +1,37 @@
 from PyQt5.QtWidgets import QListWidget, QVBoxLayout, QWidget
 
+from ..workspace.workspace import extractGeometry
+
 
 class WorkspaceData:
     def __init__(self):
         self.workspace = None
         self.action = None
         self.edges = None
+        self.defaultChildEntryNodeID = None
+        self.node = None
+        self.scene = None
+        self.childData: list[WorkspaceData] = []
+
+    def serialize(self):
+        wks = self.workspace
+        data = {
+            "edges": self.edges,
+            "geometry": extractGeometry(wks),
+            "ID": wks.id,
+            "name": wks.name,
+            "parentID": wks.parentID,
+            "padding": wks.padding,
+            "childData": [data.serialize() for data in self.childData],
+        }
+        if self.node:
+            nodePos = self.node.pos()
+            data["nodeGeometry"] = [nodePos.x(), nodePos.y()]
+
+        if self.action:
+            data["action"] = self.action.__name__
+
+        return data
 
 
 class DataWidget(QWidget):

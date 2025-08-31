@@ -102,7 +102,6 @@ class GraphEditorActions(QWidget):
 class GraphEditor(QWidget):
     def __init__(self):
         super().__init__()
-        self.isListen = False
 
     def addNode(self, scene: InteractiveGraphScene, id, name=None):
         scene.newSceneNode(id)
@@ -112,40 +111,29 @@ class GraphEditor(QWidget):
 
         return node
 
-    def addEdge(self, scene: InteractiveGraphScene):
-        if self.isListen:
-            return
+    def addEdge(self, scene: InteractiveGraphScene, nid1=None, nid2=None):
 
-        self.isListen = True
-        nodeIDs = []
+        def defineEdgeStart():
+            scene.selectionChanged.disconnect(defineEdgeStart)
+            activeNode = scene.activeNode()
+            if activeNode:
+                self.addEdge(scene, nid1=activeNode.id)
 
         def defineEdgeEnd():
             activeNode = scene.activeNode()
+            scene.selectionChanged.disconnect(defineEdgeEnd)
             if activeNode is None:
-                nodeIDs.pop()
-                scene.selectionChanged.disconnect(defineEdgeEnd)
-                scene.selectionChanged.connect(defineEdgeStart)
+                self.addEdge(scene)
                 return
 
-            nodeIDs.append(activeNode.id)
-            scene.selectionChanged.disconnect(defineEdgeEnd)
-            scene.newSceneArrow(*nodeIDs)
+            self.addEdge(scene, nid1, activeNode.id)
 
-            self.isListen = False
-
-        def defineEdgeStart():
-            activeNode = scene.activeNode()
-            if activeNode:
-                nodeIDs.append(activeNode.id)
-                scene.selectionChanged.disconnect(defineEdgeStart)
-                scene.selectionChanged.connect(defineEdgeEnd)
-
-        activeNode = scene.activeNode()
-        if activeNode and activeNode.isSelected():
-            nodeIDs.append(activeNode.id)
+        if not nid1:
+            if scene.activeNode():
+                self.addEdge(scene, nid1=scene.activeNode().id)
+            else:
+                scene.selectionChanged.connect(defineEdgeStart)
+        elif not nid2:
             scene.selectionChanged.connect(defineEdgeEnd)
         else:
-            scene.selectionChanged.connect(defineEdgeStart)
-
-    def reset(self):
-        self.isListen = False
+            scene.newSceneArrow(nid1, nid2)

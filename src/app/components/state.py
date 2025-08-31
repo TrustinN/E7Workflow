@@ -5,9 +5,12 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 
-class StateData(BaseModel):
+class RunnerState(BaseModel):
     entrypoint: str = ""
     userstate: dict = {}
+
+    def serialize(self):
+        return self.model_dump()
 
 
 class StateWidget(QWidget):
@@ -22,10 +25,10 @@ class StateWidget(QWidget):
 
         self.layout.addWidget(self.display)
 
-    def renderState(self, state: StateData):
+    def renderState(self, state: RunnerState):
         self.display.setText(state.model_dump_json(indent=2))
 
     def recompileState(self):
-        state = StateData(**json.loads(self.display.toPlainText()))
+        state = RunnerState(**json.loads(self.display.toPlainText()))
         self.renderState(state)
         self.stateModified_.emit(state)

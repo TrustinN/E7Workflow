@@ -8,14 +8,14 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from ..io.io import Serializer
 from .components.data import DataWidget
 from .components.editor import EditorWidget
 from .components.manager import WorkspaceManager
 from .components.runner import RunnerWidget
+from .components.serializer import AppSerializer, AppState
+from .constants import ROOT_ID
 from .graph.graph import NODE_HIGHLIGHT_COLOR
 from .workspace.helpers import actions
-from .workspace.workspace import layoutToBBox
 
 
 class MainWindow(QMainWindow):
@@ -43,14 +43,7 @@ class App(QApplication):
         self.manager = WorkspaceManager()
         self.runner = RunnerWidget(self.manager.sendData_)
         self.dataDisplay = DataWidget()
-        self.serializer = Serializer(
-            self,
-            {
-                "restoreWorkspace": restoreWorkspace,
-                "restoreEdges": restoreEdges,
-                "restoreActions": restoreActions,
-            },
-        )
+        self.serializer = AppSerializer(self)
 
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
@@ -78,7 +71,7 @@ class App(QApplication):
 
         # Add edge to scene on button press
         self.editor.graphEditorActions.addEdge_.connect(
-            lambda: self.editor.addEdge(self.manager.activeScene)
+            lambda: self.editor.addEdge(self.manager.scene())
         )
 
         # Update action of focused workspace
@@ -100,32 +93,31 @@ class App(QApplication):
         self.manager.reset()
 
     def onWorkspaceRegistered(self, id):
+        parentID = self.manager.parentID(id)
         wks = self.manager.workspace(id)
         data = self.manager.data(id)
-        node = self.editor.addNode(
-            self.manager.scene(self.manager.parentID(id)),
-            id,
-            wks.name,
-        )
+        node = self.editor.addNode(self.manager.scene(parentID), id, wks.name)
 
         wks.mousePress.connect(lambda: self.dataDisplay.setData(data))
-        node.emitter.onMousePress_.connect(lambda: self.dataDisplay.setData(data))
+        node.emitter.onMousePress_.connect(lambda: self.onNodeMousePress(id))
+
+    def onNodeMousePress(self, id):
+        wks = self.manager.workspace(id)
+        data = self.manager.data(id)
+
+        self.dataDisplay.setData(data)
         highlightColor = QColor(NODE_HIGHLIGHT_COLOR)
         highlightColor.setAlpha(NODE_HIGHLIGHT_COLOR.alpha() // 4)
-        node.emitter.onMousePress_.connect(
-            lambda: wks.setColor(highlightColor, NODE_HIGHLIGHT_COLOR)
-        )
-        node.emitter.onMousePress_.connect(
-            lambda: self.editor.actions.setCurrentText(data.action.__name__)
-        )
+        wks.setColor(highlightColor, NODE_HIGHLIGHT_COLOR)
+        wks.raise_()
+        self.editor.actions.setCurrentText(data.action.__name__)
 
     def onActionChanged(self, action: str):
         activeScene = self.manager.scene()
         if activeScene:
             activeNode = activeScene.activeNode()
             if activeNode:
-                wksID = activeNode.id
-                self.manager.setAction(wksID, action)
+                self.manager.setAction(activeNode.id, action)
 
     def onRequestEntrypoint(self):
         activeScene = self.manager.scene()
@@ -139,46 +131,13 @@ class App(QApplication):
         self.applySnapshot()
 
     def exportConfig(self):
+        state = AppState(self.manager.data(ROOT_ID), self.runner.state)
+
         self.serializer.reset()
-        self.manager.snapshot(self.serializer)
+        self.serializer.snapshot(state)
         self.serializer.writeData("snapshot")
 
     def applySnapshot(self):
         self.serializer.reset()
         self.serializer.readData("snapshot")
         self.serializer.playLogs()
-
-
-def restoreWorkspace(app: App, **kwargs):
-    geometry = kwargs["geometry"]
-    id = kwargs["ID"]
-    name = kwargs["name"]
-    parentID = kwargs["parentID"]
-    nodeGeometry = kwargs["nodeGeometry"]
-
-    app.manager.setActiveWorkspace(parentID)
-    app.editor.addWorkspace(id, name)
-
-    wks = app.manager.workspace(id)
-    wks.setGeometry(layoutToBBox(geometry))
-
-    app.manager.activeScene.node(id).setPos(*nodeGeometry)
-
-
-def restoreEdges(app: App, **kwargs):
-    parentID = kwargs["parentID"]
-    id = kwargs["ID"]
-    edges: list[any] = kwargs["edges"]
-
-    app.manager.setActiveWorkspace(parentID)
-    scene = app.manager.scene(parentID)
-    for id2 in edges:
-        scene.newSceneArrow(id, id2)
-
-
-def restoreActions(app: App, **kwargs):
-    id = kwargs["ID"]
-    action = kwargs["action"]
-
-    if action:
-        app.manager.setAction(id, action)

@@ -1,8 +1,8 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
-from ..state.state import StateData, StateWidget
 from .data import WorkspaceData
+from .state import RunnerState, StateWidget
 
 
 class RunResolver(QObject):
@@ -45,7 +45,7 @@ class RunnerWidget(QWidget):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.state = StateData()
+        self.state = RunnerState()
         self.stateView = StateWidget()
         self.stateView.renderState(self.state)
 
@@ -73,7 +73,7 @@ class RunnerWidget(QWidget):
         self.state.entrypoint = id
         self.stateUpdate_.emit(self.state)
 
-    def setState(self, state: StateData):
+    def setState(self, state: RunnerState):
         self.state = state
         self.stateUpdate_.emit(self.state)
 
