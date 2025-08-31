@@ -56,6 +56,7 @@ class WorkspaceManager(QObject):
         if id != ROOT_ID:
             activeWks.addChild(wks)
             self.data().childData.append(data)
+            data.parentData = self.data()
             self.workspaceRegistered.emit(id)
 
             data.node = self.scene().node(id)
@@ -99,5 +100,5 @@ class WorkspaceManager(QObject):
         else:
             return self.activeData
 
-    def sendData(self, id):
+    def sendData(self, id=None):
         self.sendData_.emit(self.data(id))

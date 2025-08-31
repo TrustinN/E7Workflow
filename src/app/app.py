@@ -80,7 +80,8 @@ class App(QApplication):
         # Poll data from manager
         self.runner.resolver.getData_.connect(self.manager.sendData)
 
-        self.runner.requestEntrypoint.connect(self.onRequestEntrypoint)
+        self.runner.requestData_.connect(self.manager.sendData)
+        self.manager.sendData_.connect(self.runner.setData)
 
         self.importBtn.clicked.connect(self.importConfig)
         self.exportBtn.clicked.connect(self.exportConfig)
@@ -118,13 +119,6 @@ class App(QApplication):
             activeNode = activeScene.activeNode()
             if activeNode:
                 self.manager.setAction(activeNode.id, action)
-
-    def onRequestEntrypoint(self):
-        activeScene = self.manager.scene()
-        if activeScene:
-            activeNode = activeScene.activeNode()
-            if activeNode:
-                self.runner.setEntrypoint(activeNode.id)
 
     def importConfig(self):
         self.reset()

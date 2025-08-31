@@ -1,17 +1,20 @@
 from PyQt5.QtWidgets import QListWidget, QVBoxLayout, QWidget
 
-from ..workspace.workspace import extractGeometry
+from ..graph.editor import InteractiveGraphScene
+from ..graph.graph import GraphicsNodeItem
+from ..workspace.workspace import Workspace, extractGeometry
 
 
 class WorkspaceData:
     def __init__(self):
-        self.workspace = None
+        self.workspace: Workspace = None
         self.action = None
         self.edges = None
         self.defaultChildEntryNodeID = None
-        self.node = None
-        self.scene = None
+        self.node: GraphicsNodeItem = None
+        self.scene: InteractiveGraphScene = None
         self.childData: list[WorkspaceData] = []
+        self.parentData: WorkspaceData = None
 
     def serialize(self):
         wks = self.workspace
