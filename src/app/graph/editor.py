@@ -1,18 +1,11 @@
-from PyQt5.QtCore import QRectF, Qt, pyqtSignal
-from PyQt5.QtWidgets import (
-    QGraphicsScene,
-    QHBoxLayout,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtCore import QRectF, pyqtSignal
+from PyQt5.QtWidgets import QGraphicsScene, QPushButton, QVBoxLayout, QWidget
 
-from ..constants import ROOT_ID
 from .graph import GraphicsArrowItem, GraphicsNodeItem
 
 
 class InteractiveGraphScene(QGraphicsScene):
-    nodeSelected_ = pyqtSignal(str, str)
+    nodeSelected_ = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -59,14 +52,18 @@ class InteractiveGraphScene(QGraphicsScene):
         return self._activeNode
 
     def setActiveNode(self, node: GraphicsNodeItem):
+        if node == self.activeNode():
+            return
+
         if self._activeNode:
             prevId = self._activeNode.id
+            self.node(prevId).setSelected(False)
             self._activeNode = node
-            self.nodeSelected_.emit(prevId, node.id)
+            self.nodeSelected_.emit(prevId)
             return
 
         self._activeNode = node
-        self.nodeSelected_.emit(ROOT_ID, node.id)
+        self.nodeSelected_.emit(None)
 
     def updateActiveNode(self):
         selected = self.selectedItems()
@@ -74,7 +71,7 @@ class InteractiveGraphScene(QGraphicsScene):
             item = selected[0]
             self.setActiveNode(item)
         else:
-            self._activeNode = None
+            self.setActiveNode(None)
 
 
 class GraphEditorActions(QWidget):

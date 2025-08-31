@@ -45,6 +45,10 @@ def listToColor(color):
     return QColor(*color)
 
 
+WORKSPACE_TRANSPARENCY = 10
+WORKSPACE_DEFAULT_COLOR = QColor(255, 255, 255, WORKSPACE_TRANSPARENCY)
+
+
 class ConfigurationHierarchy(dict):
     def __init__(self, config=None):
         super().__init__()
@@ -79,7 +83,7 @@ class SelectionWindow(QWidget):
     resizeSignal = pyqtSignal()
     moveSignal = pyqtSignal()
 
-    def __init__(self, name=None, color=QColor(255, 255, 255, 10)):
+    def __init__(self, name=None, color=WORKSPACE_DEFAULT_COLOR):
         super().__init__()
         self.name = name
 
@@ -196,6 +200,7 @@ class SelectionWindow(QWidget):
 
     def setColor(self, color):
         self.color = color
+        self.repaint()
 
     def getColor(self):
         return self.color

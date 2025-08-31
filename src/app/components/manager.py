@@ -3,86 +3,80 @@ from src.io.io import Serializer
 
 from ..constants import ROOT_ID
 from ..graph.editor import InteractiveGraphScene
-from ..workspace.helpers import click, screenshot, scroll
-from ..workspace.workspace import Workspace, extractGeometry
-
-actions = [
-    {
-        "name": click.__name__,
-        "desc": "Clicks the center of the workspace",
-        "action": click,
-    },
-    {
-        "name": screenshot.__name__,
-        "desc": "Takes a screenshot given the borders of the workspace",
-        "action": screenshot,
-    },
-    {
-        "name": scroll.__name__,
-        "action": scroll,
-        "desc": "Drags the mouse from one edge to the opposite edge given a scroll direction",
-    },
-]
-
-
-class WorkspaceData:
-    def __init__(self):
-        self.action = None
-        self.edges = None
+from ..workspace.helpers import actions
+from ..workspace.workspace import WORKSPACE_DEFAULT_COLOR, Workspace, extractGeometry
+from .data import WorkspaceData
 
 
 class WorkspaceManager(QObject):
     workspaceRegistered = pyqtSignal(object)
     activeChanged = pyqtSignal(object)
+    sendData_ = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
-        self.activeWks = None
+        self.activeData = None
         self.activeScene = None
-        self.wksHandler: dict[any, Workspace] = {}
+
+        self.dataHandler: dict[any, WorkspaceData] = {}
         self.sceneHandler: dict[any, InteractiveGraphScene] = {}
 
     def initState(self):
-        self.wksHandler[ROOT_ID] = Workspace(ROOT_ID, "Root")
-
-        rootWks = self.workspace(ROOT_ID)
+        rootWks = Workspace(ROOT_ID, "Root")
         rootWks.show()
         rootWks.unlock()
         rootWks.setPadding(15)
 
         self.registerWorkspace(rootWks)
-        self.setActiveWorkspace(ROOT_ID)
 
     def reset(self):
         rootWks = self.workspace(ROOT_ID)
         rootWks.deleteLater()
 
-        self.wksHandler.clear()
+        self.dataHandler.clear()
         self.sceneHandler.clear()
 
-        self.activeWks = None
+        self.activeData = None
         self.activeScene = None
 
         self.initState()
 
     def registerWorkspace(self, wks: Workspace):
-        id = wks.id
-        if self.activeWks:
-            self.activeWks.addChild(wks)
-
-        self.wksHandler[id] = wks
-        self.sceneHandler[id] = InteractiveGraphScene()
-
         wks.mousePress.connect(lambda: self.setActiveWorkspace(id))
 
+        id = wks.id
+        data = WorkspaceData()
+        scene = InteractiveGraphScene()
+
+        data.workspace = wks
+        scene.nodeSelected_.connect(
+            lambda prevId: self.workspace(prevId).setColor(WORKSPACE_DEFAULT_COLOR)
+        )
+
+        self.dataHandler[id] = data
+        self.sceneHandler[id] = scene
+
+        if id == ROOT_ID:
+            self.setActiveWorkspace(ROOT_ID)
+
+        activeWks = self.workspace()
         if id != ROOT_ID:
+            activeWks.addChild(wks)
             self.workspaceRegistered.emit(id)
+            data.edges = self.scene().tuples[id]
 
     def setActiveWorkspace(self, id):
-        self.activeWks = self.workspace(id)
+        self.activeData = self.data(id)
+        if self.activeScene:
+            self.activeScene.setActiveNode(None)
         self.activeScene = self.scene(id)
 
         self.activeChanged.emit(id)
+
+    def setAction(self, action):
+        activeData = self.data()
+        if activeData:
+            activeData.action = actions[action]["func"]
 
     def parentID(self, id):
         if id == ROOT_ID:
@@ -90,17 +84,32 @@ class WorkspaceManager(QObject):
 
         return self.workspace(id).parentID
 
-    def workspace(self, id) -> Workspace:
-        return self.wksHandler[id]
+    def workspace(self, id=None) -> Workspace:
+        if id:
+            return self.data(id).workspace
+        else:
+            return self.data().workspace
 
-    def scene(self, id) -> InteractiveGraphScene:
-        return self.sceneHandler[id]
+    def scene(self, id=None) -> InteractiveGraphScene:
+        if id:
+            return self.sceneHandler[id]
+        else:
+            return self.activeScene
+
+    def data(self, id=None) -> WorkspaceData:
+        if id:
+            return self.dataHandler[id]
+        else:
+            return self.activeData
+
+    def sendData(self, id):
+        self.sendData_.emit(self.data(id))
 
     def getWorkspaceSnapshot(self, workspace: Workspace):
         scene = self.scene(workspace.parentID)
         nodePos = scene.node(workspace.id).pos()
         return {
-            "edges": scene.tuples[workspace.id],
+            "edges": self.data(id).edges,
             "geometry": extractGeometry(workspace),
             "ID": workspace.id,
             "name": workspace.name,

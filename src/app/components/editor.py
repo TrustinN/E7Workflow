@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QComboBox, QGraphicsView, QVBoxLayout, QWidget
 
 from ..graph.editor import GraphEditor, GraphEditorActions
 from ..workspace.editor import WorkspacEditorActions, WorkspaceEditor
@@ -25,20 +25,25 @@ class EditorWidget(QWidget):
         self.graphView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.graphView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
+        self.actions = QComboBox()
+
+        self.layout.addWidget(self.actions)
         self.layout.addWidget(self.wksEditorActions)
         self.layout.addWidget(self.graphEditorActions)
         self.layout.addWidget(self.graphView)
-        self.layout.addWidget(self.wksEditor)
-        self.layout.addWidget(self.graphEditor)
 
         self.wksEditorActions.add_.connect(self.addWorkspace)
+
+    def setActions(self, actions):
+        for action in actions:
+            self.actions.addItem(action)
 
     def addWorkspace(self, id=None, name=None):
         wks = self.wksEditor.addWorkspace(id, name)
         self.workspaceCreated_.emit(wks)
 
     def addNode(self, scene, id, name=None):
-        self.graphEditor.addNode(scene, id, name)
+        return self.graphEditor.addNode(scene, id, name)
 
     def addEdge(self, scene):
         self.graphEditor.addEdge(scene)

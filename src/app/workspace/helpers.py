@@ -4,11 +4,10 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
+from assets.assets import getDigitIcon
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
-
-from assets.assets import getDigitIcon
 
 from .workspace import Workspace
 
@@ -327,3 +326,19 @@ def rgbToHsv(rgb):
     rgb = np.uint8([[rgb]])  # Convert RGB into OpenCV format
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     return hsv[0][0]  # Extract the HSV values
+
+
+actions = {
+    click.__name__: {
+        "func": click,
+        "desc": "Clicks the center of the workspace",
+    },
+    screenshot.__name__: {
+        "func": screenshot,
+        "desc": "Takes a screenshot given the borders of the workspace",
+    },
+    scroll.__name__: {
+        "func": scroll,
+        "desc": "Drags the mouse from one edge to the opposite edge given a scroll direction",
+    },
+}

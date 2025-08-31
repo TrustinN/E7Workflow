@@ -4,6 +4,9 @@ from PyQt5.QtCore import QObject, QPointF, QRectF, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem
 
+NODE_DEFAULT_COLOR = QColor(20, 20, 20, 255)
+NODE_HIGHLIGHT_COLOR = QColor(0, 163, 255, 255)
+
 
 class GraphicsArrowItem(QGraphicsItem):
     def __init__(self, start: QPointF, end: QPointF):
@@ -82,8 +85,8 @@ class GraphicsNodeItem(QGraphicsRectItem):
         super().__init__(rectF)
         self.id = id
         self.displayText = None
-        self.color = QColor(20, 20, 20, 255)
-        self.highlightColor = QColor(0, 163, 255, 255)
+        self.color = NODE_DEFAULT_COLOR
+        self.highlightColor = NODE_HIGHLIGHT_COLOR
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
