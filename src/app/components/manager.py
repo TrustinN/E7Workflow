@@ -12,6 +12,7 @@ class WorkspaceManager(QObject):
     workspaceRegistered = pyqtSignal(object)
     activeChanged = pyqtSignal(object)
     sendData_ = pyqtSignal(object)
+    dataUpdate = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -49,6 +50,7 @@ class WorkspaceManager(QObject):
         scene = InteractiveGraphScene()
 
         data.workspace = wks
+
         scene.nodeSelected_.connect(
             lambda prevId: self.workspace(prevId).setColor(WORKSPACE_DEFAULT_COLOR)
         )
@@ -63,7 +65,9 @@ class WorkspaceManager(QObject):
         if id != ROOT_ID:
             activeWks.addChild(wks)
             self.workspaceRegistered.emit(id)
+
             data.edges = self.scene().tuples[id]
+            self.setAction(id, "none")
 
     def setActiveWorkspace(self, id):
         self.activeData = self.data(id)
@@ -73,10 +77,10 @@ class WorkspaceManager(QObject):
 
         self.activeChanged.emit(id)
 
-    def setAction(self, action):
-        activeData = self.data()
-        if activeData:
-            activeData.action = actions[action]["func"]
+    def setAction(self, wksID, action):
+        data = self.data(wksID)
+        data.action = actions[action]["func"]
+        self.dataUpdate.emit()
 
     def parentID(self, id):
         if id == ROOT_ID:
@@ -108,13 +112,15 @@ class WorkspaceManager(QObject):
     def getWorkspaceSnapshot(self, workspace: Workspace):
         scene = self.scene(workspace.parentID)
         nodePos = scene.node(workspace.id).pos()
+        data = self.data(workspace.id)
         return {
-            "edges": self.data(id).edges,
+            "edges": data.edges,
             "geometry": extractGeometry(workspace),
             "ID": workspace.id,
             "name": workspace.name,
             "parentID": workspace.parentID,
             "nodeGeometry": [nodePos.x(), nodePos.y()],
+            "action": data.action.__name__,
         }
 
     def snapshot(self, serializer: Serializer):
@@ -133,3 +139,6 @@ class WorkspaceManager(QObject):
 
         for data in snapshots:
             serializer.addLog("restoreEdges", data)
+
+        for data in snapshots:
+            serializer.addLog("restoreActions", data)

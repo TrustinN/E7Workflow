@@ -15,7 +15,7 @@ from .components.manager import WorkspaceManager
 from .components.runner import RunnerWidget
 from .graph.graph import NODE_HIGHLIGHT_COLOR
 from .workspace.helpers import actions
-from .workspace.workspace import WORKSPACE_TRANSPARENCY, layoutToBBox
+from .workspace.workspace import layoutToBBox
 
 
 class App(QApplication):
@@ -26,6 +26,7 @@ class App(QApplication):
         self.widget = QWidget()
         self.layout = QHBoxLayout()
         self.col2Layout = QVBoxLayout()
+        self.col3Layout = QVBoxLayout()
         self.widget.setLayout(self.layout)
         self.window.setCentralWidget(self.widget)
         self.window.show()
@@ -39,6 +40,7 @@ class App(QApplication):
             {
                 "restoreWorkspace": restoreWorkspace,
                 "restoreEdges": restoreEdges,
+                "restoreActions": restoreActions,
             },
         )
 
@@ -49,17 +51,17 @@ class App(QApplication):
         self.col2Layout.addWidget(self.dataDisplay)
         self.col2Layout.addWidget(self.runner)
         self.layout.addLayout(self.col2Layout)
-        self.layout.addWidget(self.importBtn)
-        self.layout.addWidget(self.exportBtn)
+        self.col3Layout.addWidget(self.importBtn)
+        self.col3Layout.addWidget(self.exportBtn)
+        self.layout.addLayout(self.col3Layout)
 
         self.initSignals()
         self.initState()
 
     def initSignals(self):
         self.editor.workspaceCreated_.connect(self.manager.registerWorkspace)
-
-        # Add graphics node to graph view
         self.manager.workspaceRegistered.connect(self.onWorkspaceRegistered)
+        self.manager.dataUpdate.connect(self.dataDisplay.renderData)
 
         # Change InteractiveGraphicsScene on active workspace change
         self.manager.activeChanged.connect(
@@ -72,10 +74,12 @@ class App(QApplication):
         )
 
         # Update action of focused workspace
-        self.editor.actions.currentTextChanged.connect(self.manager.setAction)
+        self.editor.actions.currentTextChanged.connect(self.onActionChanged)
 
         # Poll data from manager
         self.runner.resolver.getData_.connect(self.manager.sendData)
+
+        self.runner.requestEntrypoint.connect(self.onRequestEntrypoint)
 
         self.importBtn.clicked.connect(self.importConfig)
         self.exportBtn.clicked.connect(self.exportConfig)
@@ -99,8 +103,28 @@ class App(QApplication):
         wks.mousePress.connect(lambda: self.dataDisplay.setData(data))
         node.emitter.onMousePress_.connect(lambda: self.dataDisplay.setData(data))
         highlightColor = QColor(NODE_HIGHLIGHT_COLOR)
-        highlightColor.setAlpha(WORKSPACE_TRANSPARENCY)
-        node.emitter.onMousePress_.connect(lambda: wks.setColor(highlightColor))
+        highlightColor.setAlpha(NODE_HIGHLIGHT_COLOR.alpha() // 4)
+        node.emitter.onMousePress_.connect(
+            lambda: wks.setColor(highlightColor, NODE_HIGHLIGHT_COLOR)
+        )
+        node.emitter.onMousePress_.connect(
+            lambda: self.editor.actions.setCurrentText(data.action.__name__)
+        )
+
+    def onActionChanged(self, action: str):
+        activeScene = self.manager.scene()
+        if activeScene:
+            activeNode = activeScene.activeNode()
+            if activeNode:
+                wksID = activeNode.id
+                self.manager.setAction(wksID, action)
+
+    def onRequestEntrypoint(self):
+        activeScene = self.manager.scene()
+        if activeScene:
+            activeNode = activeScene.activeNode()
+            if activeNode:
+                self.runner.setEntrypoint(activeNode.id)
 
     def importConfig(self):
         self.reset()
@@ -142,3 +166,11 @@ def restoreEdges(app: App, **kwargs):
     scene = app.manager.scene(parentID)
     for id2 in edges:
         scene.newSceneArrow(id, id2)
+
+
+def restoreActions(app: App, **kwargs):
+    id = kwargs["ID"]
+    action = kwargs["action"]
+
+    if action:
+        app.manager.setAction(id, action)

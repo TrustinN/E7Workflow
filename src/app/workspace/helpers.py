@@ -91,6 +91,10 @@ def scan(wkspace: Workspace, **kwargs):
     wkspace.setGeometry(savedGeometry)
 
 
+def none(wkspace: Workspace, **kwargs):
+    pass
+
+
 def scroll(wkspace: Workspace, **kwargs):
     dir = kwargs["dir"]
     tl, br = wkspace.getBBox()
@@ -329,6 +333,10 @@ def rgbToHsv(rgb):
 
 
 actions = {
+    none.__name__: {
+        "func": none,
+        "desc": "No action",
+    },
     click.__name__: {
         "func": click,
         "desc": "Clicks the center of the workspace",

@@ -47,6 +47,7 @@ def listToColor(color):
 
 WORKSPACE_TRANSPARENCY = 10
 WORKSPACE_DEFAULT_COLOR = QColor(255, 255, 255, WORKSPACE_TRANSPARENCY)
+WORKSPACE_DEFAULT_BORDER = QColor(255, 255, 255, 255)
 
 
 class ConfigurationHierarchy(dict):
@@ -83,13 +84,14 @@ class SelectionWindow(QWidget):
     resizeSignal = pyqtSignal()
     moveSignal = pyqtSignal()
 
-    def __init__(self, name=None, color=WORKSPACE_DEFAULT_COLOR):
+    def __init__(self, name=None):
         super().__init__()
         self.name = name
 
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.color = color
+        self.color = WORKSPACE_DEFAULT_COLOR
+        self.borderColor = WORKSPACE_DEFAULT_BORDER
 
         super().setGeometry(500, 500, 500, 300)
         self.dragPosition = QPoint()
@@ -174,6 +176,9 @@ class SelectionWindow(QWidget):
         brush = QBrush(self.color)
         painter.setBrush(brush)
 
+        pen = QPen(self.borderColor)
+        painter.setPen(pen)
+
         rect = self.rect()
         painter.drawRect(rect.adjusted(2, 2, -2, -2))
 
@@ -198,8 +203,9 @@ class SelectionWindow(QWidget):
         self.name = name
         self.repaint()
 
-    def setColor(self, color):
+    def setColor(self, color, borderColor=WORKSPACE_DEFAULT_BORDER):
         self.color = color
+        self.borderColor = borderColor
         self.repaint()
 
     def getColor(self):

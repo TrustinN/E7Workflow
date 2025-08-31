@@ -19,26 +19,16 @@ class DataWidget(QWidget):
         self.widget = QListWidget()
         self.layout.addWidget(self.widget)
 
+        self.data = None
+
     def setData(self, data: WorkspaceData):
+        self.data = data
+        self.renderData()
+
+    def renderData(self):
         self.widget.clear()
 
-        workspaceLabel = "Workspace: "
-        if data.workspace is not None:
-            workspaceLabel += data.workspace.name
-        else:
-            workspaceLabel += "None"
-        self.widget.addItem(workspaceLabel)
-
-        actionLabel = "Action: "
-        if data.action is not None:
-            actionLabel += data.action.__name__
-        else:
-            actionLabel += "None"
-        self.widget.addItem(actionLabel)
-
-        edgesLabel = "Edges: "
-        if data.edges is not None:
-            edgesLabel += str(data.edges)
-        else:
-            edgesLabel += "None"
-        self.widget.addItem(edgesLabel)
+        if self.data:
+            self.widget.addItem(f"Workspace: {self.data.workspace.name}")
+            self.widget.addItem(f"Action: {self.data.action.__name__}")
+            self.widget.addItem(f"Edges: {self.data.edges}")
