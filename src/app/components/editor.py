@@ -8,6 +8,7 @@ from ..workspace.editor import WorkspacEditorActions, WorkspaceEditor
 class EditorWidget(QWidget):
     workspaceCreated_ = pyqtSignal(object)
     edgeCreated_ = pyqtSignal(object)
+    crossEdgeCreated_ = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -33,6 +34,8 @@ class EditorWidget(QWidget):
         self.layout.addWidget(self.graphView)
 
         self.wksEditorActions.add_.connect(self.addWorkspace)
+        self.graphEditor.edgeCreated_.connect(self.edgeCreated_)
+        self.graphEditor.crossEdgeCreated_.connect(self.crossEdgeCreated_)
 
     def setActions(self, actions):
         for action in actions:

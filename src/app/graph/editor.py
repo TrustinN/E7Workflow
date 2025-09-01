@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QRectF, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene, QPushButton, QVBoxLayout, QWidget
 
-from .graph import GraphicsArrowItem, GraphicsNodeItem, WorkspaceNodeItem
+from .graph import GraphicsArrowItem, GraphicsNodeItem, NodeState, WorkspaceNodeItem
 
 
 class InteractiveGraphScene(QGraphicsScene):
@@ -76,6 +76,7 @@ class InteractiveGraphScene(QGraphicsScene):
 
 class GraphEditorActions(QWidget):
     addEdge_ = pyqtSignal()
+    addCrossEdge_ = pyqtSignal()
     addConditionalEdge_ = pyqtSignal()
 
     def __init__(self):
@@ -84,11 +85,13 @@ class GraphEditorActions(QWidget):
 
         self.buttonLabels = [
             "Add Edge",
+            "Add Cross Edge",
             "Add Conditional Edge",
         ]
         self.buttons = [QPushButton(label) for label in self.buttonLabels]
         self.signals = [
             self.addEdge_,
+            self.addCrossEdge_,
             self.addConditionalEdge_,
         ]
 
@@ -100,6 +103,9 @@ class GraphEditorActions(QWidget):
 
 
 class GraphEditor(QWidget):
+    edgeCreated_ = pyqtSignal(object)
+    crossEdgeCreated_ = pyqtSignal(object)
+
     def __init__(self):
         super().__init__()
 
@@ -117,6 +123,7 @@ class GraphEditor(QWidget):
             scene.selectionChanged.disconnect(defineEdgeStart)
             activeNode = scene.activeNode()
             if activeNode:
+                activeNode.setState(NodeState.MARKED)
                 self.addEdge(scene, nid1=activeNode.id)
 
         def defineEdgeEnd():
@@ -129,11 +136,22 @@ class GraphEditor(QWidget):
             self.addEdge(scene, nid1, activeNode.id)
 
         if not nid1:
-            if scene.activeNode():
-                self.addEdge(scene, nid1=scene.activeNode().id)
+            activeNode = scene.activeNode()
+            if activeNode:
+                activeNode.setState(NodeState.MARKED)
+                self.addEdge(scene, nid1=activeNode.id)
             else:
                 scene.selectionChanged.connect(defineEdgeStart)
         elif not nid2:
             scene.selectionChanged.connect(defineEdgeEnd)
         else:
+            node1 = scene.node(nid1)
+            node1.setState(NodeState.DEFAULT)
+
             scene.newSceneArrow(nid1, nid2)
+            self.edgeCreated_.emit(nid1)
+
+    def addCrossEdge(self, scene: InteractiveGraphScene, nid1, nid2):
+        scene.tuples[nid1].append(nid2)
+        print(scene.tuples[nid1])
+        self.crossEdgeCreated_.emit(nid1)

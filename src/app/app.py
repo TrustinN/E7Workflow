@@ -14,7 +14,7 @@ from .components.manager import WorkspaceManager
 from .components.runner import RunnerWidget
 from .components.serializer import AppSerializer, AppState
 from .constants import ROOT_ID
-from .graph.graph import NODE_HIGHLIGHT_COLOR
+from .graph.graph import NODE_HIGHLIGHT_COLOR, NodeState
 from .workspace.helpers import actions
 
 
@@ -61,6 +61,7 @@ class App(QApplication):
 
     def initSignals(self):
         self.editor.workspaceCreated_.connect(self.manager.registerWorkspace)
+
         self.manager.workspaceRegistered.connect(self.onWorkspaceRegistered)
         self.manager.dataUpdate.connect(self.dataDisplay.renderData)
 
@@ -72,6 +73,9 @@ class App(QApplication):
         # Add edge to scene on button press
         self.editor.graphEditorActions.addEdge_.connect(
             lambda: self.editor.addEdge(self.manager.scene())
+        )
+        self.editor.graphEditorActions.addCrossEdge_.connect(
+            lambda: self.onCrossEdgePress()
         )
 
         # Update action of focused workspace
@@ -121,6 +125,28 @@ class App(QApplication):
             activeNode = activeScene.activeNode()
             if activeNode:
                 self.manager.setAction(activeNode.id, action)
+
+    def onCrossEdgePress(self, scene=None, id=None):
+        if scene:
+            scene2 = self.manager.scene()
+            activeNode = scene2.activeNode()
+            if activeNode:
+                scene.node(id).setState(NodeState.DEFAULT)
+                self.editor.graphEditor.addCrossEdge(scene, id, activeNode.id)
+                self.editor.graphEditorActions.addCrossEdge_.disconnect()
+                self.editor.graphEditorActions.addCrossEdge_.connect(
+                    lambda: self.onCrossEdgePress()
+                )
+
+        else:
+            scene = self.manager.scene()
+            activeNode = scene.activeNode()
+            activeNode.setState(NodeState.MARKED)
+            if activeNode:
+                self.editor.graphEditorActions.addCrossEdge_.disconnect()
+                self.editor.graphEditorActions.addCrossEdge_.connect(
+                    lambda: self.onCrossEdgePress(scene, activeNode.id)
+                )
 
     def importConfig(self):
         self.reset()
