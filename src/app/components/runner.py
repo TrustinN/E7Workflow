@@ -1,24 +1,28 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
+from ..components.manager import WORKSPACE_MANAGER
 from ..graph.graph import NodeType
+from ..routing import Dispatcher, Endpoint, Packet
 from .data import WorkspaceData
 from .state import RunnerState, StateWidget
 
+RUN_RESOLVER = "Run Resolver"
+RUNNER = "Runner"
+
 
 class RunResolver(QObject):
-    getData_ = pyqtSignal(object)
-
-    def __init__(self, dataReceiver):
+    def __init__(self, dispatcher: Dispatcher):
         super().__init__()
-        self.receiver = dataReceiver
-        self.receiver.connect(self.setData)
+        self.name = RUN_RESOLVER
+        self.endpoint = Endpoint(self.name, dispatcher)
+        self.endpoint.addHandler(self.name, self.receiveData)
+
+    def receiveData(self, packet: Packet):
+        self.data = packet.data["data"]
 
     def getData(self, id=None):
-        self.getData_.emit(id)
-
-    def setData(self, data):
-        self.data: WorkspaceData = data
+        self.endpoint.send({"type": "GET", "id": id}, receiver=WORKSPACE_MANAGER)
 
     def getRunnableData(self, id=None):
         self.getData(id)
@@ -45,21 +49,23 @@ class RunResolver(QObject):
 
 
 class RunnerWidget(QWidget):
-    requestData_ = pyqtSignal(object)
     stateUpdate_ = pyqtSignal(object)
 
-    def __init__(self, dataReceiver):
+    def __init__(self, dispatcher: Dispatcher):
         super().__init__()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
         self.data: WorkspaceData = None
+        self.name = RUNNER
+        self.endpoint = Endpoint(self.name, dispatcher)
+        self.endpoint.addHandler(self.name, self.receiveData)
 
         self.state = RunnerState()
         self.stateView = StateWidget()
         self.stateView.renderState(self.state)
 
-        self.resolver = RunResolver(dataReceiver)
+        self.resolver = RunResolver(dispatcher)
 
         self.runBtn = QPushButton("Run")
         self.updateStateBtn = QPushButton("Update State")
@@ -79,17 +85,17 @@ class RunnerWidget(QWidget):
         self.layout.addWidget(self.setLocalEntrypointBtn)
         self.layout.addWidget(self.runBtn)
 
-    def getData(self, id=None):
-        self.requestData_.emit(id)
+    def receiveData(self, packet: Packet):
+        self.data = packet.data["data"]
 
-    def setData(self, data):
-        self.data = data
+    def getData(self, id=None):
+        self.endpoint.send({"type": "GET", "id": id}, receiver=WORKSPACE_MANAGER)
 
     def setEntrypoint(self):
         self.getData()
 
         data = self.data
-        activeNode = data.node
+        activeNode = data.scene.activeNode()
         id = None
         if activeNode:
             id = activeNode.id
@@ -131,11 +137,13 @@ class RunnerWidget(QWidget):
 
         data = self.data
         parentData = data.parentData
-        scene = data.scene
-        activeNode = scene.activeNode()
+        activeNode = data.scene.activeNode()
         id = None
         if activeNode:
             id = activeNode.id
+
+        if parentData is None:
+            return
 
         if id == parentData.defaultChildEntryNodeID:
             return

@@ -14,8 +14,11 @@ from .components.manager import WorkspaceManager
 from .components.runner import RunnerWidget
 from .components.serializer import AppSerializer, AppState
 from .constants import ROOT_ID
-from .graph.graph import NODE_HIGHLIGHT_COLOR, NodeState
+from .graph.graph import NODE_HIGHLIGHT_COLOR
+from .routing import Dispatcher
 from .workspace.helpers import actions
+
+DATA_DISPLAY = "Data Display"
 
 
 class MainWindow(QMainWindow):
@@ -39,9 +42,10 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.editor = EditorWidget()
-        self.manager = WorkspaceManager()
-        self.runner = RunnerWidget(self.manager.sendData_)
+        self.dispatcher = Dispatcher()
+        self.editor = EditorWidget(self.dispatcher)
+        self.manager = WorkspaceManager(self.dispatcher)
+        self.runner = RunnerWidget(self.dispatcher)
         self.dataDisplay = DataWidget()
         self.serializer = AppSerializer(self)
 
@@ -70,14 +74,6 @@ class App(QApplication):
             lambda id: self.editor.graphView.setScene(self.manager.scene(id))
         )
 
-        # Add edge to scene on button press
-        self.editor.graphEditorActions.addEdge_.connect(
-            lambda: self.editor.addEdge(self.manager.scene())
-        )
-        self.editor.graphEditorActions.addCrossEdge_.connect(
-            lambda: self.onCrossEdgePress()
-        )
-
         # Update action of focused workspace
         self.editor.actions.currentTextChanged.connect(self.onActionChanged)
 
@@ -85,13 +81,14 @@ class App(QApplication):
         # TODO: Send and receive data too complicated remove the signal from manager
         # and just have a function to receive the data from the widget receiving
         # then in that receive function, we can just emit a received data signal
-        self.runner.resolver.getData_.connect(self.manager.sendData)
-
-        self.runner.requestData_.connect(self.manager.sendData)
-        self.manager.sendData_.connect(self.runner.setData)
 
         self.importBtn.clicked.connect(self.importConfig)
         self.exportBtn.clicked.connect(self.exportConfig)
+
+    def addDataReceiver(self, receiver):
+        receiver.requestData_.connect(
+            lambda id: receiver.setData(self.manager.data(id))
+        )
 
     def initState(self):
         self.editor.setActions(actions)
@@ -128,28 +125,6 @@ class App(QApplication):
             activeNode = activeScene.activeNode()
             if activeNode:
                 self.manager.setAction(activeNode.id, action)
-
-    def onCrossEdgePress(self, scene=None, id=None):
-        if scene:
-            scene2 = self.manager.scene()
-            activeNode = scene2.activeNode()
-            if activeNode:
-                scene.node(id).setState(NodeState.DEFAULT)
-                self.editor.graphEditor.addCrossEdge(scene, id, activeNode.id)
-                self.editor.graphEditorActions.addCrossEdge_.disconnect()
-                self.editor.graphEditorActions.addCrossEdge_.connect(
-                    lambda: self.onCrossEdgePress()
-                )
-
-        else:
-            scene = self.manager.scene()
-            activeNode = scene.activeNode()
-            activeNode.setState(NodeState.MARKED)
-            if activeNode:
-                self.editor.graphEditorActions.addCrossEdge_.disconnect()
-                self.editor.graphEditorActions.addCrossEdge_.connect(
-                    lambda: self.onCrossEdgePress(scene, activeNode.id)
-                )
 
     def importConfig(self):
         self.reset()
