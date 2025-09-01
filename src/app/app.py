@@ -82,6 +82,9 @@ class App(QApplication):
         self.editor.actions.currentTextChanged.connect(self.onActionChanged)
 
         # Poll data from manager
+        # TODO: Send and receive data too complicated remove the signal from manager
+        # and just have a function to receive the data from the widget receiving
+        # then in that receive function, we can just emit a received data signal
         self.runner.resolver.getData_.connect(self.manager.sendData)
 
         self.runner.requestData_.connect(self.manager.sendData)
