@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QListWidget, QVBoxLayout, QWidget
 
 from ..graph.editor import InteractiveGraphScene
-from ..graph.graph import GraphicsNodeItem
+from ..graph.graph import WorkspaceNodeItem
 from ..workspace.workspace import Workspace, extractGeometry
 
 
@@ -11,7 +11,7 @@ class WorkspaceData:
         self.action = None
         self.edges = None
         self.defaultChildEntryNodeID = None
-        self.node: GraphicsNodeItem = None
+        self.node: WorkspaceNodeItem = None
         self.scene: InteractiveGraphScene = None
         self.childData: list[WorkspaceData] = []
         self.parentData: WorkspaceData = None
@@ -21,6 +21,7 @@ class WorkspaceData:
         data = {
             "edges": self.edges,
             "geometry": extractGeometry(wks),
+            "defaultEntryID": self.defaultChildEntryNodeID,
             "ID": wks.id,
             "name": wks.name,
             "parentID": wks.parentID,

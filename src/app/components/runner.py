@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
+from ..graph.graph import NodeType
 from .data import WorkspaceData
 from .state import RunnerState, StateWidget
 
@@ -44,7 +45,7 @@ class RunResolver(QObject):
 
 
 class RunnerWidget(QWidget):
-    requestData_ = pyqtSignal()
+    requestData_ = pyqtSignal(object)
     stateUpdate_ = pyqtSignal(object)
 
     def __init__(self, dataReceiver):
@@ -79,7 +80,7 @@ class RunnerWidget(QWidget):
         self.layout.addWidget(self.runBtn)
 
     def getData(self, id=None):
-        self.requestData_.emit()
+        self.requestData_.emit(id)
 
     def setData(self, data):
         self.data = data
@@ -88,26 +89,91 @@ class RunnerWidget(QWidget):
         self.getData()
 
         data = self.data
-        scene = data.scene
-        if scene:
-            activeNode = scene.activeNode()
-            if activeNode:
-                id = activeNode.id
-                self.state.entrypoint = id
-                self.stateUpdate_.emit(self.state)
+        activeNode = data.node
+        id = None
+        if activeNode:
+            id = activeNode.id
+        else:
+            return
+
+        if id == self.state.entrypoint:
+            return
+
+        if self.state.entrypoint:
+            self.getData(self.state.entrypoint)
+            prevData = self.data
+            prevData.node.setType(NodeType.DEFAULT)
+
+        self.state.entrypoint = id
+        self.stateUpdate_.emit(self.state)
+        activeNode.setType(NodeType.GLOBAL_ENTRYPOINT)
+
+    def setEntrypointByID(self, id):
+        self.getData(id)
+
+        data = self.data
+        node = data.node
+
+        if id == self.state.entrypoint:
+            return
+
+        if self.state.entrypoint:
+            self.getData(self.state.entrypoint)
+            prevData = self.data
+            prevData.node.setType(NodeType.DEFAULT)
+
+        self.state.entrypoint = id
+        self.stateUpdate_.emit(self.state)
+        node.setType(NodeType.GLOBAL_ENTRYPOINT)
 
     def setLocalEntrypoint(self):
         self.getData()
 
         data = self.data
+        parentData = data.parentData
         scene = data.scene
-        if scene:
-            activeNode = scene.activeNode()
-            if activeNode:
-                data.defaultChildEntryNodeID = activeNode.id
+        activeNode = scene.activeNode()
+        id = None
+        if activeNode:
+            id = activeNode.id
+
+        if id == parentData.defaultChildEntryNodeID:
+            return
+
+        prevID = data.defaultChildEntryNodeID
+        if prevID:
+            self.getData(prevID)
+            prevData = self.data
+            prevData.node.setType(NodeType.DEFAULT)
+
+        data.defaultChildEntryNodeID = id
+        activeNode.setType(NodeType.LOCAL_ENTRYPOINT)
+
+    def setLocalEntrypointByID(self, id):
+        self.getData(id)
+
+        data = self.data
+        parentData = data.parentData
+        node = data.node
+
+        if parentData is None:
+            return
+
+        if id == parentData.defaultChildEntryNodeID:
+            return
+
+        prevID = parentData.defaultChildEntryNodeID
+        if prevID:
+            self.getData(prevID)
+            prevData = self.data
+            prevData.node.setType(NodeType.DEFAULT)
+
+        parentData.defaultChildEntryNodeID = id
+        node.setType(NodeType.LOCAL_ENTRYPOINT)
 
     def setState(self, state: RunnerState):
-        self.state = state
+        self.setEntrypointByID(state.entrypoint)
+        self.state.userstate = state.userstate
         self.stateUpdate_.emit(self.state)
 
     def run(self, maxIter=10):

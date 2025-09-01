@@ -70,8 +70,25 @@ def restoreActions(app, **kwargs):
 
 
 def restoreRunner(app, **kwargs):
+    managerData = kwargs["managerState"]
+    runnerData = kwargs["runnerState"]
+    restoreState(app, **runnerData)
+    restoreLocalEntrypoints(app, **managerData)
+
+
+def restoreState(app, **kwargs):
     state = RunnerState(**kwargs)
     app.runner.setState(state)
+
+
+def restoreLocalEntrypoints(app, **kwargs):
+    defaultEntryID = kwargs["defaultEntryID"]
+    childData = kwargs["childData"]
+    if defaultEntryID:
+        app.runner.setLocalEntrypointByID(defaultEntryID)
+
+    for state in childData:
+        restoreLocalEntrypoints(app, **state)
 
 
 class AppSerializer(Serializer):
@@ -89,9 +106,8 @@ class AppSerializer(Serializer):
     def snapshot(self, data: AppState):
         serializedData = data.serialize()
         managerData = serializedData["managerState"]
-        runnerData = serializedData["runnerState"]
 
         self.addLog("restoreWorkspace", managerData)
         self.addLog("restoreEdges", managerData)
         self.addLog("restoreActions", managerData)
-        self.addLog("restoreRunner", runnerData)
+        self.addLog("restoreRunner", serializedData)

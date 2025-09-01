@@ -146,3 +146,83 @@ class GraphicsNodeItem(QGraphicsRectItem):
             font.setBold(True)
             painter.setFont(font)
             painter.drawText(rect, Qt.AlignVCenter | Qt.AlignHCenter, self.displayText)
+
+
+class NodeType:
+    DEFAULT = 0
+    LOCAL_ENTRYPOINT = 1
+    GLOBAL_ENTRYPOINT = 2
+
+
+class WorkspaceNodeItem(GraphicsNodeItem):
+    def __init__(self, rectF, id):
+        super().__init__(rectF, id)
+        self.type_ = None
+
+    def setType(self, nodeType):
+        self.type_ = nodeType
+        super().update()
+
+    def paint(self, painter, option, widget):
+        super().paint(painter, option, widget)
+
+        match self.type_:
+            case NodeType.LOCAL_ENTRYPOINT | NodeType.GLOBAL_ENTRYPOINT:
+                rect = self.boundingRect()
+                w, h = rect.width(), rect.height()
+
+                # arrow size
+                base = min(w, h) * 0.12  # base width
+                length = min(w, h) * 0.18  # arrow length inward
+
+                color = QColor(144, 238, 144)
+                if self.type_ == NodeType.GLOBAL_ENTRYPOINT:
+                    color = QColor(200, 160, 255)
+                painter.setBrush(QBrush(color))  # mellow green
+                painter.setPen(Qt.NoPen)
+
+                # Top-left corner (points toward center)
+                painter.drawPolygon(
+                    QPolygonF(
+                        [
+                            QPointF(rect.left(), rect.top() + length),
+                            QPointF(rect.left() + base, rect.top()),
+                            QPointF(rect.left(), rect.top()),
+                        ]
+                    )
+                )
+
+                # Top-right corner
+                painter.drawPolygon(
+                    QPolygonF(
+                        [
+                            QPointF(rect.right(), rect.top() + length),
+                            QPointF(rect.right() - base, rect.top()),
+                            QPointF(rect.right(), rect.top()),
+                        ]
+                    )
+                )
+
+                # Bottom-left corner
+                painter.drawPolygon(
+                    QPolygonF(
+                        [
+                            QPointF(rect.left(), rect.bottom() - length),
+                            QPointF(rect.left() + base, rect.bottom()),
+                            QPointF(rect.left(), rect.bottom()),
+                        ]
+                    )
+                )
+
+                # Bottom-right corner
+                painter.drawPolygon(
+                    QPolygonF(
+                        [
+                            QPointF(rect.right(), rect.bottom() - length),
+                            QPointF(rect.right() - base, rect.bottom()),
+                            QPointF(rect.right(), rect.bottom()),
+                        ]
+                    )
+                )
+            case NodeType.DEFAULT:
+                pass

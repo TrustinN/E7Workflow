@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QRectF, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene, QPushButton, QVBoxLayout, QWidget
 
-from .graph import GraphicsArrowItem, GraphicsNodeItem
+from .graph import GraphicsArrowItem, GraphicsNodeItem, WorkspaceNodeItem
 
 
 class InteractiveGraphScene(QGraphicsScene):
@@ -19,7 +19,7 @@ class InteractiveGraphScene(QGraphicsScene):
         self._activeNode = None
 
     def newSceneNode(self, id: str):
-        item = GraphicsNodeItem(QRectF(0, 0, 50, 50), id)
+        item = WorkspaceNodeItem(QRectF(0, 0, 50, 50), id)
         self.addItem(item)
 
         self.nodes[id] = item
