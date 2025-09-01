@@ -85,11 +85,6 @@ class App(QApplication):
         self.importBtn.clicked.connect(self.importConfig)
         self.exportBtn.clicked.connect(self.exportConfig)
 
-    def addDataReceiver(self, receiver):
-        receiver.requestData_.connect(
-            lambda id: receiver.setData(self.manager.data(id))
-        )
-
     def initState(self):
         self.editor.setActions(actions)
         self.manager.initState()
