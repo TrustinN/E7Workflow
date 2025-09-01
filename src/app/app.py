@@ -92,6 +92,8 @@ class App(QApplication):
 
     def reset(self):
         self.manager.reset()
+        self.runner.reset()
+        self.dataDisplay.reset()
 
     def onWorkspaceRegistered(self, id):
         parentID = self.manager.parentID(id)

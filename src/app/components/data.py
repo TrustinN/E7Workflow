@@ -51,6 +51,10 @@ class DataWidget(QWidget):
 
         self.data = None
 
+    def reset(self):
+        self.widget.clear()
+        self.data = None
+
     def setData(self, data: WorkspaceData):
         self.data = data
         self.renderData()

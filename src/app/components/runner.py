@@ -176,6 +176,10 @@ class RunnerWidget(QWidget):
         self.state.userstate = state.userstate
         self.stateUpdate_.emit(self.state)
 
+    def reset(self):
+        self.state = RunnerState()
+        self.data = None
+
     def run(self, maxIter=10):
         # Define entry workspace
         self.resolver.getRunnableData(self.state.entrypoint)
