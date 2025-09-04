@@ -1,4 +1,3 @@
-from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -8,15 +7,12 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from .components.data import DataWidget
-from .components.editor import EditorWidget
-from .components.manager import WorkspaceManager
-from .components.runner import RunnerWidget
-from .components.serializer import AppSerializer, AppState
-from .constants import ROOT_ID
-from .graph.graph import NODE_HIGHLIGHT_COLOR
+from .graph.controller import GraphController
+from .graph.graph import InteractiveGraphScene
+from .graph.model import GraphModel
+from .graph.view import GraphView
+from .graph.widget import GraphWidget
 from .routing import Dispatcher
-from .workspace.helpers import actions
 
 DATA_DISPLAY = "Data Display"
 
@@ -43,93 +39,77 @@ class App(QApplication):
         self.window.show()
 
         self.dispatcher = Dispatcher()
-        self.editor = EditorWidget(self.dispatcher)
-        self.manager = WorkspaceManager(self.dispatcher)
-        self.runner = RunnerWidget(self.dispatcher)
-        self.dataDisplay = DataWidget()
-        self.serializer = AppSerializer(self)
+        scene = InteractiveGraphScene()
+        self.graphView = GraphView(scene)
+        self.graphModel = GraphModel()
+        self.graphController = GraphController(self.graphModel, self.graphView)
+        self.graphWidget = GraphWidget(self.graphController)
+        self.graphWidget.setScene(scene)
+        # self.editor = EditorWidget(self.dispatcher)
+        # self.manager = WorkspaceManager(self.dispatcher)
+        # self.runner = RunnerWidget(self.dispatcher)
+        # self.dataDisplay = DataWidget()
 
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
 
-        self.layout.addWidget(self.editor)
-        self.col2Layout.addWidget(self.dataDisplay)
-        self.col2Layout.addWidget(self.runner)
-        self.layout.addLayout(self.col2Layout)
-        self.col3Layout.addWidget(self.importBtn)
-        self.col3Layout.addWidget(self.exportBtn)
-        self.layout.addLayout(self.col3Layout)
+        self.layout.addWidget(self.graphWidget)
+        # self.col2Layout.addWidget(self.dataDisplay)
+        # self.col2Layout.addWidget(self.runner)
+        # self.layout.addLayout(self.col2Layout)
+        # self.col3Layout.addWidget(self.importBtn)
+        # self.col3Layout.addWidget(self.exportBtn)
+        # self.layout.addLayout(self.col3Layout)
 
-        self.initSignals()
-        self.initState()
+        # self.initSignals()
+        # self.initState()
 
-    def initSignals(self):
-        self.editor.workspaceCreated_.connect(self.manager.registerWorkspace)
+    # def initSignals(self):
+    #     self.editor.workspaceCreated_.connect(self.manager.registerWorkspace)
+    #
+    #     self.manager.workspaceRegistered.connect(self.onWorkspaceRegistered)
+    #     self.manager.dataUpdate.connect(self.dataDisplay.renderData)
+    #
+    #     # Change InteractiveGraphicsScene on active workspace change
+    #     self.manager.activeChanged.connect(
+    #         lambda id: self.editor.graphView.setScene(self.manager.scene(id))
+    #     )
+    #
+    #     # Update action of focused workspace
+    #     self.editor.actions.currentTextChanged.connect(self.onActionChanged)
+    #
+    #     # Poll data from manager
+    #     # TODO: Send and receive data too complicated remove the signal from manager
+    #     # and just have a function to receive the data from the widget receiving
+    #     # then in that receive function, we can just emit a received data signal
+    #
+    #     self.importBtn.clicked.connect(self.importConfig)
+    #     self.exportBtn.clicked.connect(self.exportConfig)
 
-        self.manager.workspaceRegistered.connect(self.onWorkspaceRegistered)
-        self.manager.dataUpdate.connect(self.dataDisplay.renderData)
-
-        # Change InteractiveGraphicsScene on active workspace change
-        self.manager.activeChanged.connect(
-            lambda id: self.editor.graphView.setScene(self.manager.scene(id))
-        )
-
-        # Update action of focused workspace
-        self.editor.actions.currentTextChanged.connect(self.onActionChanged)
-
-        # Poll data from manager
-        # TODO: Send and receive data too complicated remove the signal from manager
-        # and just have a function to receive the data from the widget receiving
-        # then in that receive function, we can just emit a received data signal
-
-        self.importBtn.clicked.connect(self.importConfig)
-        self.exportBtn.clicked.connect(self.exportConfig)
-
-    def initState(self):
-        self.editor.setActions(actions)
-        self.manager.initState()
+    # def initState(self):
+    #     self.editor.setActions(actions)
+    #     self.manager.initState()
 
     def reset(self):
         self.manager.reset()
         self.runner.reset()
         self.dataDisplay.reset()
 
-    def onWorkspaceRegistered(self, id):
-        parentID = self.manager.parentID(id)
-        wks = self.manager.workspace(id)
-        data = self.manager.data(id)
-        node = self.editor.addNode(self.manager.scene(parentID), id, wks.name)
-
-        wks.mousePress.connect(lambda: self.dataDisplay.setData(data))
-        node.emitter.onMousePress_.connect(lambda: self.onNodeMousePress(id))
-
-    def onNodeMousePress(self, id):
-        wks = self.manager.workspace(id)
-        data = self.manager.data(id)
-
-        self.dataDisplay.setData(data)
-        highlightColor = QColor(NODE_HIGHLIGHT_COLOR)
-        highlightColor.setAlpha(NODE_HIGHLIGHT_COLOR.alpha() // 4)
-        wks.setColor(highlightColor, NODE_HIGHLIGHT_COLOR)
-        wks.raise_()
-        self.editor.actions.setCurrentText(data.action.__name__)
-
-    def onActionChanged(self, action: str):
-        activeScene = self.manager.scene()
-        if activeScene:
-            activeNode = activeScene.activeNode()
-            if activeNode:
-                self.manager.setAction(activeNode.id, action)
+    # def onActionChanged(self, action: str):
+    #     activeScene = self.manager.scene()
+    #     if activeScene:
+    #         activeNode = activeScene.activeNode()
+    #         if activeNode:
+    #             self.manager.setAction(activeNode.id, action)
 
     def importConfig(self):
         self.reset()
         self.applySnapshot()
 
     def exportConfig(self):
-        state = AppState(self.manager.data(ROOT_ID), self.runner.state)
 
         self.serializer.reset()
-        self.serializer.snapshot(state)
+        # self.serializer.snapshot(state)
         self.serializer.writeData("snapshot")
 
     def applySnapshot(self):

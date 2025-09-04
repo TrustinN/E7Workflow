@@ -57,9 +57,6 @@ class RunnerWidget(QWidget):
         self.setLayout(self.layout)
 
         self.data: WorkspaceData = None
-        self.name = RUNNER
-        self.endpoint = Endpoint(self.name, dispatcher)
-        self.endpoint.addHandler(self.name, self.receiveData)
 
         self.state = RunnerState()
         self.stateView = StateWidget()
@@ -201,3 +198,29 @@ class RunnerWidget(QWidget):
 
             if not self.resolver.next():
                 break
+
+
+RUNNER_SERVICE = "RUNNER SERVICE"
+
+
+class RunnerService:
+    def __init__(self, dispatcher: Dispatcher):
+        self.endpoint = Endpoint(RUNNER_SERVICE, dispatcher)
+        self.endpoint.addHandler(RUNNER_SERVICE, self.receiveData)
+
+    def receiveData(self, packet: Packet):
+        data = packet.data
+
+        type_ = data["type"]
+        match type_:
+            case "GET":
+                self.handleGetRequest(packet)
+            case "POST":
+                self.handlePostRequest(packet)
+
+    def handleGetRequest(self, packet: Packet):
+        data = packet.data
+        sender = packet.sender
+
+        id = data["id"]
+        self.sendData(self.editor.workspace(id), receiver=sender)

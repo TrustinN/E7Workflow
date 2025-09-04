@@ -1,9 +1,25 @@
+class RequestType:
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+
+
 class Packet:
-    def __init__(self, data, sender=None, receiver=None, topic=None):
+    def __init__(
+        self,
+        data,
+        method: RequestType,
+        resourceID: str = None,
+        sender=None,
+        receiver=None,
+        topic=None,
+    ):
         self.sender = sender
         self.receiver = receiver
         self.topic = topic
         self.data = data
+        self.method = method
+        self.resourceID = resourceID
 
 
 class Endpoint:
@@ -12,9 +28,17 @@ class Endpoint:
         self.dispatcher = dispatcher
         self.handlers = {}
 
-    def send(self, body, receiver=None, topic=None):
-        packet = Packet(body, sender=self.name, receiver=receiver, topic=None)
-        self.dispatcher.send(packet)
+    def send(self, body, method, resourceID=None, receiver=None, topic=None):
+        packet = Packet(
+            data=body,
+            method=method,
+            resourceID=resourceID,
+            sender=self.name,
+            receiver=receiver,
+            topic=topic,
+        )
+        response = self.dispatcher.send(packet)
+        return response
 
     def addHandler(self, key: str, handler):
         self.dispatcher.register(key, handler)
@@ -25,17 +49,54 @@ class Dispatcher:
         self.routes = {}
 
     def register(self, key: str, receiver):
-        self.routes.setdefault(key, []).append(receiver)
+        self.routes[key] = receiver
 
     def send(self, packet: Packet):
         if packet.receiver:
-            receivers = packet.receiver
-            if not isinstance(receivers, list):
-                receivers = [receivers]
-            for r in receivers:
-                for cb in self.routes.get(r, []):
-                    cb(packet)
+            cb = self.routes[packet.receiver]
+            response = cb(packet)
+            return response
 
-        elif packet.topic:
-            for cb in self.routes.get(packet.topic, []):
-                cb(packet)
+
+class EndpointService:
+    def __init__(self, name: str, dispatcher: Dispatcher):
+        self.endpoint = Endpoint(name, dispatcher)
+        self.endpoint.addHandler(name, self.handleRequest)
+        self.handlers = {
+            RequestType.GET: self.handleGetRequest,
+            RequestType.POST: self.handlePostRequest,
+            RequestType.PUT: self.handlePutRequest,
+        }
+        self.routes = {}
+
+    def _route(*parts: str) -> str:
+        return "/".join(parts)
+
+    def addRoute(self, method: RequestType, resourceID, handler):
+        self.routes[f"{method} {resourceID}"] = handler
+
+    def getRouteHandler(self, method: RequestType, resourceID):
+        return self.routes[f"{method} {resourceID}"]
+
+    def subscribe(self, name: str, handler):
+        self.endpoint.addHandler(name, handler)
+
+    def handleRequest(self, packet: Packet):
+        handler = self.handlers.get(packet.method)
+        response = handler(packet)
+        return response
+
+    def handleGetRequest(self, packet: Packet):
+        handler = self.getRouteHandler(RequestType.GET, packet.resourceID)
+        response = handler(packet.data)
+        return response
+
+    def handlePostRequest(self, packet: Packet):
+        handler = self.getRouteHandler(RequestType.POST, packet.resourceID)
+        response = handler(packet.data)
+        return response
+
+    def handlePutRequest(self, packet: Packet):
+        handler = self.getRouteHandler(RequestType.PUT, packet.resourceID)
+        response = handler(packet.data)
+        return response

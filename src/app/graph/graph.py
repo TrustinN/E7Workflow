@@ -2,14 +2,18 @@ import math
 
 from PyQt5.QtCore import QObject, QPointF, QRectF, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsScene
 
 NODE_DEFAULT_COLOR = QColor(20, 20, 20, 255)
 NODE_HIGHLIGHT_COLOR = QColor(0, 163, 255, 255)
 
 
 class GraphicsArrowItem(QGraphicsItem):
-    def __init__(self, start: QPointF, end: QPointF):
+    def __init__(
+        self,
+        start: QPointF = QPointF(0, 0),
+        end: QPointF = QPointF(1, 1),
+    ):
         super().__init__()
         self.color = QColor(20, 20, 20, 255)
         self.end = QPointF(0, 0)
@@ -25,6 +29,7 @@ class GraphicsArrowItem(QGraphicsItem):
         a2 = math.atan2(v2.y(), v2.x())
 
         self.setRotation(self.rotation() + a2 - a1)
+        self.update()
 
     def setEnd(self, end: QPointF):
         self.end = end
@@ -36,6 +41,7 @@ class GraphicsArrowItem(QGraphicsItem):
         a2 = math.atan2(v2.y(), v2.x())
 
         self.setRotation(self.rotation() + a2 - a1)
+        self.update()
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)
@@ -81,9 +87,8 @@ class GraphicsEmitter(QObject):
 
 class GraphicsNodeItem(QGraphicsRectItem):
 
-    def __init__(self, rectF: QRectF, id: str):
+    def __init__(self, rectF: QRectF = QRectF(0, 0, 50, 50)):
         super().__init__(rectF)
-        self.id = id
         self.displayText = None
         self.color = NODE_DEFAULT_COLOR
         self.highlightColor = NODE_HIGHLIGHT_COLOR
@@ -92,6 +97,10 @@ class GraphicsNodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
         self.emitter = GraphicsEmitter()
+
+    def setColor(self, color):
+        self.color = color
+        self.update()
 
     def setDisplayText(self, text):
         self.displayText = text
@@ -283,3 +292,23 @@ class WorkspaceNodeItem(GraphicsNodeItem):
                 painter.drawLine(
                     rect.bottomRight(), rect.bottomRight() - QPointF(0, bracket_len)
                 )
+
+
+class InteractiveGraphScene(QGraphicsScene):
+    itemSelected_ = pyqtSignal(object)
+
+    def __init__(self):
+        super().__init__()
+        self.setSceneRect(0, 0, 400, 300)
+
+        self.selectionChanged.connect(
+            lambda: self.itemSelected_.emit(self.getSelection())
+        )
+
+    def getSelection(self):
+        selected = self.selectedItems()
+        if selected:
+            item = selected[0]
+            return item
+
+        return None
