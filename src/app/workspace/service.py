@@ -2,7 +2,7 @@ from nanoid import generate
 
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .model import WorkspaceModel, WorkspaceTreeModel
+from .model import WorkspaceData, WorkspaceModel, WorkspaceTreeModel
 
 WORKSPACE_SERVICE = "WORKSPACE SERVICE"
 
@@ -40,4 +40,19 @@ class WorkspaceService(EndpointService):
         self.treeModel.createWorkspace(modelID)
         self.treeModel.updateWorkspace(modelID, model.data)
 
+        self.addRoute(
+            RequestType.PUT,
+            route(WorkspaceServiceRoute.WORKSPACE, modelID),
+            self.updateWorkspaceFunc(modelID),
+        )
+
         return {"workspaceID": modelID, "workspaceModel": model}
+
+    def updateWorkspaceFunc(self, id):
+        def updateWorkspace(data):
+            text = data.get("text")
+            newData = WorkspaceData()
+            newData.text = text
+            self.treeModel.updateWorkspace(id, newData)
+
+        return updateWorkspace

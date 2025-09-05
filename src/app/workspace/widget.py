@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from src.router.routing import Dispatcher, Endpoint, RequestType, route
 
@@ -32,9 +32,24 @@ class WorkspaceWidget(QWidget):
         self.layout.addWidget(self.createWorkspaceBtn)
 
     def createWorkspace(self):
-        self.endpoint.send(
+        response = self.endpoint.send(
             {},
             RequestType.POST,
             route(WorkspaceServiceRoute.WORKSPACE),
+            WORKSPACE_SERVICE,
+        )
+        id = response["workspaceID"]
+
+        name, ok = QInputDialog.getText(
+            self,
+            "QInputDialog.getText()",
+            "Workspace Name:",
+            QLineEdit.Normal,
+            "WS Name",
+        )
+        self.endpoint.send(
+            {"text": name},
+            RequestType.PUT,
+            route(WorkspaceServiceRoute.WORKSPACE, id),
             WORKSPACE_SERVICE,
         )
