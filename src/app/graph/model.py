@@ -31,7 +31,7 @@ class GraphData:
 
 
 class NodeModel(QObject):
-    dataChanged_ = pyqtSignal()
+    dataChanged_ = pyqtSignal(NodeData)
 
     def __init__(self, data: NodeData = None):
         super().__init__()
@@ -54,11 +54,11 @@ class NodeModel(QObject):
         if data.rect is not None:
             self.data.rect = data.rect
 
-        self.dataChanged_.emit()
+        self.dataChanged_.emit(data)
 
 
 class EdgeModel(QObject):
-    dataChanged_ = pyqtSignal()
+    dataChanged_ = pyqtSignal(EdgeData)
 
     def __init__(self, data: EdgeData = None):
         super().__init__()
@@ -78,7 +78,7 @@ class EdgeModel(QObject):
         if data.posTail is not None:
             self.data.posTail = data.posTail
 
-        self.dataChanged_.emit()
+        self.dataChanged_.emit(data)
 
 
 class GraphModel(QObject):
@@ -102,7 +102,7 @@ class GraphModel(QObject):
         self.data.nodes.append(id)
 
         nodeModel = NodeModel()
-        onDataChanged = partial(self.nodeUpdated_.emit, id, nodeModel.data)
+        onDataChanged = partial(self.nodeUpdated_.emit, id)
         nodeModel.dataChanged_.connect(onDataChanged)
 
         self.nodeModels[id] = nodeModel
@@ -118,7 +118,7 @@ class GraphModel(QObject):
 
         key = (id1, id2)
         edgeModel = EdgeModel()
-        onEdgeChanged = partial(self.edgeUpdated_.emit, id1, id2, edgeModel.data)
+        onEdgeChanged = partial(self.edgeUpdated_.emit, id1, id2)
         edgeModel.dataChanged_.connect(onEdgeChanged)
         self.edgeModels[key] = edgeModel
         self.edgeCreated_.emit(id1, id2, edgeModel.data)
