@@ -1,13 +1,16 @@
-from nanoid import generate
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGraphicsView, QPushButton, QVBoxLayout, QWidget
 
+from ..routing import Dispatcher, Endpoint, RequestType, route
 from .controller import GraphController
+from .graph import InteractiveGraphScene
+from .service import GRAPH_SERVICE, GraphServiceRoute
+from .view import GraphView
 
 
 class GraphWidget(QWidget):
 
-    def __init__(self, controller: GraphController):
+    def __init__(self, dispatcher: Dispatcher):
         super().__init__()
 
         self.layout = QVBoxLayout()
@@ -18,25 +21,60 @@ class GraphWidget(QWidget):
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.controller = controller
+        self.endpoint = Endpoint("Graph Widget", dispatcher)
+        self.controllers: dict[str, GraphController] = {}
+        self.activeGraph: str = None
 
+        self.createGraphBtn = QPushButton("Create Graph")
         self.createNodeBtn = QPushButton("Create Node")
         self.createEdgeBtn = QPushButton("Create Edge")
 
+        self.createGraphBtn.clicked.connect(self.createGraph)
         self.createNodeBtn.clicked.connect(self.createNode)
         self.createEdgeBtn.clicked.connect(self.createEdge)
         self.nodeStart = None
 
         self.layout.addWidget(self.view)
+        self.layout.addWidget(self.createGraphBtn)
         self.layout.addWidget(self.createNodeBtn)
         self.layout.addWidget(self.createEdgeBtn)
 
-    def setScene(self, scene):
+    @property
+    def controller(self):
+        return self.controllers[self.activeGraph]
+
+    def setActiveGraph(self, id):
+        self.activeGraph = id
+        scene = self.controller.view.scene
         self.view.setScene(scene)
 
+    def createGraph(self):
+        response = self.endpoint.send(
+            {},
+            RequestType.POST,
+            route(GraphServiceRoute.GRAPH),
+            GRAPH_SERVICE,
+        )
+        graphID = response["graphID"]
+        graphModel = response["graphModel"]
+        scene = InteractiveGraphScene()
+        graphView = GraphView(scene)
+        controller = GraphController(graphModel, graphView)
+        self.controllers[graphID] = controller
+
+        self.setActiveGraph(graphID)
+
     def createNode(self):
-        id = generate()
-        self.controller.createNode(id)
+        self.endpoint.send(
+            {},
+            RequestType.POST,
+            route(
+                GraphServiceRoute.GRAPH,
+                self.activeGraph,
+                GraphServiceRoute.NODE,
+            ),
+            GRAPH_SERVICE,
+        )
 
     def createEdge(self):
         id1 = self.nodeStart
@@ -48,5 +86,14 @@ class GraphWidget(QWidget):
             self.nodeStart = id2
             return
 
-        self.controller.createEdge(id1, id2)
+        self.endpoint.send(
+            {"nodeID1": id1, "nodeID2": id2},
+            RequestType.POST,
+            route(
+                GraphServiceRoute.GRAPH,
+                self.activeGraph,
+                GraphServiceRoute.EDGE,
+            ),
+            GRAPH_SERVICE,
+        )
         self.nodeStart = None

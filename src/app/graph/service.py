@@ -1,8 +1,6 @@
-import os
-
 from nanoid import generate
 
-from ..routing import Dispatcher, EndpointService, RequestType
+from ..routing import Dispatcher, EndpointService, RequestType, route
 from .model import GraphModel
 
 GRAPH_SERVICE = "GRAPH SERVICE"
@@ -11,6 +9,7 @@ GRAPH_SERVICE = "GRAPH SERVICE"
 class GraphServiceRoute:
     GRAPH = "graph"
     NODE = "node"
+    EDGE = "edge"
 
 
 class GraphService(EndpointService):
@@ -19,7 +18,7 @@ class GraphService(EndpointService):
 
         self.addRoute(
             RequestType.POST,
-            self._route(GraphServiceRoute.GRAPH),
+            route(GraphServiceRoute.GRAPH),
             self.createGraph,
         )
 
@@ -29,20 +28,44 @@ class GraphService(EndpointService):
         model = GraphModel()
         modelID = generate()
         self.graphs[modelID] = model
+
         self.addRoute(
             RequestType.POST,
-            self._route(
+            route(
                 GraphServiceRoute.GRAPH,
                 modelID,
                 GraphServiceRoute.NODE,
             ),
-            self.createNode,
+            self.createNodeFunc(modelID),
         )
-        return {"graphID": modelID}
 
-    def createNode(self, data):
-        nodeID = generate()
-        graphID = data["graphID"]
-        self.graphs[graphID].createNode(nodeID)
+        self.addRoute(
+            RequestType.POST,
+            route(
+                GraphServiceRoute.GRAPH,
+                modelID,
+                GraphServiceRoute.EDGE,
+            ),
+            self.createEdgeFunc(modelID),
+        )
+        return {"graphID": modelID, "graphModel": model}
 
-        return {"nodeID": nodeID}
+    def createNodeFunc(self, graphID):
+        def createNode(data):
+            nodeID = generate()
+            self.graphs[graphID].createNode(nodeID)
+
+            return {"nodeID": nodeID}
+
+        return createNode
+
+    def createEdgeFunc(self, graphID):
+        def createEdge(data):
+            id1 = data["nodeID1"]
+            id2 = data["nodeID2"]
+
+            self.graphs[graphID].createEdge(id1, id2)
+
+            return {}
+
+        return createEdge

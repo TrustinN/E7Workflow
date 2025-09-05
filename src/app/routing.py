@@ -58,6 +58,10 @@ class Dispatcher:
             return response
 
 
+def route(*parts: str) -> str:
+    return "/".join(parts)
+
+
 class EndpointService:
     def __init__(self, name: str, dispatcher: Dispatcher):
         self.endpoint = Endpoint(name, dispatcher)
@@ -68,9 +72,6 @@ class EndpointService:
             RequestType.PUT: self.handlePutRequest,
         }
         self.routes = {}
-
-    def _route(*parts: str) -> str:
-        return "/".join(parts)
 
     def addRoute(self, method: RequestType, resourceID, handler):
         self.routes[f"{method} {resourceID}"] = handler

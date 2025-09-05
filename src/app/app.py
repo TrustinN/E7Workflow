@@ -7,11 +7,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from .graph.controller import GraphController
+from .graph import GraphModel, GraphService, GraphView, GraphWidget
 from .graph.graph import InteractiveGraphScene
-from .graph.model import GraphModel
-from .graph.view import GraphView
-from .graph.widget import GraphWidget
 from .routing import Dispatcher
 
 DATA_DISPLAY = "Data Display"
@@ -39,12 +36,8 @@ class App(QApplication):
         self.window.show()
 
         self.dispatcher = Dispatcher()
-        scene = InteractiveGraphScene()
-        self.graphView = GraphView(scene)
-        self.graphModel = GraphModel()
-        self.graphController = GraphController(self.graphModel, self.graphView)
-        self.graphWidget = GraphWidget(self.graphController)
-        self.graphWidget.setScene(scene)
+        self.graphService = GraphService(self.dispatcher)
+        self.graphWidget = GraphWidget(self.dispatcher)
         # self.editor = EditorWidget(self.dispatcher)
         # self.manager = WorkspaceManager(self.dispatcher)
         # self.runner = RunnerWidget(self.dispatcher)
