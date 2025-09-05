@@ -51,8 +51,12 @@ class WorkspaceService(EndpointService):
     def updateWorkspaceFunc(self, id):
         def updateWorkspace(data):
             text = data.get("text")
+            parentID = data.get("parentID")
+            padding = data.get("padding")
             newData = WorkspaceData()
             newData.text = text
+            newData.parentID = parentID
+            newData.padding = padding
             self.treeModel.updateWorkspace(id, newData)
 
         return updateWorkspace

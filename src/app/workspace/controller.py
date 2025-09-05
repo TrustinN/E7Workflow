@@ -31,4 +31,7 @@ class WorkspaceController:
         self.signalOriginView = False
 
     def focusedWorkspace(self):
-        return self.model.focusedWorkspace()
+        return self.model.focusedWorkspace
+
+    def setFocusedWorkspace(self, id):
+        self.model.setFocusedWorkspace(id)

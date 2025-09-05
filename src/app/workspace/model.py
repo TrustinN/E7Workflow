@@ -7,6 +7,8 @@ from PyQt5.QtCore import QObject, QRect, pyqtSignal
 
 @dataclass
 class WorkspaceData:
+    padding: Optional[int] = None
+    parentID: Optional[str] = None
     text: Optional[str] = None
     geometry: QRect = field(default_factory=lambda: QRect(0, 0, 1, 1))
     children: list[str] = field(default_factory=list)
@@ -26,6 +28,12 @@ class WorkspaceModel(QObject):
     def update(self, data: WorkspaceData):
         if data.text is not None:
             self.data.text = data.text
+
+        if data.parentID is not None:
+            self.data.parentID = data.parentID
+
+        if data.padding is not None:
+            self.data.padding = data.padding
 
         if len(data.children) != 0:
             self.data.children = data.children
@@ -61,6 +69,3 @@ class WorkspaceTreeModel(QObject):
     def setFocusedWorkspace(self, id):
         self.focusedWorkspace = id
         self.workspaceFocused_.emit(id)
-
-    def focusedWorkspace(self):
-        return self.focusedWorkspace

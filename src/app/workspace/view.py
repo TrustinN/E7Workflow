@@ -26,9 +26,13 @@ class WorkspaceView(QObject):
 
         text = data.get("text")
         parentID = data.get("parentID")
+        padding = data.get("padding")
         if text:
             workspace.setName(text)
 
         if parentID:
             parent = self.workspaces[parentID]
             parent.addChild(workspace)
+
+        if padding:
+            workspace.setPadding(padding)

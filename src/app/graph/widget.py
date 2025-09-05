@@ -29,17 +29,14 @@ class GraphWidget(QWidget):
         self.controllers: dict[str, GraphController] = {}
         self.activeGraph: str = None
 
-        self.createGraphBtn = QPushButton("Create Graph")
         self.createNodeBtn = QPushButton("Create Node")
         self.createEdgeBtn = QPushButton("Create Edge")
 
-        self.createGraphBtn.clicked.connect(self.createGraph)
         self.createNodeBtn.clicked.connect(self.createNode)
         self.createEdgeBtn.clicked.connect(self.createEdge)
         self.nodeStart = None
 
         self.layout.addWidget(self.view)
-        self.layout.addWidget(self.createGraphBtn)
         self.layout.addWidget(self.createNodeBtn)
         self.layout.addWidget(self.createEdgeBtn)
 
@@ -66,7 +63,6 @@ class GraphWidget(QWidget):
         controller = GraphController(graphModel, graphView)
         self.controllers[graphID] = controller
 
-        self.setActiveGraph(graphID)
         self.graphCreated_.emit(graphID)
 
     def createNode(self):

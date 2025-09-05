@@ -10,6 +10,9 @@ from .view import WorkspaceView
 
 class WorkspaceWidget(QWidget):
     workspaceCreated_ = pyqtSignal(str)
+    workspacePressed_ = pyqtSignal(str)
+
+    workspaceUpdated_ = pyqtSignal(str)
 
     def __init__(self, dispatcher: Dispatcher):
         super().__init__()
@@ -23,9 +26,10 @@ class WorkspaceWidget(QWidget):
         )
         model = response["treeModel"]
         view = WorkspaceView()
+        view.workspacePressed_.connect(self.workspacePressed_.emit)
         self.controller = WorkspaceController(model, view)
 
-    def createWorkspace(self):
+    def createWorkspace(self, name=None):
         response = self.endpoint.send(
             {},
             RequestType.POST,
@@ -33,19 +37,30 @@ class WorkspaceWidget(QWidget):
             WORKSPACE_SERVICE,
         )
         id = response["workspaceID"]
+        self.workspaceCreated_.emit(id)
 
-        name, ok = QInputDialog.getText(
-            self,
-            "QInputDialog.getText()",
-            "Workspace Name:",
-            QLineEdit.Normal,
-            "WS Name",
-        )
+        if not name:
+            name, ok = QInputDialog.getText(
+                self,
+                "QInputDialog.getText()",
+                "Workspace Name:",
+                QLineEdit.Normal,
+                "WS Name",
+            )
+        self.updateWorkspace(id, {"text": name})
+
+    def updateWorkspace(self, id, data):
         self.endpoint.send(
-            {"text": name},
+            data,
             RequestType.PUT,
             route(WorkspaceServiceRoute.WORKSPACE, id),
             WORKSPACE_SERVICE,
         )
 
-        self.workspaceCreated_.emit(id)
+        self.workspaceUpdated_.emit(id)
+
+    def focusedWorkspace(self):
+        return self.controller.focusedWorkspace()
+
+    def setFocusedWorkspace(self, id):
+        self.controller.setFocusedWorkspace(id)
