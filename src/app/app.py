@@ -7,7 +7,6 @@ from src.router.routing import Dispatcher
 
 from .graph import GraphWidget
 from .workspace import WorkspaceWidget
-from .workspace.workspace import Workspace
 
 
 @dataclass
@@ -56,15 +55,6 @@ class App(QApplication):
 
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.workspaceWidget)
-
-        # self.rootWks = Workspace("Root")
-        # self.rootWks.show()
-        # self.rootWks.unlock()
-        # self.rootWks.setPadding(15)
-        # self.nextWks = Workspace("Next")
-        # self.nextWks.show()
-        # self.nextWks.unlock()
-        # self.rootWks.addChild(self.nextWks)
 
         self.initState()
 

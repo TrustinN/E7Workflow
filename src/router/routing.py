@@ -12,11 +12,9 @@ class Packet:
         resourceID: str = None,
         sender=None,
         receiver=None,
-        topic=None,
     ):
         self.sender = sender
         self.receiver = receiver
-        self.topic = topic
         self.data = data
         self.method = method
         self.resourceID = resourceID
@@ -28,14 +26,13 @@ class Endpoint:
         self.dispatcher = dispatcher
         self.handlers = {}
 
-    def send(self, body, method, resourceID=None, receiver=None, topic=None):
+    def send(self, body, method, resourceID=None, receiver=None):
         packet = Packet(
             data=body,
             method=method,
             resourceID=resourceID,
             sender=self.name,
             receiver=receiver,
-            topic=topic,
         )
         response = self.dispatcher.send(packet)
         return response
@@ -74,10 +71,39 @@ class EndpointService:
     def getRouteHandler(self, method: RequestType, resourceID):
         return self.routes[f"{method} {resourceID}"]
 
-    def subscribe(self, name: str, handler):
-        self.endpoint.addHandler(name, handler)
-
     def handleRequest(self, packet: Packet):
         handler = self.getRouteHandler(packet.method, packet.resourceID)
         response = handler(packet.data)
         return response
+
+
+class Link:
+    def __init__(self, baseUrl, *args):
+        self.baseUrl = baseUrl
+        self.resourceID = route(*args)
+
+
+class Client:
+    def __init__(self, name: str, dispatcher: Dispatcher):
+        self.endpoint = Endpoint(name, dispatcher)
+        # self.endpoint.addHandler(name, self.handleResponse)
+
+    def _request(self, requestType, link: Link, data):
+        return self.endpoint.send(
+            data,
+            requestType,
+            resourceID=link.resourceID,
+            receiver=link.baseUrl,
+        )
+
+    # def handleResponse(self, packet: Packet):
+    #     return packet.data
+
+    def get(self, link: Link, data):
+        return self._request(RequestType.GET, link, data)
+
+    def post(self, link: Link, data):
+        return self._request(RequestType.POST, link, data)
+
+    def put(self, link: Link, data):
+        return self._request(RequestType.PUT, link, data)

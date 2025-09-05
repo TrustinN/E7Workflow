@@ -1,7 +1,7 @@
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QInputDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QWidget
 
-from src.router.routing import Dispatcher, Endpoint, RequestType, route
+from src.router.routing import Client, Dispatcher, Link
 
 from .controller import WorkspaceController
 from .service import WORKSPACE_SERVICE, WorkspaceServiceRoute
@@ -17,12 +17,10 @@ class WorkspaceWidget(QWidget):
     def __init__(self, dispatcher: Dispatcher):
         super().__init__()
 
-        self.endpoint = Endpoint("Workspace Widget", dispatcher)
-        response = self.endpoint.send(
+        self.client = Client("Workspace Widget", dispatcher)
+        response = self.client.get(
+            Link(WORKSPACE_SERVICE, WorkspaceServiceRoute.WORKSPACE),
             {},
-            RequestType.GET,
-            route(WorkspaceServiceRoute.WORKSPACE),
-            WORKSPACE_SERVICE,
         )
         model = response["treeModel"]
         view = WorkspaceView()
@@ -30,11 +28,9 @@ class WorkspaceWidget(QWidget):
         self.controller = WorkspaceController(model, view)
 
     def createWorkspace(self, name=None):
-        response = self.endpoint.send(
+        response = self.client.post(
+            Link(WORKSPACE_SERVICE, WorkspaceServiceRoute.WORKSPACE),
             {},
-            RequestType.POST,
-            route(WorkspaceServiceRoute.WORKSPACE),
-            WORKSPACE_SERVICE,
         )
         id = response["workspaceID"]
         self.workspaceCreated_.emit(id)
@@ -50,11 +46,9 @@ class WorkspaceWidget(QWidget):
         self.updateWorkspace(id, {"text": name})
 
     def updateWorkspace(self, id, data):
-        self.endpoint.send(
+        self.client.put(
+            Link(WORKSPACE_SERVICE, WorkspaceServiceRoute.WORKSPACE, id),
             data,
-            RequestType.PUT,
-            route(WorkspaceServiceRoute.WORKSPACE, id),
-            WORKSPACE_SERVICE,
         )
 
         self.workspaceUpdated_.emit(id)

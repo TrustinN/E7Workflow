@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsView, QPushButton, QVBoxLayout, QWidget
 
-from src.router.routing import Dispatcher, Endpoint, RequestType, route
+from src.router.routing import Client, Dispatcher, Link
 
 from .controller import GraphController
 from .graph import InteractiveGraphScene
@@ -25,7 +25,7 @@ class GraphWidget(QWidget):
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.endpoint = Endpoint("Graph Widget", dispatcher)
+        self.client = Client("Graph Widget", dispatcher)
         self.controllers: dict[str, GraphController] = {}
         self.activeGraph: str = None
 
@@ -50,11 +50,9 @@ class GraphWidget(QWidget):
         self.view.setScene(scene)
 
     def createGraph(self):
-        response = self.endpoint.send(
+        response = self.client.post(
+            Link(GRAPH_SERVICE, GraphServiceRoute.GRAPH),
             {},
-            RequestType.POST,
-            route(GraphServiceRoute.GRAPH),
-            GRAPH_SERVICE,
         )
         graphID = response["graphID"]
         graphModel = response["graphModel"]
@@ -66,15 +64,14 @@ class GraphWidget(QWidget):
         self.graphCreated_.emit(graphID)
 
     def createNode(self):
-        response = self.endpoint.send(
-            {},
-            RequestType.POST,
-            route(
+        response = self.client.post(
+            Link(
+                GRAPH_SERVICE,
                 GraphServiceRoute.GRAPH,
                 self.activeGraph,
                 GraphServiceRoute.NODE,
             ),
-            GRAPH_SERVICE,
+            {},
         )
         nodeID = response["nodeID"]
         self.nodeCreated_.emit(nodeID)
@@ -89,15 +86,14 @@ class GraphWidget(QWidget):
             self.nodeStart = id2
             return
 
-        self.endpoint.send(
-            {"nodeID1": id1, "nodeID2": id2},
-            RequestType.POST,
-            route(
+        self.client.post(
+            Link(
+                GRAPH_SERVICE,
                 GraphServiceRoute.GRAPH,
                 self.activeGraph,
                 GraphServiceRoute.EDGE,
             ),
-            GRAPH_SERVICE,
+            {"nodeID1": id1, "nodeID2": id2},
         )
         self.edgeCreated_.emit(id1, id2)
         self.nodeStart = None
