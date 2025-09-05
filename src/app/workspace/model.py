@@ -15,7 +15,7 @@ class WorkspaceData:
 
 
 class WorkspaceModel(QObject):
-    dataChanged_ = pyqtSignal()
+    dataChanged_ = pyqtSignal(WorkspaceData)
 
     def __init__(self, data: WorkspaceData = None):
         super().__init__()
@@ -38,7 +38,7 @@ class WorkspaceModel(QObject):
         if len(data.children) != 0:
             self.data.children = data.children
 
-        self.dataChanged_.emit()
+        self.dataChanged_.emit(data)
 
 
 class WorkspaceTreeModel(QObject):
@@ -57,7 +57,7 @@ class WorkspaceTreeModel(QObject):
         model = WorkspaceModel()
         self.models[id] = model
 
-        onWorkspaceChanged = partial(self.workspaceUpdated_.emit, id, model.data)
+        onWorkspaceChanged = partial(self.workspaceUpdated_.emit, id)
         model.dataChanged_.connect(onWorkspaceChanged)
 
         self.workspaceCreated_.emit(id, model.data)

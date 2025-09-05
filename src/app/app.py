@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from nanoid import generate
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QWidget
 
@@ -5,8 +7,14 @@ from src.router.routing import Dispatcher
 
 from .graph import GraphWidget
 from .workspace import WorkspaceWidget
+from .workspace.workspace import Workspace
 
-DATA_DISPLAY = "Data Display"
+
+@dataclass
+class Group:
+    node: str | None = None
+    workspace: str | None = None
+    graph: str | None = None
 
 
 class MainWindow(QMainWindow):
@@ -38,7 +46,7 @@ class App(QApplication):
         self.graphs: dict[str, str] = {}
         self.workspaces: dict[str, str] = {}
 
-        self.groups: dict[str, list[str]] = {}
+        self.groups: dict[str, Group] = {}
 
         self.graphWidget.graphCreated_.connect(self.onGraphCreated)
         self.graphWidget.nodeCreated_.connect(self.onNodeCreated)
@@ -49,6 +57,15 @@ class App(QApplication):
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.workspaceWidget)
 
+        # self.rootWks = Workspace("Root")
+        # self.rootWks.show()
+        # self.rootWks.unlock()
+        # self.rootWks.setPadding(15)
+        # self.nextWks = Workspace("Next")
+        # self.nextWks.show()
+        # self.nextWks.unlock()
+        # self.rootWks.addChild(self.nextWks)
+
         self.initState()
 
     def initState(self):
@@ -58,26 +75,31 @@ class App(QApplication):
 
     def createGroup(self):
         self.groupID = generate()
-        self.groups[self.groupID] = ["", "", ""]
-
-    def onGraphCreated(self, id):
-        self.graphs[id] = self.groupID
-        self.groups[self.groupID][2] = id
-        if not self.graphWidget.activeGraph:
-            self.graphWidget.setActiveGraph(id)
+        self.groups[self.groupID] = Group()
 
     def onNodeCreated(self, id):
         self.createGroup()
 
         self.nodes[id] = self.groupID
-        self.groups[self.groupID][0] = id
+        group = self.groups[self.groupID]
+        group.node = id
 
-        self.workspaceWidget.createWorkspace()
         self.graphWidget.createGraph()
+        self.workspaceWidget.createWorkspace()
+
+    def onGraphCreated(self, id):
+        self.graphs[id] = self.groupID
+        group = self.groups[self.groupID]
+        group.graph = id
+
+        if not self.graphWidget.activeGraph:
+            self.graphWidget.setActiveGraph(id)
 
     def onWorkspaceCreated(self, id):
         self.workspaces[id] = self.groupID
-        self.groups[self.groupID][1] = id
+        group = self.groups[self.groupID]
+        group.workspace = id
+
         parentID = self.workspaceWidget.focusedWorkspace()
         if not parentID:
             self.workspaceWidget.setFocusedWorkspace(id)
@@ -88,5 +110,6 @@ class App(QApplication):
 
     def onWorkspacePressed(self, id):
         groupID = self.workspaces[id]
-        graphID = self.groups[groupID][2]
+        group = self.groups[groupID]
+        graphID = group.graph
         self.graphWidget.setActiveGraph(graphID)
