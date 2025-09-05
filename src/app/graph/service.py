@@ -1,6 +1,7 @@
 from nanoid import generate
 
-from ..routing import Dispatcher, EndpointService, RequestType, route
+from src.router.routing import Dispatcher, EndpointService, RequestType, route
+
 from .model import GraphModel
 
 GRAPH_SERVICE = "GRAPH SERVICE"

@@ -7,9 +7,9 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from .graph import GraphModel, GraphService, GraphView, GraphWidget
-from .graph.graph import InteractiveGraphScene
-from .routing import Dispatcher
+from src.router.routing import Dispatcher
+
+from .graph import GraphWidget
 
 DATA_DISPLAY = "Data Display"
 
@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
 
 
 class App(QApplication):
-    def __init__(self):
+    def __init__(self, dispatcher: Dispatcher):
         super().__init__([])
 
         self.window = MainWindow()
@@ -35,77 +35,9 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.dispatcher = Dispatcher()
-        self.graphService = GraphService(self.dispatcher)
-        self.graphWidget = GraphWidget(self.dispatcher)
-        # self.editor = EditorWidget(self.dispatcher)
-        # self.manager = WorkspaceManager(self.dispatcher)
-        # self.runner = RunnerWidget(self.dispatcher)
-        # self.dataDisplay = DataWidget()
+        self.graphWidget = GraphWidget(dispatcher)
 
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
 
         self.layout.addWidget(self.graphWidget)
-        # self.col2Layout.addWidget(self.dataDisplay)
-        # self.col2Layout.addWidget(self.runner)
-        # self.layout.addLayout(self.col2Layout)
-        # self.col3Layout.addWidget(self.importBtn)
-        # self.col3Layout.addWidget(self.exportBtn)
-        # self.layout.addLayout(self.col3Layout)
-
-        # self.initSignals()
-        # self.initState()
-
-    # def initSignals(self):
-    #     self.editor.workspaceCreated_.connect(self.manager.registerWorkspace)
-    #
-    #     self.manager.workspaceRegistered.connect(self.onWorkspaceRegistered)
-    #     self.manager.dataUpdate.connect(self.dataDisplay.renderData)
-    #
-    #     # Change InteractiveGraphicsScene on active workspace change
-    #     self.manager.activeChanged.connect(
-    #         lambda id: self.editor.graphView.setScene(self.manager.scene(id))
-    #     )
-    #
-    #     # Update action of focused workspace
-    #     self.editor.actions.currentTextChanged.connect(self.onActionChanged)
-    #
-    #     # Poll data from manager
-    #     # TODO: Send and receive data too complicated remove the signal from manager
-    #     # and just have a function to receive the data from the widget receiving
-    #     # then in that receive function, we can just emit a received data signal
-    #
-    #     self.importBtn.clicked.connect(self.importConfig)
-    #     self.exportBtn.clicked.connect(self.exportConfig)
-
-    # def initState(self):
-    #     self.editor.setActions(actions)
-    #     self.manager.initState()
-
-    def reset(self):
-        self.manager.reset()
-        self.runner.reset()
-        self.dataDisplay.reset()
-
-    # def onActionChanged(self, action: str):
-    #     activeScene = self.manager.scene()
-    #     if activeScene:
-    #         activeNode = activeScene.activeNode()
-    #         if activeNode:
-    #             self.manager.setAction(activeNode.id, action)
-
-    def importConfig(self):
-        self.reset()
-        self.applySnapshot()
-
-    def exportConfig(self):
-
-        self.serializer.reset()
-        # self.serializer.snapshot(state)
-        self.serializer.writeData("snapshot")
-
-    def applySnapshot(self):
-        self.serializer.reset()
-        self.serializer.readData("snapshot")
-        self.serializer.playLogs()

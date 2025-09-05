@@ -1,7 +1,8 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGraphicsView, QPushButton, QVBoxLayout, QWidget
 
-from ..routing import Dispatcher, Endpoint, RequestType, route
+from src.router.routing import Dispatcher, Endpoint, RequestType, route
+
 from .controller import GraphController
 from .graph import InteractiveGraphScene
 from .service import GRAPH_SERVICE, GraphServiceRoute

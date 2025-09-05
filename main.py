@@ -1,8 +1,12 @@
 from src.app import App
+from src.app.graph.service import GraphService
+from src.router.routing import Dispatcher
 
 
 def main():
-    app = App()
+    dispatcher = Dispatcher()
+    _ = GraphService(dispatcher)
+    app = App(dispatcher)
     app.exec()
 
 
