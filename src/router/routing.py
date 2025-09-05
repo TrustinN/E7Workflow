@@ -66,11 +66,6 @@ class EndpointService:
     def __init__(self, name: str, dispatcher: Dispatcher):
         self.endpoint = Endpoint(name, dispatcher)
         self.endpoint.addHandler(name, self.handleRequest)
-        self.handlers = {
-            RequestType.GET: self.handleGetRequest,
-            RequestType.POST: self.handlePostRequest,
-            RequestType.PUT: self.handlePutRequest,
-        }
         self.routes = {}
 
     def addRoute(self, method: RequestType, resourceID, handler):
@@ -83,21 +78,6 @@ class EndpointService:
         self.endpoint.addHandler(name, handler)
 
     def handleRequest(self, packet: Packet):
-        handler = self.handlers.get(packet.method)
-        response = handler(packet)
-        return response
-
-    def handleGetRequest(self, packet: Packet):
-        handler = self.getRouteHandler(RequestType.GET, packet.resourceID)
-        response = handler(packet.data)
-        return response
-
-    def handlePostRequest(self, packet: Packet):
-        handler = self.getRouteHandler(RequestType.POST, packet.resourceID)
-        response = handler(packet.data)
-        return response
-
-    def handlePutRequest(self, packet: Packet):
-        handler = self.getRouteHandler(RequestType.PUT, packet.resourceID)
+        handler = self.getRouteHandler(packet.method, packet.resourceID)
         response = handler(packet.data)
         return response

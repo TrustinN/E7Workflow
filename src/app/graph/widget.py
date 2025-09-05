@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsView, QPushButton, QVBoxLayout, QWidget
 
 from src.router.routing import Dispatcher, Endpoint, RequestType, route
@@ -10,6 +10,9 @@ from .view import GraphView
 
 
 class GraphWidget(QWidget):
+    graphCreated_ = pyqtSignal(str)
+    nodeCreated_ = pyqtSignal(str)
+    edgeCreated_ = pyqtSignal(str, str)
 
     def __init__(self, dispatcher: Dispatcher):
         super().__init__()
@@ -64,9 +67,10 @@ class GraphWidget(QWidget):
         self.controllers[graphID] = controller
 
         self.setActiveGraph(graphID)
+        self.graphCreated_.emit(graphID)
 
     def createNode(self):
-        self.endpoint.send(
+        response = self.endpoint.send(
             {},
             RequestType.POST,
             route(
@@ -76,6 +80,8 @@ class GraphWidget(QWidget):
             ),
             GRAPH_SERVICE,
         )
+        nodeID = response["nodeID"]
+        self.nodeCreated_.emit(nodeID)
 
     def createEdge(self):
         id1 = self.nodeStart
@@ -97,4 +103,5 @@ class GraphWidget(QWidget):
             ),
             GRAPH_SERVICE,
         )
+        self.edgeCreated_.emit(id1, id2)
         self.nodeStart = None

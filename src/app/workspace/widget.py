@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from src.router.routing import Dispatcher, Endpoint, RequestType, route
@@ -8,11 +9,10 @@ from .view import WorkspaceView
 
 
 class WorkspaceWidget(QWidget):
+    workspaceCreated_ = pyqtSignal(str)
+
     def __init__(self, dispatcher: Dispatcher):
         super().__init__()
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
 
         self.endpoint = Endpoint("Workspace Widget", dispatcher)
         response = self.endpoint.send(
@@ -24,12 +24,6 @@ class WorkspaceWidget(QWidget):
         model = response["treeModel"]
         view = WorkspaceView()
         self.controller = WorkspaceController(model, view)
-
-        self.createWorkspaceBtn = QPushButton("Create Workspace")
-
-        self.createWorkspaceBtn.clicked.connect(self.createWorkspace)
-
-        self.layout.addWidget(self.createWorkspaceBtn)
 
     def createWorkspace(self):
         response = self.endpoint.send(
@@ -53,3 +47,5 @@ class WorkspaceWidget(QWidget):
             route(WorkspaceServiceRoute.WORKSPACE, id),
             WORKSPACE_SERVICE,
         )
+
+        self.workspaceCreated_.emit(id)
