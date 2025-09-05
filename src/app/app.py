@@ -1,15 +1,9 @@
-from PyQt5.QtWidgets import (
-    QApplication,
-    QHBoxLayout,
-    QMainWindow,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QWidget
 
 from src.router.routing import Dispatcher
 
 from .graph import GraphWidget
+from .workspace import WorkspaceWidget
 
 DATA_DISPLAY = "Data Display"
 
@@ -29,15 +23,15 @@ class App(QApplication):
         self.window = MainWindow()
         self.widget = QWidget()
         self.layout = QHBoxLayout()
-        self.col2Layout = QVBoxLayout()
-        self.col3Layout = QVBoxLayout()
         self.widget.setLayout(self.layout)
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
         self.graphWidget = GraphWidget(dispatcher)
+        self.workspaceWidget = WorkspaceWidget(dispatcher)
 
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
 
         self.layout.addWidget(self.graphWidget)
+        self.layout.addWidget(self.workspaceWidget)

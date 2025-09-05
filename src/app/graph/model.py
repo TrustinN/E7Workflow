@@ -83,9 +83,9 @@ class EdgeModel(QObject):
 
 class GraphModel(QObject):
     nodeCreated_ = pyqtSignal(str, NodeData)
-    edgeCreated_ = pyqtSignal(str, str, EdgeData)
-
     nodeUpdated_ = pyqtSignal(str, NodeData)
+
+    edgeCreated_ = pyqtSignal(str, str, EdgeData)
     edgeUpdated_ = pyqtSignal(str, str, EdgeData)
 
     dataChanged_ = pyqtSignal(GraphData)

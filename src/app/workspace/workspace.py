@@ -226,13 +226,11 @@ class Workspace(SelectionWindow):
     mousePress = pyqtSignal()
     onDelete = pyqtSignal()
 
-    def __init__(self, id, name=None):
+    def __init__(self, name=None):
         super().__init__(name)
         self.padding = 0
         self.wkspaces = []
         self.childFocused = None
-        self.id = id
-        self.parentID = None
 
     def isChild(self):
         return len(self.wkspaces) == 0
@@ -251,7 +249,6 @@ class Workspace(SelectionWindow):
 
     def addChild(self, wks):
         self.wkspaces.append(wks)
-        wks.parentID = self.id
         wks.connectSignals(self.updateGeometry)
         wks.onDelete.connect(lambda: self.deleteChild(wks))
         wks.focusParent.connect(self.mousePressEvent)
