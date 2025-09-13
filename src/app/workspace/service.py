@@ -4,8 +4,6 @@ from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
 from .model import WorkspaceData, WorkspaceModel, WorkspaceTreeModel
 
-WORKSPACE_SERVICE = "WORKSPACE SERVICE"
-
 
 class WorkspaceServiceData:
     NAME = "workspaceService"
@@ -17,7 +15,7 @@ ws = WorkspaceServiceData
 
 class WorkspaceService(EndpointService):
     def __init__(self, dispatcher: Dispatcher):
-        super().__init__(WORKSPACE_SERVICE, dispatcher)
+        super().__init__(ws.NAME, dispatcher)
 
         self.treeModel: WorkspaceTreeModel = WorkspaceTreeModel()
         self.workspaces: dict[str, WorkspaceModel] = self.treeModel.models
