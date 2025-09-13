@@ -30,10 +30,10 @@ class GraphicsArrowItem(QGraphicsItem):
         startPosition = data.get("startPosition")
         endPosition = data.get("endPosition")
 
-        if startPosition:
+        if startPosition is not None:
             self.setStart(startPosition)
 
-        if endPosition:
+        if endPosition is not None:
             self.setEnd(endPosition)
 
     def setStart(self, start: QPointF):
@@ -128,16 +128,16 @@ class GraphicsNodeItem(QGraphicsRectItem):
         rect = data.get("rect")
         displayText = data.get("displayText")
 
-        if position:
+        if position is not None:
             self.setPos(position)
 
-        if color:
+        if color is not None:
             self.color = color
 
-        if rect:
+        if rect is not None:
             self.setRect(rect)
 
-        if displayText:
+        if displayText is not None:
             self.displayText = displayText
 
         self.update()

@@ -50,36 +50,6 @@ WORKSPACE_DEFAULT_COLOR = QColor(255, 255, 255, WORKSPACE_TRANSPARENCY)
 WORKSPACE_DEFAULT_BORDER = QColor(255, 255, 255, 255)
 
 
-class ConfigurationHierarchy(dict):
-    def __init__(self, config=None):
-        super().__init__()
-        self["config"] = config
-        self["children"]: dict[str, ConfigurationHierarchy] = {}
-
-    def setData(self, data):
-        self["config"] = data["config"]
-        children = data["children"]
-        for c in children:
-            config = ConfigurationHierarchy()
-            config.setData(children[c])
-            self.addChildConfig(c, config)
-
-    def addChildConfig(self, name, config):
-        if isinstance(config, ConfigurationHierarchy):
-            self["children"][name] = config
-        else:
-            self["children"][name] = ConfigurationHierarchy(config)
-
-    def getChildConfig(self, name):
-        return self["children"][name]
-
-    def children(self):
-        return self["children"]
-
-    def config(self):
-        return self["config"]
-
-
 class SelectionWindow(QWidget):
     resizeSignal = pyqtSignal()
     moveSignal = pyqtSignal()
@@ -231,6 +201,21 @@ class Workspace(SelectionWindow):
         self.padding = 0
         self.wkspaces = []
         self.childFocused = None
+
+    def getData(self):
+        return {"padding": self.padding, "text": self.name}
+
+    def setData(self, data):
+        padding = data.get("padding")
+        text = data.get("text")
+
+        if padding is not None:
+            self.padding = padding
+
+        if text is not None:
+            self.name = text
+
+        self.update()
 
     def isChild(self):
         return len(self.wkspaces) == 0

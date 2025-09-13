@@ -2,7 +2,8 @@ from nanoid import generate
 
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .model import WorkspaceData, WorkspaceModel, WorkspaceTreeModel
+# from .model import WorkspaceData, WorkspaceModel, WorkspaceTreeModel
+from .backend import WorkspaceBackend
 
 
 class WorkspaceServiceData:
@@ -14,43 +15,27 @@ ws = WorkspaceServiceData
 
 
 class WorkspaceService(EndpointService):
-    def __init__(self, dispatcher: Dispatcher):
+    def __init__(self, dispatcher: Dispatcher, backend: WorkspaceBackend):
         super().__init__(ws.NAME, dispatcher)
 
-        self.treeModel: WorkspaceTreeModel = WorkspaceTreeModel()
-        self.workspaces: dict[str, WorkspaceModel] = self.treeModel.models
-
-        self.addRoute(RequestType.GET, route(ws.WORKSPACE), self.getTreeModel)
+        self.backend = backend
 
         self.addRoute(RequestType.POST, route(ws.WORKSPACE), self.createWorkspace)
 
-    def getTreeModel(self, data):
-        return {"treeModel": self.treeModel}
-
     def createWorkspace(self, data):
-        model = WorkspaceModel()
-        modelID = generate()
-
-        self.treeModel.createWorkspace(modelID)
-        self.treeModel.updateWorkspace(modelID, model.data)
-
+        parent = data.get("parentID")
+        workspaceID, workspaceData = self.backend.createWorkspace(parent)
         self.addRoute(
             RequestType.PUT,
-            route(ws.WORKSPACE, modelID),
-            self.updateWorkspaceFunc(modelID),
+            route(ws.WORKSPACE, workspaceID),
+            self.updateWorkspaceFunc(workspaceID),
         )
 
-        return {"workspaceID": modelID, "workspaceModel": model}
+        return {"workspaceID": workspaceID, "workspaceData": workspaceData}
 
     def updateWorkspaceFunc(self, id):
         def updateWorkspace(data):
-            text = data.get("text")
-            parentID = data.get("parentID")
-            padding = data.get("padding")
-            newData = WorkspaceData()
-            newData.text = text
-            newData.parentID = parentID
-            newData.padding = padding
-            self.treeModel.updateWorkspace(id, newData)
+            userData = data.get("userData")
+            self.backend.updateWorkspace(id, userData)
 
         return updateWorkspace

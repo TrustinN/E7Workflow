@@ -93,10 +93,7 @@ class App(QApplication):
         parentID = self.workspaceWidget.focusedWorkspace()
         if not parentID:
             self.workspaceWidget.setFocusedWorkspace(id)
-            self.workspaceWidget.updateWorkspace(id, {"padding": 15})
-
-        else:
-            self.workspaceWidget.updateWorkspace(id, {"parentID": parentID})
+            self.workspaceWidget.updateWorkspace(id, {"userData": {"padding": 15}})
 
     def onWorkspacePressed(self, id):
         groupID = self.workspaces[id]

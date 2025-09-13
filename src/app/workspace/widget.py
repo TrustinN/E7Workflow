@@ -18,17 +18,15 @@ class WorkspaceWidget(QWidget):
         super().__init__()
 
         self.client = Client("Workspace Widget", dispatcher)
-        response = self.client.get(Link(ws.NAME, ws.WORKSPACE))
-        model = response["treeModel"]
-        view = WorkspaceView()
-        view.workspacePressed_.connect(self.workspacePressed_.emit)
-        self.controller = WorkspaceController(model, view)
+        self.view = WorkspaceView()
+        self.view.workspacePressed_.connect(self.workspacePressed_.emit)
+        self.controller = WorkspaceController(self.view)
 
     def createWorkspace(self, name=None):
-        response = self.client.post(Link(ws.NAME, ws.WORKSPACE))
-        id = response["workspaceID"]
-        self.workspaceCreated_.emit(id)
+        parentID = self.focusedWorkspace()
 
+        response = self.client.post(Link(ws.NAME, ws.WORKSPACE), {"parentID": parentID})
+        id = response["workspaceID"]
         if not name:
             name, ok = QInputDialog.getText(
                 self,
@@ -37,10 +35,14 @@ class WorkspaceWidget(QWidget):
                 QLineEdit.Normal,
                 "WS Name",
             )
-        self.updateWorkspace(id, {"text": name})
+
+        self.view.createWorkspace(id, parentID)
+        self.workspaceCreated_.emit(id)
+        self.updateWorkspace(id, {"userData": {"text": name}})
 
     def updateWorkspace(self, id, data):
         self.client.put(Link(ws.NAME, ws.WORKSPACE, id), data)
+        self.view.updateWorkspace(id, data["userData"])
 
         self.workspaceUpdated_.emit(id)
 

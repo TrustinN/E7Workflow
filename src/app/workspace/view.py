@@ -13,26 +13,17 @@ class WorkspaceView(QObject):
 
         self.workspaces: dict[str, Workspace] = {}
 
-    def createWorkspace(self, id):
+    def createWorkspace(self, id, parentID):
         workspace = Workspace()
         workspace.show()
         workspace.unlock()
         self.workspaces[id] = workspace
 
+        if parentID:
+            self.workspaces[parentID].addChild(workspace)
+
         workspace.mousePress.connect(partial(self.workspacePressed_.emit, id))
 
     def updateWorkspace(self, id, data):
         workspace = self.workspaces[id]
-
-        text = data.get("text")
-        parentID = data.get("parentID")
-        padding = data.get("padding")
-        if text:
-            workspace.setName(text)
-
-        if parentID:
-            parent = self.workspaces[parentID]
-            parent.addChild(workspace)
-
-        if padding:
-            workspace.setPadding(padding)
+        workspace.setData(data)

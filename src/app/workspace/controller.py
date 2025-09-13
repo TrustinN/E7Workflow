@@ -1,37 +1,23 @@
-from dataclasses import asdict
-
-from .model import WorkspaceData, WorkspaceTreeModel
+# from .model import WorkspaceData, WorkspaceTreeModel
 from .view import WorkspaceView
 
 
 class WorkspaceController:
-    def __init__(self, model: WorkspaceTreeModel, view: WorkspaceView):
-        self.model = model
+    def __init__(self, view: WorkspaceView):
+        self.state = {"focusedWorkspace": None}
         self.view = view
 
-        self.signalOriginView = False
+        self.view.workspacePressed_.connect(self.setFocusedWorkspace)
 
-        self.model.workspaceCreated_.connect(self.onWorkspaceCreated)
-        self.model.workspaceUpdated_.connect(self.onWorkspaceUpdated)
-
-        self.view.workspacePressed_.connect(self.onWorkspaceFocused)
-
-    def onWorkspaceCreated(self, id, data: WorkspaceData):
+    def createWorkspace(self, id, parentID, data):
         self.view.createWorkspace(id)
-        self.view.updateWorkspace(id, asdict(data))
+        self.view.updateWorkspace(id, data)
 
-    def onWorkspaceUpdated(self, id, data: WorkspaceData):
-        if self.signalOriginView:
-            return
-        self.view.updateWorkspace(id, asdict(data))
-
-    def onWorkspaceFocused(self, id):
-        self.signalOriginView = True
-        self.model.setFocusedWorkspace(id)
-        self.signalOriginView = False
+    def updateWorkspace(self, id, data):
+        self.view.updateWorkspace(id, data)
 
     def focusedWorkspace(self):
-        return self.model.focusedWorkspace
+        return self.state["focusedWorkspace"]
 
     def setFocusedWorkspace(self, id):
-        self.model.setFocusedWorkspace(id)
+        self.state["focusedWorkspace"] = id

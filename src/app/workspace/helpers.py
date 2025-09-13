@@ -4,10 +4,11 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
-from assets.assets import getDigitIcon
 from PyQt5.QtCore import QPoint, QRect
 from PyQt5.QtWidgets import QApplication
 from skimage.metrics import structural_similarity as ssim
+
+from assets.assets import getDigitIcon
 
 from .workspace import Workspace
 
