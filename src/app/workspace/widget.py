@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QInputDialog, QLineEdit, QWidget
 from src.router.routing import Client, Dispatcher, Link
 
 from .controller import WorkspaceController
-from .service import WORKSPACE_SERVICE, WorkspaceServiceRoute
+from .service import ws
 from .view import WorkspaceView
 
 
@@ -18,20 +18,14 @@ class WorkspaceWidget(QWidget):
         super().__init__()
 
         self.client = Client("Workspace Widget", dispatcher)
-        response = self.client.get(
-            Link(WORKSPACE_SERVICE, WorkspaceServiceRoute.WORKSPACE),
-            {},
-        )
+        response = self.client.get(Link(ws.NAME, ws.WORKSPACE))
         model = response["treeModel"]
         view = WorkspaceView()
         view.workspacePressed_.connect(self.workspacePressed_.emit)
         self.controller = WorkspaceController(model, view)
 
     def createWorkspace(self, name=None):
-        response = self.client.post(
-            Link(WORKSPACE_SERVICE, WorkspaceServiceRoute.WORKSPACE),
-            {},
-        )
+        response = self.client.post(Link(ws.NAME, ws.WORKSPACE))
         id = response["workspaceID"]
         self.workspaceCreated_.emit(id)
 
@@ -46,10 +40,7 @@ class WorkspaceWidget(QWidget):
         self.updateWorkspace(id, {"text": name})
 
     def updateWorkspace(self, id, data):
-        self.client.put(
-            Link(WORKSPACE_SERVICE, WorkspaceServiceRoute.WORKSPACE, id),
-            data,
-        )
+        self.client.put(Link(ws.NAME, ws.WORKSPACE, id), data)
 
         self.workspaceUpdated_.emit(id)
 

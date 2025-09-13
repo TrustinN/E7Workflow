@@ -20,6 +20,22 @@ class GraphicsArrowItem(QGraphicsItem):
         self.setStart(start)
         self.setEnd(end)
 
+    def getData(self):
+        return {
+            "startPosition": self.start,
+            "endPosition": self.end,
+        }
+
+    def setData(self, data):
+        startPosition = data.get("startPosition")
+        endPosition = data.get("endPosition")
+
+        if startPosition:
+            self.setStart(startPosition)
+
+        if endPosition:
+            self.setEnd(endPosition)
+
     def setStart(self, start: QPointF):
         self.start = start
         v1 = self.start - self.end
@@ -98,12 +114,32 @@ class GraphicsNodeItem(QGraphicsRectItem):
 
         self.emitter = GraphicsEmitter()
 
-    def setColor(self, color):
-        self.color = color
-        self.update()
+    def getData(self):
+        return {
+            "position": self.pos(),
+            "color": self.color,
+            "rect": self.rect(),
+            "displayText": self.displayText,
+        }
 
-    def setDisplayText(self, text):
-        self.displayText = text
+    def setData(self, data):
+        position = data.get("position")
+        color = data.get("color")
+        rect = data.get("rect")
+        displayText = data.get("displayText")
+
+        if position:
+            self.setPos(position)
+
+        if color:
+            self.color = color
+
+        if rect:
+            self.setRect(rect)
+
+        if displayText:
+            self.displayText = displayText
+
         self.update()
 
     def mousePressEvent(self, event):

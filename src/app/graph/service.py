@@ -1,72 +1,65 @@
-from nanoid import generate
-
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .model import GraphModel
-
-GRAPH_SERVICE = "GRAPH SERVICE"
+from .backend import GraphBackend
 
 
-class GraphServiceRoute:
+class GraphServiceData:
+    NAME = "graphService"
     GRAPH = "graph"
     NODE = "node"
     EDGE = "edge"
 
 
-class GraphService(EndpointService):
-    def __init__(self, dispatcher: Dispatcher):
-        super().__init__(GRAPH_SERVICE, dispatcher)
+gs = GraphServiceData
 
+
+class GraphService(EndpointService):
+    def __init__(self, dispatcher: Dispatcher, backend: GraphBackend):
+        super().__init__(gs.NAME, dispatcher)
+
+        self.backend = backend
         self.addRoute(
             RequestType.POST,
-            route(GraphServiceRoute.GRAPH),
+            route(gs.GRAPH),
             self.createGraph,
         )
 
-        self.graphs: dict[str, GraphModel] = {}
-
     def createGraph(self, data):
-        model = GraphModel()
-        modelID = generate()
-        self.graphs[modelID] = model
+        userData = data.get("userData")
+        graphID, graphData = self.backend.createGraph(userData=userData)
 
         self.addRoute(
             RequestType.POST,
-            route(
-                GraphServiceRoute.GRAPH,
-                modelID,
-                GraphServiceRoute.NODE,
-            ),
-            self.createNodeFunc(modelID),
+            route(gs.GRAPH, graphID, gs.NODE),
+            self.createNodeHandler(graphID),
         )
 
         self.addRoute(
             RequestType.POST,
-            route(
-                GraphServiceRoute.GRAPH,
-                modelID,
-                GraphServiceRoute.EDGE,
-            ),
-            self.createEdgeFunc(modelID),
+            route(gs.GRAPH, graphID, gs.EDGE),
+            self.createEdgeHandler(graphID),
         )
-        return {"graphID": modelID, "graphModel": model}
+        return {"graphID": graphID, "graphData": graphData}
 
-    def createNodeFunc(self, graphID):
+    def createNodeHandler(self, graphID):
         def createNode(data):
-            nodeID = generate()
-            self.graphs[graphID].createNode(nodeID)
+            userData = data.get("userData")
+            nodeID, nodeData = self.backend.createNode(graphID, userData=userData)
 
             return {"nodeID": nodeID}
 
         return createNode
 
-    def createEdgeFunc(self, graphID):
+    def createEdgeHandler(self, graphID):
         def createEdge(data):
             id1 = data["nodeID1"]
             id2 = data["nodeID2"]
+            userData = data.get("userData")
 
-            self.graphs[graphID].createEdge(id1, id2)
+            edgeID, edgeData = self.backend.createEdge(
+                graphID, id1, id2, userData=userData
+            )
 
-            return {}
+            return {"edgeID": edgeID}
 
         return createEdge

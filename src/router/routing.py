@@ -88,7 +88,9 @@ class Client:
         self.endpoint = Endpoint(name, dispatcher)
         # self.endpoint.addHandler(name, self.handleResponse)
 
-    def _request(self, requestType, link: Link, data):
+    def _request(self, requestType, link: Link, data=None):
+        if data is None:
+            data = {}
         return self.endpoint.send(
             data,
             requestType,
@@ -99,11 +101,11 @@ class Client:
     # def handleResponse(self, packet: Packet):
     #     return packet.data
 
-    def get(self, link: Link, data):
-        return self._request(RequestType.GET, link, data)
+    def get(self, link: Link, data=None):
+        return self._request(RequestType.GET, link, data=data)
 
-    def post(self, link: Link, data):
-        return self._request(RequestType.POST, link, data)
+    def post(self, link: Link, data=None):
+        return self._request(RequestType.POST, link, data=data)
 
-    def put(self, link: Link, data):
-        return self._request(RequestType.PUT, link, data)
+    def put(self, link: Link, data=None):
+        return self._request(RequestType.PUT, link, data=data)

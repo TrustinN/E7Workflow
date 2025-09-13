@@ -7,8 +7,12 @@ from .model import WorkspaceData, WorkspaceModel, WorkspaceTreeModel
 WORKSPACE_SERVICE = "WORKSPACE SERVICE"
 
 
-class WorkspaceServiceRoute:
+class WorkspaceServiceData:
+    NAME = "workspaceService"
     WORKSPACE = "workspace"
+
+
+ws = WorkspaceServiceData
 
 
 class WorkspaceService(EndpointService):
@@ -18,17 +22,9 @@ class WorkspaceService(EndpointService):
         self.treeModel: WorkspaceTreeModel = WorkspaceTreeModel()
         self.workspaces: dict[str, WorkspaceModel] = self.treeModel.models
 
-        self.addRoute(
-            RequestType.GET,
-            route(WorkspaceServiceRoute.WORKSPACE),
-            self.getTreeModel,
-        )
+        self.addRoute(RequestType.GET, route(ws.WORKSPACE), self.getTreeModel)
 
-        self.addRoute(
-            RequestType.POST,
-            route(WorkspaceServiceRoute.WORKSPACE),
-            self.createWorkspace,
-        )
+        self.addRoute(RequestType.POST, route(ws.WORKSPACE), self.createWorkspace)
 
     def getTreeModel(self, data):
         return {"treeModel": self.treeModel}
@@ -42,7 +38,7 @@ class WorkspaceService(EndpointService):
 
         self.addRoute(
             RequestType.PUT,
-            route(WorkspaceServiceRoute.WORKSPACE, modelID),
+            route(ws.WORKSPACE, modelID),
             self.updateWorkspaceFunc(modelID),
         )
 

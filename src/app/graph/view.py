@@ -27,21 +27,13 @@ class GraphView(QObject):
 
         self.scene.addItem(node)
 
+    def readNode(self, id):
+        node = self.nodes[id]
+        return node.getData()
+
     def updateNode(self, id, data):
         node = self.nodes[id]
-
-        pos = data.get("pos")
-        text = data.get("text")
-        color = data.get("color")
-
-        if pos:
-            node.setPos(pos)
-
-        if text:
-            node.setDisplayText(text)
-
-        if color:
-            node.setColor(color)
+        node.setData(data)
 
     def createEdge(self, id1, id2):
         key = (id1, id2)
@@ -55,5 +47,10 @@ class GraphView(QObject):
         self.edges[key] = arrow
         self.scene.addItem(arrow)
 
+    def readEdge(self, id1, id2):
+        edge = self.edges[(id1, id2)]
+        return edge.getData()
+
     def updateEdge(self, id1, id2, data):
-        pass
+        edge = self.edges[(id1, id2)]
+        edge.setData(data)

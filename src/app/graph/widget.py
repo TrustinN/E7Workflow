@@ -5,7 +5,7 @@ from src.router.routing import Client, Dispatcher, Link
 
 from .controller import GraphController
 from .graph import InteractiveGraphScene
-from .service import GRAPH_SERVICE, GraphServiceRoute
+from .service import gs
 from .view import GraphView
 
 
@@ -50,30 +50,22 @@ class GraphWidget(QWidget):
         self.view.setScene(scene)
 
     def createGraph(self):
-        response = self.client.post(
-            Link(GRAPH_SERVICE, GraphServiceRoute.GRAPH),
-            {},
-        )
+        link = Link(gs.NAME, gs.GRAPH)
+        response = self.client.post(link)
         graphID = response["graphID"]
-        graphModel = response["graphModel"]
+        graphData = response["graphData"]["data"]
         scene = InteractiveGraphScene()
         graphView = GraphView(scene)
-        controller = GraphController(graphModel, graphView)
+        controller = GraphController(graphData, graphView)
         self.controllers[graphID] = controller
 
         self.graphCreated_.emit(graphID)
 
     def createNode(self):
-        response = self.client.post(
-            Link(
-                GRAPH_SERVICE,
-                GraphServiceRoute.GRAPH,
-                self.activeGraph,
-                GraphServiceRoute.NODE,
-            ),
-            {},
-        )
+        link = Link(gs.NAME, gs.GRAPH, self.activeGraph, gs.NODE)
+        response = self.client.post(link)
         nodeID = response["nodeID"]
+        self.controller.createNode(nodeID)
         self.nodeCreated_.emit(nodeID)
 
     def createEdge(self):
@@ -86,14 +78,8 @@ class GraphWidget(QWidget):
             self.nodeStart = id2
             return
 
-        self.client.post(
-            Link(
-                GRAPH_SERVICE,
-                GraphServiceRoute.GRAPH,
-                self.activeGraph,
-                GraphServiceRoute.EDGE,
-            ),
-            {"nodeID1": id1, "nodeID2": id2},
-        )
+        link = Link(gs.NAME, gs.GRAPH, self.activeGraph, gs.EDGE)
+        self.client.post(link, {"nodeID1": id1, "nodeID2": id2})
+        self.controller.createEdge(id1, id2)
         self.edgeCreated_.emit(id1, id2)
         self.nodeStart = None
