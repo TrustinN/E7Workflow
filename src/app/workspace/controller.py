@@ -22,7 +22,7 @@ class WorkspaceController:
     def _createRootWorkspace(self, data):
         response = self.client.post(Link(ws.NAME, ws.WORKSPACE))
         id = response["workspaceID"]
-        self.widget.createWorkspace(id, name="Root")
+        self.widget.createWorkspace(id)
         self.widget.setFocusedWorkspace(id)
         self.updateWorkspace(id, {"padding": 15, "text": "Root"})
         self.eventLog.processEvent(Event(EventType.WORKSPACE_CREATED, {"id": id}))
@@ -34,6 +34,9 @@ class WorkspaceController:
         id = response["workspaceID"]
         self.widget.createWorkspace(id, parentID)
         self.eventLog.processEvent(Event(EventType.WORKSPACE_CREATED, {"id": id}))
+
+        name = self.widget.getWorkspaceName()
+        self.updateWorkspace(id, {"text": name})
 
     def updateWorkspace(self, id, data):
         self.client.put(Link(ws.NAME, ws.WORKSPACE, id), data)

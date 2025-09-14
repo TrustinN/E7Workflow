@@ -30,12 +30,14 @@ class App(QApplication):
         self.graphWidget = GraphWidget()
         self.workspaceWidget = WorkspaceWidget()
         self.createWorkspaceBtn = QPushButton("Create Workspace")
+        self.createEdgeBtn = QPushButton("CreateEdge")
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
 
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.workspaceWidget)
         self.layout.addWidget(self.createWorkspaceBtn)
+        self.layout.addWidget(self.createEdgeBtn)
 
         self.graphController = GraphController(
             self.eventLog, dispatcher, self.graphWidget
@@ -47,5 +49,6 @@ class App(QApplication):
         self.createWorkspaceBtn.clicked.connect(
             self.workspaceController.createWorkspace
         )
+        self.createEdgeBtn.clicked.connect(self.graphController.createEdge)
 
         self.eventLog.processEvent(Event(EventType.APPLICATION_LOADED))

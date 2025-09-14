@@ -14,16 +14,17 @@ class WorkspaceWidget(QWidget):
         self.view = WorkspaceView()
         self.view.workspacePressed_.connect(self.workspaceFocused_.emit)
 
-    def createWorkspace(self, id, parentID=None, name=None):
-        if not name:
-            name, ok = QInputDialog.getText(
-                self,
-                "QInputDialog.getText()",
-                "Workspace Name:",
-                QLineEdit.Normal,
-                "WS Name",
-            )
+    def getWorkspaceName(self):
+        name, ok = QInputDialog.getText(
+            self,
+            "QInputDialog.getText()",
+            "Workspace Name:",
+            QLineEdit.Normal,
+            "WS Name",
+        )
+        return name
 
+    def createWorkspace(self, id, parentID=None):
         self.view.createWorkspace(id, parentID)
         self.workspaceCreated_.emit(id)
 
