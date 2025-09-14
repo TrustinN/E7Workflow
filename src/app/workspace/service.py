@@ -1,8 +1,5 @@
-from nanoid import generate
-
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-# from .model import WorkspaceData, WorkspaceModel, WorkspaceTreeModel
 from .backend import WorkspaceBackend
 
 
@@ -35,7 +32,6 @@ class WorkspaceService(EndpointService):
 
     def updateWorkspaceFunc(self, id):
         def updateWorkspace(data):
-            userData = data.get("userData")
-            self.backend.updateWorkspace(id, userData)
+            self.backend.updateWorkspace(id, data)
 
         return updateWorkspace

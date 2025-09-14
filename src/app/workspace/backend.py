@@ -14,6 +14,6 @@ class WorkspaceBackend:
         self.workspaces[workspaceID] = data
         return workspaceID, data
 
-    def updateWorkspace(self, id, userData):
+    def updateWorkspace(self, id, data):
         wsData = self.workspaces[id]
-        wsData["data"].update(userData)
+        wsData["data"].update(data)

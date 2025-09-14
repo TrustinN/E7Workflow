@@ -1,19 +1,10 @@
-from dataclasses import dataclass
-
-from nanoid import generate
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QWidget
 
 from src.router.routing import Dispatcher
 
-from .graph import GraphWidget
-from .workspace import WorkspaceWidget
-
-
-@dataclass
-class Group:
-    node: str | None = None
-    workspace: str | None = None
-    graph: str | None = None
+from .event.events import Event, EventLog, EventType
+from .graph import GraphController, GraphWidget
+from .workspace import WorkspaceController, WorkspaceWidget
 
 
 class MainWindow(QMainWindow):
@@ -35,68 +26,26 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.graphWidget = GraphWidget(dispatcher)
-        self.workspaceWidget = WorkspaceWidget(dispatcher)
-
+        self.eventLog = EventLog()
+        self.graphWidget = GraphWidget()
+        self.workspaceWidget = WorkspaceWidget()
+        self.createWorkspaceBtn = QPushButton("Create Workspace")
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
 
-        self.nodes: dict[str, str] = {}
-        self.graphs: dict[str, str] = {}
-        self.workspaces: dict[str, str] = {}
-
-        self.groups: dict[str, Group] = {}
-
-        self.graphWidget.graphCreated_.connect(self.onGraphCreated)
-        self.graphWidget.nodeCreated_.connect(self.onNodeCreated)
-
-        self.workspaceWidget.workspaceCreated_.connect(self.onWorkspaceCreated)
-        self.workspaceWidget.workspacePressed_.connect(self.onWorkspacePressed)
-
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.workspaceWidget)
+        self.layout.addWidget(self.createWorkspaceBtn)
 
-        self.initState()
+        self.graphController = GraphController(
+            self.eventLog, dispatcher, self.graphWidget
+        )
+        self.workspaceController = WorkspaceController(
+            self.eventLog, dispatcher, self.workspaceWidget
+        )
 
-    def initState(self):
-        self.createGroup()
-        self.graphWidget.createGraph()
-        self.workspaceWidget.createWorkspace("Root")
+        self.createWorkspaceBtn.clicked.connect(
+            self.workspaceController.createWorkspace
+        )
 
-    def createGroup(self):
-        self.groupID = generate()
-        self.groups[self.groupID] = Group()
-
-    def onNodeCreated(self, id):
-        self.createGroup()
-
-        self.nodes[id] = self.groupID
-        group = self.groups[self.groupID]
-        group.node = id
-
-        self.graphWidget.createGraph()
-        self.workspaceWidget.createWorkspace()
-
-    def onGraphCreated(self, id):
-        self.graphs[id] = self.groupID
-        group = self.groups[self.groupID]
-        group.graph = id
-
-        if not self.graphWidget.activeGraph:
-            self.graphWidget.setActiveGraph(id)
-
-    def onWorkspaceCreated(self, id):
-        self.workspaces[id] = self.groupID
-        group = self.groups[self.groupID]
-        group.workspace = id
-
-        parentID = self.workspaceWidget.focusedWorkspace()
-        if not parentID:
-            self.workspaceWidget.setFocusedWorkspace(id)
-            self.workspaceWidget.updateWorkspace(id, {"userData": {"padding": 15}})
-
-    def onWorkspacePressed(self, id):
-        groupID = self.workspaces[id]
-        group = self.groups[groupID]
-        graphID = group.graph
-        self.graphWidget.setActiveGraph(graphID)
+        self.eventLog.processEvent(Event(EventType.APPLICATION_LOADED))

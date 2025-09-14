@@ -1,31 +1,40 @@
 from functools import partial
 
-from PyQt5.QtCore import QObject, QPointF, pyqtSignal
+from PyQt5.QtCore import QPointF, pyqtSignal
+from PyQt5.QtWidgets import QGraphicsScene
 
 from .graph import GraphicsArrowItem, GraphicsNodeItem
 
 
-class GraphView(QObject):
+class GraphView(QGraphicsScene):
     nodeMoved_ = pyqtSignal(str, QPointF)
     nodePressed_ = pyqtSignal(str)
 
-    def __init__(self, scene):
+    def __init__(self):
         super().__init__()
-        self.scene = scene
+        self.setSceneRect(0, 0, 400, 300)
         self.nodes: dict[str, GraphicsNodeItem] = {}
         self.edges: dict[any, GraphicsArrowItem] = {}
+        self.state = {"nodeSelected": None}
+
+    def selectedNode(self):
+        return self.state["nodeSelected"]
+
+    def onNodePressed(self, id):
+        self.state["nodeSelected"] = id
+        self.nodePressed_.emit(id)
 
     def createNode(self, id):
         node = GraphicsNodeItem()
         self.nodes[id] = node
 
         onNodeMoved = partial(self.nodeMoved_.emit, id)
-        onNodePressed = partial(self.nodePressed_.emit, id)
+        onNodePressed = partial(self.onNodePressed, id)
 
         node.emitter.onMove_.connect(onNodeMoved)
         node.emitter.onMousePress_.connect(onNodePressed)
 
-        self.scene.addItem(node)
+        self.addItem(node)
 
     def readNode(self, id):
         node = self.nodes[id]
@@ -45,7 +54,7 @@ class GraphView(QObject):
         n2.emitter.onMove_.connect(arrow.setEnd)
 
         self.edges[key] = arrow
-        self.scene.addItem(arrow)
+        self.addItem(arrow)
 
     def readEdge(self, id1, id2):
         edge = self.edges[(id1, id2)]
