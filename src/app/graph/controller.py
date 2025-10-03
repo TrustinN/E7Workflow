@@ -1,75 +1,44 @@
 from src.router.routing import Client, Dispatcher, Link
 
-from ..event.events import EventLog, EventType
 from .service import gs
-from .widget import GraphWidget
+from .view import GraphView
 
 
 class GraphController:
-    def __init__(self, eventLog: EventLog, dispatcher: Dispatcher, widget: GraphWidget):
-        self.widget = widget
+    def __init__(self, dispatcher: Dispatcher):
         self.client = Client("Graph Controller", dispatcher)
-        self.eventLog = eventLog
-
-        self.eventLog.register(EventType.WORKSPACE_CREATED, self.onWorkspaceCreated)
-        self.eventLog.register(EventType.WORKSPACE_FOCUSED, self.onWorkspaceFocused)
-
-        self.sceneWksMappings = {}
-        self.nodeWksMappings = {}
-
-        self.wksSceneMappings = {}
-        self.wksNodeMappings = {}
-
         self.nodeStart = None
-
-        response = self.createGraph()
-        self.widget.setActiveGraph(response["graphID"])
-
-    def onWorkspaceCreated(self, data):
-        wsID = data["id"]
-
-        response = self.createGraph()
-        graphID = response["graphID"]
-        self.sceneWksMappings[graphID] = wsID
-        self.wksSceneMappings[wsID] = graphID
-
-        response = self.createNode()
-        nodeID = response["nodeID"]
-        self.nodeWksMappings[nodeID] = wsID
-        self.wksNodeMappings[wsID] = nodeID
-
-    def onWorkspaceFocused(self, data):
-        wsID = data["id"]
-        graphID = self.wksSceneMappings[wsID]
-        self.widget.setActiveGraph(graphID)
 
     def createGraph(self):
         link = Link(gs.NAME, gs.GRAPH)
         response = self.client.post(link)
+
         graphID = response["graphID"]
-        self.widget.createGraph(graphID)
+        return GraphView(), graphID
 
-        return response
-
-    def createNode(self):
-        link = Link(gs.NAME, gs.GRAPH, self.widget.activeGraph, gs.NODE)
+    def createNode(self, view, viewID):
+        link = Link(gs.NAME, gs.GRAPH, viewID, gs.NODE)
         response = self.client.post(link)
+
         nodeID = response["nodeID"]
-        self.widget.createNode(nodeID)
+        view.createNode(nodeID)
+        return nodeID
 
-        return response
-
-    def createEdge(self):
+    def createEdge(self, view, viewID):
         id1 = self.nodeStart
-        id2 = self.widget.scene.selectedNode()
+        id2 = view.selectedNode()
         if not id2:
-            return
+            return None
 
         if not id1:
             self.nodeStart = id2
-            return
+            return None
 
-        link = Link(gs.NAME, gs.GRAPH, self.widget.activeGraph, gs.EDGE)
+        link = Link(gs.NAME, gs.GRAPH, viewID, gs.EDGE)
         self.client.post(link, {"nodeID1": id1, "nodeID2": id2})
         self.nodeStart = None
-        self.widget.createEdge(id1, id2)
+        view.createEdge(id1, id2)
+        return (id1, id2)
+
+    def updateNode(self, view, viewID, nodeID, data):
+        view.updateNode(nodeID, data)

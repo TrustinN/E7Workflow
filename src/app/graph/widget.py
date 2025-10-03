@@ -1,13 +1,8 @@
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QWidget
-
-from .view import GraphView
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QGraphicsView, QPushButton, QVBoxLayout, QWidget
 
 
 class GraphWidget(QWidget):
-    graphCreated_ = pyqtSignal(str)
-    nodeCreated_ = pyqtSignal(str)
-    edgeCreated_ = pyqtSignal(str, str)
 
     def __init__(self):
         super().__init__()
@@ -20,28 +15,14 @@ class GraphWidget(QWidget):
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.scenes: dict[str, GraphView] = {}
-        self.activeGraph: str = None
+        self.createEdgeBtn = QPushButton("Create Edge")
 
         self.layout.addWidget(self.view)
+        self.layout.addWidget(self.createEdgeBtn)
 
     @property
     def scene(self):
-        return self.scenes[self.activeGraph]
+        return self.view.scene()
 
-    def setActiveGraph(self, id):
-        self.activeGraph = id
-        scene = self.scene
+    def setScene(self, scene):
         self.view.setScene(scene)
-
-    def createGraph(self, id):
-        self.scenes[id] = GraphView()
-        self.graphCreated_.emit(id)
-
-    def createNode(self, id):
-        self.scene.createNode(id)
-        self.nodeCreated_.emit(id)
-
-    def createEdge(self, id1, id2):
-        self.scene.createEdge(id1, id2)
-        self.edgeCreated_.emit(id1, id2)

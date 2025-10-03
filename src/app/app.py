@@ -2,9 +2,9 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton,
 
 from src.router.routing import Dispatcher
 
-from .event.events import Event, EventLog, EventType
-from .graph import GraphController, GraphWidget
-from .workspace import WorkspaceController, WorkspaceWidget
+from .event.events import EventLog, EventType
+from .graph import GraphController, GraphCore, GraphWidget
+from .workspace import WorkspaceController, WorkspaceCore, WorkspaceWidget
 
 
 class MainWindow(QMainWindow):
@@ -27,28 +27,23 @@ class App(QApplication):
         self.window.show()
 
         self.eventLog = EventLog()
+
         self.graphWidget = GraphWidget()
+        self.graphController = GraphController(dispatcher)
+        self.graphCore = GraphCore(
+            self.graphWidget, self.graphController, self.eventLog
+        )
+
         self.workspaceWidget = WorkspaceWidget()
-        self.createWorkspaceBtn = QPushButton("Create Workspace")
-        self.createEdgeBtn = QPushButton("CreateEdge")
+        self.workspaceController = WorkspaceController(self.eventLog, dispatcher)
+        self.workspaceCore = WorkspaceCore(
+            self.workspaceWidget, self.workspaceController, self.eventLog
+        )
+
         self.importBtn = QPushButton("Import")
         self.exportBtn = QPushButton("Export")
 
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.workspaceWidget)
-        self.layout.addWidget(self.createWorkspaceBtn)
-        self.layout.addWidget(self.createEdgeBtn)
 
-        self.graphController = GraphController(
-            self.eventLog, dispatcher, self.graphWidget
-        )
-        self.workspaceController = WorkspaceController(
-            self.eventLog, dispatcher, self.workspaceWidget
-        )
-
-        self.createWorkspaceBtn.clicked.connect(
-            self.workspaceController.createWorkspace
-        )
-        self.createEdgeBtn.clicked.connect(self.graphController.createEdge)
-
-        self.eventLog.processEvent(Event(EventType.APPLICATION_LOADED))
+        self.eventLog.processEvent(EventType.APPLICATION_LOADED)

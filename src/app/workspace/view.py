@@ -33,3 +33,9 @@ class WorkspaceView(QObject):
     def onWorkspacePressed(self, id):
         self.focusedWorkspace = id
         self.workspacePressed_.emit(id)
+
+    def setFocusedWorkspace(self, id):
+        self.focusedWorkspace = id
+
+    def focusedWorkspace(self):
+        return self.focusedWorkspace

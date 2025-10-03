@@ -1,14 +1,11 @@
 class EventType:
     APPLICATION_LOADED = 1
+
     WORKSPACE_CREATED = 2
     WORKSPACE_UPDATED = 3
     WORKSPACE_FOCUSED = 4
 
-
-class Event:
-    def __init__(self, eventType: EventType, data=None):
-        self.eventType = eventType
-        self.data = data
+    NODE_PRESSED = 5
 
 
 class EventLog:
@@ -18,12 +15,12 @@ class EventLog:
     def register(self, event: EventType, handler):
         self.handlers.setdefault(event, []).append(handler)
 
-    def processEvent(self, event: Event):
-        if event.eventType not in self.handlers:
+    def processEvent(self, eventType, data=None):
+        if eventType not in self.handlers:
             return
-        handlers = self.handlers[event.eventType]
+        handlers = self.handlers[eventType]
         for cb in handlers:
-            cb(event.data or {})
+            cb(data or {})
 
 
 def subscribe(eventlog: EventLog, event: str, handler):
