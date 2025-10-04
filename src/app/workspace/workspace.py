@@ -203,17 +203,25 @@ class Workspace(SelectionWindow):
         self.childFocused = None
 
     def getData(self):
-        return {"padding": self.padding, "text": self.name}
+        return {
+            "padding": self.padding,
+            "text": self.name,
+            "geometry": bboxToLayout(self.getBBox()),
+        }
 
     def setData(self, data):
         padding = data.get("padding")
         text = data.get("text")
+        geometry = data.get("geometry")
 
         if padding is not None:
             self.padding = padding
 
         if text is not None:
             self.name = text
+
+        if geometry is not None:
+            self.setGeometry(layoutToBBox(geometry))
 
         self.update()
 

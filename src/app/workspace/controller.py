@@ -1,24 +1,22 @@
-from src.router.routing import Client, Dispatcher, Link
-
-from .service import ws
 from .view import WorkspaceView
 
 
 class WorkspaceController:
-    def __init__(self, dispatcher: Dispatcher):
-        self.client = Client("Workspace Controller", dispatcher)
+    def __init__(self):
+        pass
 
     def setView(self, view: WorkspaceView):
         self.view = view
 
-    def createWorkspace(self):
-        response = self.client.post(Link(ws.NAME, ws.WORKSPACE))
-        id = response["workspaceID"]
-        self.view.createWorkspace(id)
+    def clearState(self):
+        if self.view:
+            self.view.clearState()
 
-        return id
+    def createWorkspace(self, id, parentID=None):
+        self.view.createWorkspace(id, parentID)
 
-    def updateWorkspace(self, data):
-        id = data.get("id")
-        self.client.put(Link(ws.NAME, ws.WORKSPACE, id), data)
+    def readWorkspace(self, id):
+        return self.view.readWorkspace(id)
+
+    def updateWorkspace(self, id, data):
         self.view.updateWorkspace(id, data)

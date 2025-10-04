@@ -35,9 +35,12 @@ class App(QApplication):
         )
 
         self.workspaceWidget = WorkspaceWidget()
-        self.workspaceController = WorkspaceController(dispatcher)
+        self.workspaceController = WorkspaceController()
         self.workspaceCore = WorkspaceCore(
-            self.workspaceWidget, self.workspaceController, self.eventLog
+            self.workspaceWidget,
+            self.workspaceController,
+            self.eventLog,
+            dispatcher,
         )
 
         self.importBtn = QPushButton("Import")

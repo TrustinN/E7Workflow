@@ -1,0 +1,49 @@
+{
+    "4TperPddAogn27G0GavUu": {
+        "id": "4TperPddAogn27G0GavUu",
+        "padding": 15,
+        "text": "Root",
+        "geometry": [
+            [
+                485,
+                485
+            ],
+            [
+                1465,
+                984
+            ]
+        ]
+    },
+    "AF7K51QvgPOp2MOkv5a2w": {
+        "id": "AF7K51QvgPOp2MOkv5a2w",
+        "text": "WS Name",
+        "parentID": "4TperPddAogn27G0GavUu",
+        "padding": 0,
+        "geometry": [
+            [
+                500,
+                500
+            ],
+            [
+                999,
+                799
+            ]
+        ]
+    },
+    "5FN0nXYoxx6Cqfb8xO8TE": {
+        "id": "5FN0nXYoxx6Cqfb8xO8TE",
+        "text": "WS Name",
+        "parentID": "4TperPddAogn27G0GavUu",
+        "padding": 0,
+        "geometry": [
+            [
+                951,
+                670
+            ],
+            [
+                1450,
+                969
+            ]
+        ]
+    }
+}
