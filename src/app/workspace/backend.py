@@ -6,8 +6,7 @@ class WorkspaceBackend:
         self.workspaces = {}
 
     def createWorkspace(self, userData=None):
-        if userData is None:
-            userData = {}
+        userData = userData or {}
 
         workspaceID = generate()
         self.workspaces[workspaceID] = userData

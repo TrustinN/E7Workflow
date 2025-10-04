@@ -69,7 +69,5 @@ class WorkspaceService(EndpointService):
             data = json.load(f)
             self.backend.overwrite(data)
 
-        return self.readAllWorkspaces(data)
-
     def deleteAllWorkspaces(self, data):
         self.backend.clear()

@@ -7,6 +7,90 @@ from .view import WorkspaceView
 from .widget import WorkspaceWidget
 
 
+class WorkspaceRepository:
+    def __init__(self, dispatcher: Dispatcher):
+        self.client = Client("Workspace Repository", dispatcher)
+
+    def createWorkspace(self):
+        link = Link(ws.NAME, ws.WORKSPACE)
+        response = self.client.post(link)
+        id = response["workspaceID"]
+        return id
+
+    def updateWorkspace(self, id, data):
+        link = Link(ws.NAME, ws.WORKSPACE, id)
+        self.client.put(link, data)
+
+    def getAllWorkspaces(self):
+        link = Link(ws.NAME, ws.WORKSPACE)
+        workspaces = self.client.get(link)
+        return workspaces
+
+    def exportWorkspaces(self):
+        link = Link(ws.NAME, ws.WORKSPACE, ws.EXPORT)
+        self.client.post(link)
+
+    def importWorkspaces(self):
+        link = Link(ws.NAME, ws.WORKSPACE, ws.IMPORT)
+        self.client.post(link)
+
+
+class WorkspaceSerializer:
+    def __init__(
+        self,
+        controller: WorkspaceController,
+        repository: WorkspaceRepository,
+    ):
+        self.repository = repository
+        self.controller = controller
+
+    def export(self):
+        workspaces = self.repository.getAllWorkspaces()
+
+        for id in workspaces:
+            config = self.controller.readWorkspace(id)
+            self.repository.updateWorkspace(id, config)
+
+        self.repository.exportWorkspaces()
+
+    def restore(self):
+        self.controller.clearState()
+        self.repository.importWorkspaces()
+
+        workspaces = self.repository.getAllWorkspaces()
+
+        for id in workspaces:
+            data = workspaces[id]
+            parentID = data.get("parentID")
+
+            self.controller.createWorkspace(id, parentID)
+            self.controller.updateWorkspace(id, data)
+
+
+class WorkspaceBuilder:
+    def __init__(
+        self,
+        controller: WorkspaceController,
+        repository: WorkspaceRepository,
+        eventLog: EventLog,
+    ):
+        self.repository = repository
+        self.eventLog = eventLog
+        self.controller = controller
+
+    def create(self, parentID=None):
+        id = self.repository.createWorkspace()
+        self.controller.createWorkspace(id, parentID)
+        self.eventLog.processEvent(EventType.WORKSPACE_CREATED, {"id": id})
+
+        return id
+
+    def update(self, id, data):
+        self.repository.updateWorkspace(id, data)
+        self.controller.updateWorkspace(id, data)
+        self.eventLog.processEvent(EventType.WORKSPACE_UPDATED, data)
+
+
 class WorkspaceCore:
     def __init__(
         self,
@@ -15,75 +99,37 @@ class WorkspaceCore:
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
-        self.client = Client("Workspace Controller", dispatcher)
-
         self.view = WorkspaceView()
         self.view.workspacePressed_.connect(self.onWorkspaceFocused)
 
         self.controller = controller
         self.controller.setView(self.view)
 
+        self.repository = WorkspaceRepository(dispatcher)
+        self.builder = WorkspaceBuilder(controller, self.repository, eventLog)
+        self.serializer = WorkspaceSerializer(controller, self.repository)
+
         self.widget = widget
         self.widget.createWorkspaceBtn.clicked.connect(self.onWorkspaceCreated)
-        self.widget.restoreWorkspaceBtn.clicked.connect(self.onWorkspaceRestore)
-        self.widget.exportWorkspaceBtn.clicked.connect(self.onWorkspaceExport)
+        self.widget.restoreWorkspaceBtn.clicked.connect(self.serializer.restore)
+        self.widget.exportWorkspaceBtn.clicked.connect(self.serializer.export)
 
         self.eventLog = eventLog
         self.eventLog.register(EventType.APPLICATION_LOADED, self._createRootWorkspace)
 
     def _createRootWorkspace(self, data):
-        link = Link(ws.NAME, ws.WORKSPACE)
-        response = self.client.post(link)
-        id = response["workspaceID"]
-
-        self.controller.createWorkspace(id)
-        self.eventLog.processEvent(EventType.WORKSPACE_CREATED, {"id": id})
+        id = self.builder.create()
 
         data = {"id": id, "padding": 15, "text": "Root"}
-        link = Link(ws.NAME, ws.WORKSPACE, id)
-        self.client.put(link, data)
-        self.controller.updateWorkspace(id, data)
-        self.eventLog.processEvent(EventType.WORKSPACE_UPDATED, data)
+        self.builder.update(id, data)
 
     def onWorkspaceCreated(self):
-        link = Link(ws.NAME, ws.WORKSPACE)
-        response = self.client.post(link)
-        id = response["workspaceID"]
         parentID = self.view.focusedWorkspace
-        self.controller.createWorkspace(id, parentID)
-        self.eventLog.processEvent(EventType.WORKSPACE_CREATED, {"id": id})
+        id = self.builder.create(parentID)
 
         name = self.widget.getWorkspaceName()
         data = {"id": id, "text": name, "parentID": parentID}
-        link = Link(ws.NAME, ws.WORKSPACE, id)
-        self.client.put(link, data)
-        self.controller.updateWorkspace(id, data)
-        self.eventLog.processEvent(EventType.WORKSPACE_UPDATED, data)
+        self.builder.update(id, data)
 
     def onWorkspaceFocused(self, id):
         self.eventLog.processEvent(EventType.WORKSPACE_FOCUSED, {"id": id})
-
-    def onWorkspaceExport(self):
-        link = Link(ws.NAME, ws.WORKSPACE)
-        workspaces = self.client.get(link)
-
-        for id in workspaces:
-            config = self.controller.readWorkspace(id)
-            link = Link(ws.NAME, ws.WORKSPACE, id)
-            self.client.put(link, config)
-
-        link = Link(ws.NAME, ws.WORKSPACE, ws.EXPORT)
-        self.client.post(link)
-
-    def onWorkspaceRestore(self):
-        self.controller.clearState()
-
-        link = Link(ws.NAME, ws.WORKSPACE, ws.IMPORT)
-        workspaces = self.client.post(link)
-
-        for id in workspaces:
-            data = workspaces[id]
-            parentID = data.get("parentID")
-
-            self.controller.createWorkspace(id, parentID)
-            self.controller.updateWorkspace(id, data)
