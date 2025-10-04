@@ -8,8 +8,9 @@ from .backend import WorkspaceBackend
 class WorkspaceServiceData:
     NAME = "workspaceService"
     WORKSPACE = "workspace"
-    EXPORT = "export"
     DELETE = "delete"
+    EXPORT = "export"
+    IMPORT = "import"
 
 
 ws = WorkspaceServiceData
@@ -25,11 +26,14 @@ class WorkspaceService(EndpointService):
         self.addRoute(RequestType.POST, createRoute, self.createWorkspace)
 
         batchReadRoute = route(ws.WORKSPACE)
-        batchExportRoute = route(ws.WORKSPACE, ws.EXPORT)
         batchDeleteRoute = route(ws.WORKSPACE, ws.DELETE)
+        batchExportRoute = route(ws.WORKSPACE, ws.EXPORT)
+        batchImportRoute = route(ws.WORKSPACE, ws.IMPORT)
+
         self.addRoute(RequestType.GET, batchReadRoute, self.readAllWorkspaces)
-        self.addRoute(RequestType.POST, batchExportRoute, self.exportWorkspace)
         self.addRoute(RequestType.POST, batchDeleteRoute, self.deleteAllWorkspaces)
+        self.addRoute(RequestType.POST, batchExportRoute, self.exportWorkspace)
+        self.addRoute(RequestType.POST, batchImportRoute, self.importWorkspace)
 
     def createWorkspace(self, data):
         workspaceID, workspaceData = self.backend.createWorkspace(data)
@@ -56,6 +60,16 @@ class WorkspaceService(EndpointService):
 
         with open(path, "w") as f:
             json.dump(self.backend.workspaces, f, indent=4)
+
+    def importWorkspace(self, data):
+        path = data.get("outputFilename") or "workspaceConfig"
+        self.deleteAllWorkspaces(data)
+
+        with open(path, "r") as f:
+            data = json.load(f)
+            self.backend.overwrite(data)
+
+        return self.readAllWorkspaces(data)
 
     def deleteAllWorkspaces(self, data):
         self.backend.clear()

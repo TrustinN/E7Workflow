@@ -18,3 +18,6 @@ class WorkspaceBackend:
 
     def clear(self):
         self.workspaces.clear()
+
+    def overwrite(self, data):
+        self.workspaces = data
