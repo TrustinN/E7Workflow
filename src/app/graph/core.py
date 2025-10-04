@@ -26,6 +26,17 @@ class GraphCore:
             self.onWorkspaceCreated,
         )
         self.eventLog.register(EventType.WORKSPACE_UPDATED, self.onWorkspaceUpdated)
+        self.eventLog.register(EventType.WORKSPACE_FOCUSED, self.onWorkspaceFocused)
+
+    def getSceneNodePair(self, wksID):
+        sceneID = self.workspaceViewMapping.get(wksID)
+        nodeID = self.workspaceNodeMapping.get(wksID)
+        return sceneID, nodeID
+
+    def setScene(self, sceneID):
+        scene = self.scenes[sceneID]
+        self.widget.setScene(scene)
+        self.activeScene = sceneID
 
     def onWorkspaceCreated(self, data):
         wksID = data.get("id")
@@ -35,8 +46,7 @@ class GraphCore:
         self.workspaceViewMapping[wksID] = sceneID
 
         if not self.activeScene:
-            self.widget.setScene(scene)
-            self.activeScene = sceneID
+            self.setScene(sceneID)
 
         else:
             parentScene = self.widget.scene
@@ -46,15 +56,21 @@ class GraphCore:
     def onWorkspaceUpdated(self, data):
         wksID = data.get("id")
 
-        # scene = self.workspaceViewMapping[wksID]
-        node = self.workspaceNodeMapping.get(wksID)
+        _, nodeID = self.getSceneNodePair(wksID)
 
         nodeData = {"displayText": data.get("text")}
 
-        if node:
+        if nodeID:
             self.controller.updateNode(
-                self.scenes[self.activeScene], self.activeScene, node, nodeData
+                self.scenes[self.activeScene], self.activeScene, nodeID, nodeData
             )
+
+    def onWorkspaceFocused(self, data):
+        wksID = data.get("id")
+        sceneID, _ = self.getSceneNodePair(wksID)
+
+        if sceneID:
+            self.setScene(sceneID)
 
     def onEdgeCreated(self):
         parentScene = self.widget.scene

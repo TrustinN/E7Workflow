@@ -14,17 +14,21 @@ class WorkspaceView(QObject):
         self.focusedWorkspace = None
         self.workspaces: dict[str, Workspace] = {}
 
-    def createWorkspace(self, id, parentID):
+    def createWorkspace(self, id):
         workspace = Workspace()
         workspace.show()
         workspace.unlock()
-        self.workspaces[id] = workspace
-
-        if parentID:
-            self.workspaces[parentID].addChild(workspace)
 
         onWorkspacePressed = partial(self.onWorkspacePressed, id)
         workspace.mousePress.connect(onWorkspacePressed)
+
+        self.workspaces[id] = workspace
+
+        parentID = self.focusedWorkspace
+        if parentID:
+            self.workspaces[parentID].addChild(workspace)
+        else:
+            workspace.mousePress.emit()
 
     def updateWorkspace(self, id, data):
         workspace = self.workspaces[id]
@@ -33,9 +37,3 @@ class WorkspaceView(QObject):
     def onWorkspacePressed(self, id):
         self.focusedWorkspace = id
         self.workspacePressed_.emit(id)
-
-    def setFocusedWorkspace(self, id):
-        self.focusedWorkspace = id
-
-    def focusedWorkspace(self):
-        return self.focusedWorkspace

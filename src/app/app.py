@@ -35,7 +35,7 @@ class App(QApplication):
         )
 
         self.workspaceWidget = WorkspaceWidget()
-        self.workspaceController = WorkspaceController(self.eventLog, dispatcher)
+        self.workspaceController = WorkspaceController(dispatcher)
         self.workspaceCore = WorkspaceCore(
             self.workspaceWidget, self.workspaceController, self.eventLog
         )
