@@ -1,9 +1,9 @@
+from src.app.event.events import EventLog, EventType
+from src.app.frontend.graph import GraphWidget
 from src.router.routing import Client, Dispatcher, Link
 
-from ..event.events import EventLog, EventType
-from .modelView import GraphController
+from .controller import GraphController
 from .service import gs
-from .widget import GraphWidget
 
 
 class GraphRepository:

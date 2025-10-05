@@ -1,9 +1,9 @@
+from src.app.event.events import EventLog, EventType
+from src.app.frontend.workspace import WorkspaceView, WorkspaceWidget
 from src.router.routing import Client, Dispatcher, Link
 
-from ..event.events import EventLog, EventType
-from .modelView import WorkspaceController, WorkspaceView
+from .controller import WorkspaceController
 from .service import ws
-from .widget import WorkspaceWidget
 
 
 class WorkspaceRepository:

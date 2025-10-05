@@ -1,6 +1,6 @@
 from src.app import App
-from src.app.graph import GraphBackend, GraphService
-from src.app.workspace import WorkspaceBackend, WorkspaceService
+from src.app.backend.graph import GraphBackend, GraphService
+from src.app.backend.workspace import WorkspaceBackend, WorkspaceService
 from src.router.routing import Dispatcher
 
 

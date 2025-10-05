@@ -1,10 +1,12 @@
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QWidget
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
 
 from src.router.routing import Dispatcher
 
+from .backend.graph import GraphController, GraphCore
+from .backend.workspace import WorkspaceController, WorkspaceCore
 from .event.events import EventLog, EventType
-from .graph import GraphController, GraphCore, GraphWidget
-from .workspace import WorkspaceController, WorkspaceCore, WorkspaceWidget
+from .frontend.graph import GraphWidget
+from .frontend.workspace import WorkspaceWidget
 
 
 class MainWindow(QMainWindow):
@@ -45,9 +47,6 @@ class App(QApplication):
             self.eventLog,
             dispatcher,
         )
-
-        self.importBtn = QPushButton("Import")
-        self.exportBtn = QPushButton("Export")
 
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.workspaceWidget)

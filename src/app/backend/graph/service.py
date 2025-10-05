@@ -38,6 +38,7 @@ class GraphService(EndpointService):
 
         edgeRoute = route(gs.GRAPH, ":id", gs.EDGE, ":id")
         nodeRoute = route(gs.GRAPH, ":id", gs.NODE, ":id")
+
         self.addRoute(RequestType.PUT, edgeRoute, self.updateEdge)
         self.addRoute(RequestType.PUT, nodeRoute, self.updateNode)
 
