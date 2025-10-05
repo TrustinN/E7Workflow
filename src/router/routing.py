@@ -1,3 +1,6 @@
+from functools import partial
+
+
 class RequestType:
     GET = "GET"
     POST = "POST"
@@ -59,20 +62,69 @@ def route(*parts: str) -> str:
     return "/".join(parts)
 
 
+def routeParts(route: str):
+    return route.split("/")
+
+
+class RouteResolver:
+    def __init__(self):
+        self.routes = {}
+
+    def addRoute(self, method: RequestType, pathPattern: str, handler):
+        key = f"{method} {pathPattern}"
+        self.routes[key] = handler
+
+    def resolve(self, method: RequestType, route: str):
+        matches = []
+
+        handler = self.routes.get(f"{method} {route}")
+        if handler:
+            return handler, matches
+
+        for key, handler in self.routes.items():
+            routeMethod, routePattern = key.split(" ", 1)
+            if routeMethod != method:
+                continue
+
+            isMatch, matches = self.matchPattern(route, routePattern)
+            if isMatch:
+                return handler, matches
+
+    def matchPattern(self, route, pattern):
+        routeList = routeParts(route)
+        patternList = routeParts(pattern)
+        matches = []
+
+        if len(routeList) != len(patternList):
+            return False, matches
+
+        for routeP, patternP in zip(routeList, patternList):
+            if not patternP.startswith(":"):
+                if routeP != patternP:
+                    return False, matches
+
+            else:
+                matches.append(routeP)
+
+        return True, matches
+
+
 class EndpointService:
     def __init__(self, name: str, dispatcher: Dispatcher):
         self.endpoint = Endpoint(name, dispatcher)
         self.endpoint.addHandler(name, self.handleRequest)
-        self.routes = {}
+
+        self.resolver = RouteResolver()
 
     def addRoute(self, method: RequestType, resourceID, handler):
-        self.routes[f"{method} {resourceID}"] = handler
+        self.resolver.addRoute(method, resourceID, handler)
 
     def getRouteHandler(self, method: RequestType, resourceID):
-        return self.routes[f"{method} {resourceID}"]
+        return self.resolver.resolve(method, resourceID)
 
     def handleRequest(self, packet: Packet):
-        handler = self.getRouteHandler(packet.method, packet.resourceID)
+        handler, params = self.getRouteHandler(packet.method, packet.resourceID)
+        handler = partial(handler, *params)
         response = handler(packet.data)
         return response
 

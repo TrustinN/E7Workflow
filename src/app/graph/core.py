@@ -140,7 +140,6 @@ class GraphSerializer:
             edges = graphData.get("edges")
             graphConfig = graphData.get("data")
             self.controller.createGraph(graphID)
-            # TODO: Clear and restore graphContext
 
             for nodeID, nodeData in nodes.items():
                 self.controller.createNode(graphID, nodeID)
