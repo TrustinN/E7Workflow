@@ -115,10 +115,13 @@ class GraphicsNodeItem(QGraphicsRectItem):
         self.emitter = GraphicsEmitter()
 
     def getData(self):
+        pos = self.pos()
+        r = self.rect()
+        c = self.color
         return {
-            "position": self.pos(),
-            "color": self.color,
-            "rect": self.rect(),
+            "position": [pos.x(), pos.y()],
+            "color": [c.red(), c.green(), c.blue()],
+            "rect": [r.x(), r.y(), r.width(), r.height()],
             "displayText": self.displayText,
         }
 
@@ -129,13 +132,13 @@ class GraphicsNodeItem(QGraphicsRectItem):
         displayText = data.get("displayText")
 
         if position is not None:
-            self.setPos(position)
+            self.setPos(QPointF(*position))
 
         if color is not None:
-            self.color = color
+            self.color = QColor(*color)
 
         if rect is not None:
-            self.setRect(rect)
+            self.setRect(QRectF(*rect))
 
         if displayText is not None:
             self.displayText = displayText

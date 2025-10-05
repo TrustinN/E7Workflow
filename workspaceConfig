@@ -1,96 +1,48 @@
 {
-    "whMKHqVKYSJDXIFBUIqrM": {
-        "id": "whMKHqVKYSJDXIFBUIqrM",
+    "5ZZ1SEz9JIjXcyMlceJ5u": {
+        "id": "5ZZ1SEz9JIjXcyMlceJ5u",
         "padding": 15,
         "text": "Root",
         "geometry": [
             [
-                650,
-                170
+                485,
+                224
             ],
             [
-                1458,
-                672
+                1369,
+                815
             ]
         ]
     },
-    "TXFA9rREODZ1EpK0Lgqnp": {
-        "id": "TXFA9rREODZ1EpK0Lgqnp",
+    "F7CSuWkorVRkMf-DibEs9": {
+        "id": "F7CSuWkorVRkMf-DibEs9",
         "text": "WS Name",
-        "parentID": "whMKHqVKYSJDXIFBUIqrM",
+        "parentID": "5ZZ1SEz9JIjXcyMlceJ5u",
         "padding": 0,
         "geometry": [
             [
-                1025,
-                185
+                500,
+                501
             ],
             [
-                1443,
-                437
+                999,
+                800
             ]
         ]
     },
-    "O4Tbju0DfdxRHUdvfZiWj": {
-        "id": "O4Tbju0DfdxRHUdvfZiWj",
+    "WofnPdXNso2SnZIoubkvn": {
+        "id": "WofnPdXNso2SnZIoubkvn",
         "text": "WS Name",
-        "parentID": "whMKHqVKYSJDXIFBUIqrM",
+        "parentID": "5ZZ1SEz9JIjXcyMlceJ5u",
         "padding": 0,
         "geometry": [
             [
-                665,
-                357
+                855,
+                239
             ],
             [
-                1003,
-                557
-            ]
-        ]
-    },
-    "9I-mQPup2yX81R2kiyyxD": {
-        "id": "9I-mQPup2yX81R2kiyyxD",
-        "text": "WS Name",
-        "parentID": "whMKHqVKYSJDXIFBUIqrM",
-        "padding": 0,
-        "geometry": [
-            [
-                1021,
-                456
-            ],
-            [
-                1360,
-                657
-            ]
-        ]
-    },
-    "6Owp2WOY8cabI5_xNpe2n": {
-        "id": "6Owp2WOY8cabI5_xNpe2n",
-        "text": "WS Name",
-        "parentID": "TXFA9rREODZ1EpK0Lgqnp",
-        "padding": 0,
-        "geometry": [
-            [
-                1025,
-                299
-            ],
-            [
-                1256,
-                437
-            ]
-        ]
-    },
-    "-GFN7Pa0HDZxN4i31CWRM": {
-        "id": "-GFN7Pa0HDZxN4i31CWRM",
-        "text": "WS Name",
-        "parentID": "TXFA9rREODZ1EpK0Lgqnp",
-        "padding": 0,
-        "geometry": [
-            [
-                1104,
-                185
-            ],
-            [
-                1443,
-                385
+                1354,
+                538
             ]
         ]
     }

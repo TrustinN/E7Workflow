@@ -39,9 +39,11 @@ class WorkspaceSerializer:
         self,
         controller: WorkspaceController,
         repository: WorkspaceRepository,
+        eventLog: EventLog,
     ):
         self.repository = repository
         self.controller = controller
+        self.eventLog = eventLog
 
     def export(self):
         workspaces = self.repository.getAllWorkspaces()
@@ -51,6 +53,7 @@ class WorkspaceSerializer:
             self.repository.updateWorkspace(id, config)
 
         self.repository.exportWorkspaces()
+        self.eventLog.processEvent(EventType.WORKSPACE_EXPORTED)
 
     def restore(self):
         self.controller.clearState()
@@ -63,6 +66,8 @@ class WorkspaceSerializer:
 
             self.controller.createWorkspace(id, parentID)
             self.controller.updateWorkspace(id, data)
+
+        self.eventLog.processEvent(EventType.WORKSPACE_IMPORTED)
 
 
 class WorkspaceBuilder:
@@ -105,7 +110,7 @@ class WorkspaceCore:
 
         self.repository = WorkspaceRepository(dispatcher)
         self.builder = WorkspaceBuilder(controller, self.repository, eventLog)
-        self.serializer = WorkspaceSerializer(controller, self.repository)
+        self.serializer = WorkspaceSerializer(controller, self.repository, eventLog)
 
         self.widget = widget
         self.widget.createWorkspaceBtn.clicked.connect(self.onWorkspaceCreated)

@@ -6,8 +6,7 @@ class GraphBackend:
         self.graphs = {}
 
     def createGraph(self, userData=None):
-        if userData is None:
-            userData = {}
+        userData = userData or {}
 
         graphID = generate()
         data = {"nodes": {}, "edges": {}, "data": userData}
@@ -15,27 +14,34 @@ class GraphBackend:
         return graphID, data
 
     def createNode(self, graphID, userData=None):
-        if userData is None:
-            userData = {}
+        userData = userData or {}
 
         nodes = self.graphs[graphID]["nodes"]
         nodeID = generate()
-        data = {"data": userData}
-        nodes[nodeID] = data
-        return nodeID, data
+        nodes[nodeID] = userData
+        return nodeID, userData
 
     def createEdge(self, graphID, id1, id2, userData=None):
-        if userData is None:
-            userData = {}
+        userData = userData or {}
 
         edges = self.graphs[graphID]["edges"]
-        data = {"startNodeID": id1, "endNodeID": id2, "data": userData}
+        data = {"startNodeID": id1, "endNodeID": id2}
+        data.update(userData)
         edgeID = generate()
         edges[edgeID] = data
         return edgeID, data
 
-    def updateNode(self, graphID, id, data):
-        pass
+    def updateGraph(self, graphID, data):
+        self.graphs[graphID]["data"].update(data)
 
-    def updateEdge(self, graphID, id1, id2, data):
-        pass
+    def updateNode(self, graphID, nodeID, data):
+        self.graphs[graphID]["nodes"][nodeID].update(data)
+
+    def updateEdge(self, graphID, edgeID, data):
+        self.graphs[graphID]["edges"][edgeID].update(data)
+
+    def clear(self):
+        self.graphs.clear()
+
+    def overwrite(self, data):
+        self.graphs = data

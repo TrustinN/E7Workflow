@@ -1,0 +1,54 @@
+{
+    "o2cI--Q71VFg3wnnSkPW4": {
+        "nodes": {
+            "yRbxaprZA0qRoEJj7o8zB": {
+                "position": [
+                    126.0,
+                    181.0
+                ],
+                "color": [
+                    20,
+                    20,
+                    20
+                ],
+                "rect": [
+                    0.0,
+                    0.0,
+                    50.0,
+                    50.0
+                ],
+                "displayText": "WS Name"
+            },
+            "9gLCScEzUvX898aaQINy6": {
+                "position": [
+                    213.0,
+                    6.0
+                ],
+                "color": [
+                    20,
+                    20,
+                    20
+                ],
+                "rect": [
+                    0.0,
+                    0.0,
+                    50.0,
+                    50.0
+                ],
+                "displayText": "WS Name"
+            }
+        },
+        "edges": {},
+        "data": {}
+    },
+    "jqKr3btvjcuufP7XjVNzb": {
+        "nodes": {},
+        "edges": {},
+        "data": {}
+    },
+    "DElxxFlbOEzyOirkhYWwW": {
+        "nodes": {},
+        "edges": {},
+        "data": {}
+    }
+}
