@@ -10,6 +10,14 @@ class GraphRepository:
     def __init__(self, dispatcher: Dispatcher):
         self.client = Client("Graph Repository", dispatcher)
 
+    def getContext(self):
+        link = Link(gs.NAME, gs.CONTEXT)
+        return self.client.get(link)
+
+    def setContext(self, context):
+        link = Link(gs.NAME, gs.CONTEXT)
+        self.client.post(link, context)
+
     def createGraph(self):
         link = Link(gs.NAME, gs.GRAPH)
         response = self.client.post(link)
@@ -28,9 +36,16 @@ class GraphRepository:
         link = Link(gs.NAME, gs.GRAPH, graphID, gs.NODE, nodeID)
         self.client.put(link, data)
 
-    def createEdge(self, graphID, id1, id2):
+    def createEdge(self, graphID):
         link = Link(gs.NAME, gs.GRAPH, graphID, gs.EDGE)
-        self.client.post(link, {"nodeID1": id1, "nodeID2": id2})
+        response = self.client.post(link)
+
+        edgeID = response["edgeID"]
+        return edgeID
+
+    def updateEdge(self, graphID, edgeID, data):
+        link = Link(gs.NAME, gs.GRAPH, graphID, gs.EDGE, edgeID)
+        self.client.put(link, data)
 
     def getGraph(self):
         link = Link(gs.NAME, gs.GRAPH)
@@ -73,6 +88,20 @@ class GraphContext:
         nodeID = self.workspaceNodeMapping.get(wksID)
         return sceneID, nodeID
 
+    def toDict(self):
+        return {
+            "activeScene": self.activeScene,
+            "sceneParents": self.sceneParents,
+            "workspaceViewMapping": self.workspaceViewMapping,
+            "workspaceNodeMapping": self.workspaceNodeMapping,
+        }
+
+    def fromDict(self, data):
+        self.activeScene = data.get("activeScene")
+        self.sceneParents = data.get("sceneParents")
+        self.workspaceViewMapping = data.get("workspaceViewMapping")
+        self.workspaceNodeMapping = data.get("workspaceNodeMapping")
+
 
 class GraphSerializer:
     def __init__(
@@ -83,6 +112,7 @@ class GraphSerializer:
     ):
         self.controller = controller
         self.repository = repository
+        self.context = context
 
     def export(self):
         graphs = self.repository.getGraph()
@@ -96,6 +126,7 @@ class GraphSerializer:
                 nodeData = self.controller.readNode(graphID, nodeID)
                 self.repository.updateNode(graphID, nodeID, nodeData)
 
+        self.repository.setContext(self.context.toDict())
         self.repository.exportGraph()
 
     def restore(self):
@@ -109,10 +140,19 @@ class GraphSerializer:
             edges = graphData.get("edges")
             graphConfig = graphData.get("data")
             self.controller.createGraph(graphID)
+            # TODO: Clear and restore graphContext
 
             for nodeID, nodeData in nodes.items():
                 self.controller.createNode(graphID, nodeID)
                 self.controller.updateNode(graphID, nodeID, nodeData)
+
+            for edgeID, edgeData in edges.items():
+                id1 = edgeData.get("id1")
+                id2 = edgeData.get("id2")
+                self.controller.createEdge(graphID, edgeID, id1, id2)
+
+        context = self.repository.getContext()
+        self.context.fromDict(context)
 
 
 class GraphBuilder:
@@ -140,9 +180,13 @@ class GraphBuilder:
         self.controller.updateNode(graphID, nodeID, data)
 
     def createEdge(self, graphID):
-        ids = self.controller.createEdge(graphID)
+        if not self.controller.canCreateEdge():
+            return
+
+        edgeID = self.repository.createEdge(graphID)
+        ids = self.controller.createEdge(graphID, edgeID)
         if ids:
-            self.repository.createEdge(graphID, *ids)
+            self.repository.updateEdge(graphID, edgeID, {"id1": ids[0], "id2": ids[1]})
 
 
 class GraphCore:
@@ -156,6 +200,12 @@ class GraphCore:
         self.widget = widget
         self.controller = controller
 
+        self.widget.setE1Btn.clicked.connect(
+            lambda: self.controller.setE1(self.context.activeScene)
+        )
+        self.widget.setE2Btn.clicked.connect(
+            lambda: self.controller.setE2(self.context.activeScene)
+        )
         self.widget.createEdgeBtn.clicked.connect(self.onEdgeCreated)
 
         self.context = GraphContext()

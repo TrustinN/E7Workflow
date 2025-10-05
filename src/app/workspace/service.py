@@ -1,4 +1,5 @@
 import json
+from functools import partial
 
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
@@ -40,16 +41,13 @@ class WorkspaceService(EndpointService):
         self.addRoute(
             RequestType.PUT,
             route(ws.WORKSPACE, workspaceID),
-            self.updateWorkspaceFunc(workspaceID),
+            partial(self.updateWorkspace, workspaceID),
         )
 
         return {"workspaceID": workspaceID, "workspaceData": workspaceData}
 
-    def updateWorkspaceFunc(self, id):
-        def updateWorkspace(data):
-            self.backend.updateWorkspace(id, data)
-
-        return updateWorkspace
+    def updateWorkspace(self, id, data):
+        self.backend.updateWorkspace(id, data)
 
     # Batch Operations
     def readAllWorkspaces(self, data):
