@@ -1,9 +1,8 @@
 from src.router.routing import Client, Dispatcher, Link
 
 from ..event.events import EventLog, EventType
-from .controller import WorkspaceController
+from .modelView import WorkspaceController, WorkspaceView
 from .service import ws
-from .view import WorkspaceView
 from .widget import WorkspaceWidget
 
 
@@ -59,8 +58,7 @@ class WorkspaceSerializer:
 
         workspaces = self.repository.getAllWorkspaces()
 
-        for id in workspaces:
-            data = workspaces[id]
+        for id, data in workspaces.items():
             parentID = data.get("parentID")
 
             self.controller.createWorkspace(id, parentID)

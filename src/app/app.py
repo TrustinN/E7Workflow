@@ -29,9 +29,12 @@ class App(QApplication):
         self.eventLog = EventLog()
 
         self.graphWidget = GraphWidget()
-        self.graphController = GraphController(dispatcher)
+        self.graphController = GraphController()
         self.graphCore = GraphCore(
-            self.graphWidget, self.graphController, self.eventLog
+            self.graphWidget,
+            self.graphController,
+            self.eventLog,
+            dispatcher,
         )
 
         self.workspaceWidget = WorkspaceWidget()
