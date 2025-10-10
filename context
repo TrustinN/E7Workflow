@@ -1,0 +1,25 @@
+{
+    "activeScene": "z4gOCYbFO7Q5hbX3TUCOO",
+    "sceneParents": {
+        "gLyd6VrvKcjGN41konbu1": "TN5j8TfxZifcaKwSqwi85",
+        "cXy4Y91E_8h2b2zVJov8o": "TN5j8TfxZifcaKwSqwi85",
+        "z4gOCYbFO7Q5hbX3TUCOO": "TN5j8TfxZifcaKwSqwi85",
+        "riPapxdBKELSEC-YOE0BX": "z4gOCYbFO7Q5hbX3TUCOO",
+        "jp5-WZWoc7t8EwPhNQZWf": "z4gOCYbFO7Q5hbX3TUCOO"
+    },
+    "workspaceViewMapping": {
+        "HYRo6VnCqyFoWWTh0ZBsk": "TN5j8TfxZifcaKwSqwi85",
+        "3ISSKRMZ1vQ2248YQ2TT1": "gLyd6VrvKcjGN41konbu1",
+        "7w_F337X5SnA-3Dhpjp1e": "cXy4Y91E_8h2b2zVJov8o",
+        "k6zvuBFUXid9sk9n-fUI3": "z4gOCYbFO7Q5hbX3TUCOO",
+        "LUTevB84RSahmiU2FwCy-": "riPapxdBKELSEC-YOE0BX",
+        "MW3KixSRmthwe6fz5Vi1p": "jp5-WZWoc7t8EwPhNQZWf"
+    },
+    "workspaceNodeMapping": {
+        "3ISSKRMZ1vQ2248YQ2TT1": "O5Sba6ABvpEaB29mkkRM3",
+        "7w_F337X5SnA-3Dhpjp1e": "2KXEvI4FvTM9HNnGtjj1P",
+        "k6zvuBFUXid9sk9n-fUI3": "Lkj5AMEK3nJXIjS10PH1J",
+        "LUTevB84RSahmiU2FwCy-": "jJpR0lFyzlwPyL5MnNQ25",
+        "MW3KixSRmthwe6fz5Vi1p": "MdvQmvJ5i2Y1zemDPcUL7"
+    }
+}

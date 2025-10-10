@@ -29,7 +29,7 @@ class WorkspaceView(QObject):
         if parentID:
             self.workspaces[parentID].addChild(workspace)
         else:
-            self.onWorkspacePressed(id)
+            self.focusedWorkspace = id
             self.rootID = id
 
     def readWorkspace(self, id):

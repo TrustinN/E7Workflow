@@ -1,4 +1,4 @@
-from src.app.frontend.graph import GraphView
+from .view import GraphView
 
 
 class GraphController:

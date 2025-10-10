@@ -1,4 +1,4 @@
-from src.app.frontend.workspace import WorkspaceView
+from .view import WorkspaceView
 
 
 class WorkspaceController:

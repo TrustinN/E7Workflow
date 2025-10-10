@@ -1,9 +1,10 @@
-from src.app.event.events import EventLog, EventType
-from src.app.frontend.graph import GraphWidget
+from src.app.backend.graph.service import gs
+from src.app.frontend.context import Context
+from src.app.frontend.events import EventLog, EventType
 from src.router.routing import Client, Dispatcher, Link
 
 from .controller import GraphController
-from .service import gs
+from .widget import GraphWidget
 
 
 class GraphRepository:
@@ -60,59 +61,14 @@ class GraphRepository:
         self.client.post(link)
 
 
-class GraphContext:
-    def __init__(self):
-        self.activeScene = None
-        self.sceneParents = {}
-        self.workspaceViewMapping = {}
-        self.workspaceNodeMapping = {}
-
-    def setActive(self, sceneID):
-        self.activeScene = sceneID
-
-    @property
-    def active(self):
-        return self.activeScene
-
-    def parentScene(self, id):
-        return self.sceneParents[id]
-
-    def newWorkspace(self, wksID, viewID, nodeID=None):
-        self.workspaceViewMapping[wksID] = viewID
-        if self.activeScene:
-            self.sceneParents[viewID] = self.activeScene
-            self.workspaceNodeMapping[wksID] = nodeID
-
-    def sceneNode(self, wksID):
-        sceneID = self.workspaceViewMapping.get(wksID)
-        nodeID = self.workspaceNodeMapping.get(wksID)
-        return sceneID, nodeID
-
-    def toDict(self):
-        return {
-            "activeScene": self.activeScene,
-            "sceneParents": self.sceneParents,
-            "workspaceViewMapping": self.workspaceViewMapping,
-            "workspaceNodeMapping": self.workspaceNodeMapping,
-        }
-
-    def fromDict(self, data):
-        self.activeScene = data.get("activeScene")
-        self.sceneParents = data.get("sceneParents")
-        self.workspaceViewMapping = data.get("workspaceViewMapping")
-        self.workspaceNodeMapping = data.get("workspaceNodeMapping")
-
-
 class GraphSerializer:
     def __init__(
         self,
         controller: GraphController,
         repository: GraphRepository,
-        context: GraphContext,
     ):
         self.controller = controller
         self.repository = repository
-        self.context = context
 
     def export(self):
         graphs = self.repository.getGraph()
@@ -126,7 +82,6 @@ class GraphSerializer:
                 nodeData = self.controller.readNode(graphID, nodeID)
                 self.repository.updateNode(graphID, nodeID, nodeData)
 
-        self.repository.setContext(self.context.toDict())
         self.repository.exportGraph()
 
     def restore(self):
@@ -149,9 +104,6 @@ class GraphSerializer:
                 id1 = edgeData.get("id1")
                 id2 = edgeData.get("id2")
                 self.controller.createEdge(graphID, edgeID, id1, id2)
-
-        context = self.repository.getContext()
-        self.context.fromDict(context)
 
 
 class GraphBuilder:
@@ -193,24 +145,30 @@ class GraphCore:
         self,
         widget: GraphWidget,
         controller: GraphController,
+        context: Context,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
         self.widget = widget
         self.controller = controller
 
+        self.context = context
+        self.context.add("activeScene", None)
+        self.context.add("sceneParents", {})
+        self.context.add("workspaceViewMapping", {})
+        self.context.add("workspaceNodeMapping", {})
+
         self.widget.setE1Btn.clicked.connect(
-            lambda: self.controller.setE1(self.context.activeScene)
+            lambda: self.controller.setE1(self.context.get("activeScene"))
         )
         self.widget.setE2Btn.clicked.connect(
-            lambda: self.controller.setE2(self.context.activeScene)
+            lambda: self.controller.setE2(self.context.get("activeScene"))
         )
         self.widget.createEdgeBtn.clicked.connect(self.onEdgeCreated)
 
-        self.context = GraphContext()
         self.repository = GraphRepository(dispatcher)
         self.builder = GraphBuilder(controller, self.repository, eventLog)
-        self.serializer = GraphSerializer(controller, self.repository, self.context)
+        self.serializer = GraphSerializer(controller, self.repository)
 
         self.eventLog = eventLog
         self.eventLog.register(
@@ -229,41 +187,45 @@ class GraphCore:
     def setScene(self, sceneID):
         scene = self.controller.scene(sceneID)
         self.widget.setScene(scene)
-        self.context.setActive(sceneID)
+        self.context.put("activeScene", sceneID)
 
     def onWorkspaceCreated(self, data):
         wksID = data.get("id")
         sceneID, scene = self.builder.createGraph()
         nodeID = None
-        activeID = self.context.active
+        activeID = self.context.get("activeScene")
+        self.context.get("workspaceViewMapping")[wksID] = sceneID
         if not activeID:
             self.setScene(sceneID)
 
         else:
             nodeID = self.builder.createNode(activeID)
-
-        self.context.newWorkspace(wksID, sceneID, nodeID)
+            self.context.get("sceneParents")[sceneID] = activeID
+            self.context.get("workspaceNodeMapping")[wksID] = nodeID
 
     def onWorkspaceUpdated(self, data):
         wksID = data.get("id")
         text = data.get("text")
 
-        sceneID, nodeID = self.context.sceneNode(wksID)
+        sceneID = self.context.get("workspaceViewMapping").get(wksID)
+        nodeID = self.context.get("workspaceNodeMapping").get(wksID)
 
         nodeData = {"displayText": text}
 
         if nodeID:
-            parentScene = self.context.parentScene(sceneID)
+            parentScene = self.context.get("sceneParents").get(sceneID)
             self.builder.updateNode(parentScene, nodeID, nodeData)
 
     def onWorkspaceFocused(self, data):
         wksID = data.get("id")
-        sceneID, _ = self.context.sceneNode(wksID)
+
+        sceneID = self.context.get("workspaceViewMapping").get(wksID)
+        nodeID = self.context.get("workspaceNodeMapping").get(wksID)
 
         if sceneID:
             self.setScene(sceneID)
 
     def onEdgeCreated(self):
-        activeID = self.context.active
+        activeID = self.context.get("activeScene")
         if activeID:
             self.builder.createEdge(activeID)

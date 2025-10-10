@@ -2,11 +2,11 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
 
 from src.router.routing import Dispatcher
 
-from .backend.graph import GraphController, GraphCore
-from .backend.workspace import WorkspaceController, WorkspaceCore
-from .event.events import EventLog, EventType
-from .frontend.graph import GraphWidget
-from .frontend.workspace import WorkspaceWidget
+from .frontend.context import Context
+from .frontend.events import EventLog, EventType
+from .frontend.graph import GraphController, GraphCore, GraphWidget
+from .frontend.runner import RunnerWidget
+from .frontend.workspace import WorkspaceController, WorkspaceCore, WorkspaceWidget
 
 
 class MainWindow(QMainWindow):
@@ -28,27 +28,33 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
+        self.context = Context()
         self.eventLog = EventLog()
-
-        self.graphWidget = GraphWidget()
-        self.graphController = GraphController()
-        self.graphCore = GraphCore(
-            self.graphWidget,
-            self.graphController,
-            self.eventLog,
-            dispatcher,
-        )
 
         self.workspaceWidget = WorkspaceWidget()
         self.workspaceController = WorkspaceController()
         self.workspaceCore = WorkspaceCore(
             self.workspaceWidget,
             self.workspaceController,
+            self.context,
             self.eventLog,
             dispatcher,
         )
 
-        self.layout.addWidget(self.graphWidget)
+        self.graphWidget = GraphWidget()
+        self.graphController = GraphController()
+        self.graphCore = GraphCore(
+            self.graphWidget,
+            self.graphController,
+            self.context,
+            self.eventLog,
+            dispatcher,
+        )
+
+        self.runnerWidget = RunnerWidget()
+
         self.layout.addWidget(self.workspaceWidget)
+        self.layout.addWidget(self.graphWidget)
+        self.layout.addWidget(self.runnerWidget)
 
         self.eventLog.processEvent(EventType.APPLICATION_LOADED)

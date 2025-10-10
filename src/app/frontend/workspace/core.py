@@ -1,9 +1,11 @@
-from src.app.event.events import EventLog, EventType
-from src.app.frontend.workspace import WorkspaceView, WorkspaceWidget
+from src.app.backend.workspace.service import ws
+from src.app.frontend.context import Context
+from src.app.frontend.events import EventLog, EventType
 from src.router.routing import Client, Dispatcher, Link
 
 from .controller import WorkspaceController
-from .service import ws
+from .view import WorkspaceView
+from .widget import WorkspaceWidget
 
 
 class WorkspaceRepository:
@@ -99,6 +101,7 @@ class WorkspaceCore:
         self,
         widget: WorkspaceWidget,
         controller: WorkspaceController,
+        context: Context,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
@@ -108,13 +111,17 @@ class WorkspaceCore:
         self.controller = controller
         self.controller.setView(self.view)
 
+        self.context = context
+
         self.repository = WorkspaceRepository(dispatcher)
         self.builder = WorkspaceBuilder(controller, self.repository, eventLog)
         self.serializer = WorkspaceSerializer(controller, self.repository, eventLog)
 
         self.widget = widget
         self.widget.createWorkspaceBtn.clicked.connect(self.onWorkspaceCreated)
+        self.widget.restoreWorkspaceBtn.clicked.connect(self.context.load)
         self.widget.restoreWorkspaceBtn.clicked.connect(self.serializer.restore)
+        self.widget.exportWorkspaceBtn.clicked.connect(self.context.save)
         self.widget.exportWorkspaceBtn.clicked.connect(self.serializer.export)
 
         self.eventLog = eventLog

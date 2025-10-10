@@ -27,9 +27,6 @@ class GraphService(EndpointService):
         self.addRoute(RequestType.GET, route(gs.GRAPH), self.readGraph)
         self.addRoute(RequestType.POST, route(gs.GRAPH), self.createGraph)
 
-        self.addRoute(RequestType.GET, route(gs.CONTEXT), self.getContext)
-        self.addRoute(RequestType.POST, route(gs.CONTEXT), self.setContext)
-
         nodeRoute = route(gs.GRAPH, ":id", gs.NODE)
         edgeRoute = route(gs.GRAPH, ":id", gs.EDGE)
 
@@ -44,12 +41,6 @@ class GraphService(EndpointService):
 
         self.addRoute(RequestType.POST, route(gs.GRAPH, gs.EXPORT), self.exportGraph)
         self.addRoute(RequestType.POST, route(gs.GRAPH, gs.IMPORT), self.importGraph)
-
-    def getContext(self, data):
-        return self.backend.context
-
-    def setContext(self, data):
-        self.backend.setContext(data)
 
     def createGraph(self, data):
         userData = data.get("userData")
@@ -83,20 +74,11 @@ class GraphService(EndpointService):
         with open(path, "w") as f:
             json.dump(self.backend.graphs, f, indent=4)
 
-        path = data.get("contextFilename") or "graphContext"
-        with open(path, "w") as f:
-            json.dump(self.backend.context, f, indent=4)
-
     def importGraph(self, data):
         path = data.get("outputFilename") or "graphConfig"
         with open(path, "r") as f:
             data = json.load(f)
             self.backend.overwrite(data)
-
-        path = data.get("contextFilename") or "graphContext"
-        with open(path, "r") as f:
-            data = json.load(f)
-            self.backend.setContext(data)
 
     def deleteAllGraphs(self, data):
         self.backend.clear

@@ -4,10 +4,6 @@ from nanoid import generate
 class GraphBackend:
     def __init__(self):
         self.graphs = {}
-        self.context = {}
-
-    def setContext(self, data):
-        self.context = data
 
     def createGraph(self, userData=None):
         userData = userData or {}
@@ -44,7 +40,6 @@ class GraphBackend:
 
     def clear(self):
         self.graphs.clear()
-        self.context.clear()
 
     def overwrite(self, data):
         self.graphs = data
