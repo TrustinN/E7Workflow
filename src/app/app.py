@@ -3,10 +3,10 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
 from src.router.routing import Dispatcher
 
 from .frontend.context import Context
-from .frontend.events import EventLog, EventType
-from .frontend.graph import GraphController, GraphCore, GraphWidget
-from .frontend.runner import RunnerWidget
-from .frontend.workspace import WorkspaceController, WorkspaceCore, WorkspaceWidget
+from .frontend.events import AppEvents, EventLog
+from .frontend.graph import GraphCore, GraphWidget
+from .frontend.runner import RunnerComponent, RunnerWidget
+from .frontend.workspace import WorkspaceCore, WorkspaceWidget
 
 
 class MainWindow(QMainWindow):
@@ -32,29 +32,26 @@ class App(QApplication):
         self.eventLog = EventLog()
 
         self.workspaceWidget = WorkspaceWidget()
-        self.workspaceController = WorkspaceController()
         self.workspaceCore = WorkspaceCore(
             self.workspaceWidget,
-            self.workspaceController,
             self.context,
             self.eventLog,
             dispatcher,
         )
 
         self.graphWidget = GraphWidget()
-        self.graphController = GraphController()
         self.graphCore = GraphCore(
             self.graphWidget,
-            self.graphController,
             self.context,
             self.eventLog,
             dispatcher,
         )
 
         self.runnerWidget = RunnerWidget()
+        self.runnerComponent = RunnerComponent(self.runnerWidget, self.context)
 
         self.layout.addWidget(self.workspaceWidget)
         self.layout.addWidget(self.graphWidget)
         self.layout.addWidget(self.runnerWidget)
 
-        self.eventLog.processEvent(EventType.APPLICATION_LOADED)
+        self.eventLog.processEvent(AppEvents.APP_LOADED)

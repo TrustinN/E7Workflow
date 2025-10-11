@@ -1,28 +1,82 @@
-class EventType:
-    APPLICATION_LOADED = 1
+from nanoid import generate
 
-    WORKSPACE_CREATED = 2
-    WORKSPACE_UPDATED = 3
-    WORKSPACE_FOCUSED = 4
-    WORKSPACE_EXPORTED = 5
-    WORKSPACE_IMPORTED = 6
 
-    NODE_PRESSED = 7
+class EventIDProvider:
+    def __init__(self, group: str):
+        self.group = group
+        self.groupID = group + generate(size=8)
+        self.counter = 0
+
+    def genID(self):
+        id = f"{self.groupID}__{self.counter}"
+        self.counter += 1
+        return id
+
+
+class AppEvents:
+    provider = EventIDProvider("ApplicationEvent")
+
+    APP_LOADED = provider.genID()
+
+    NODE_PRESSED = provider.genID()
 
 
 class EventLog:
     def __init__(self):
-        self.handlers: dict[EventType, list[any]] = {}
+        self.handlers: dict[str, list[any]] = {}
 
-    def register(self, event: EventType, handler):
+    def register(self, event: str, handler):
         self.handlers.setdefault(event, []).append(handler)
 
-    def processEvent(self, eventType, data=None):
-        if eventType not in self.handlers:
+    def processEvent(self, event: str, data=None):
+        if event not in self.handlers:
             return
-        handlers = self.handlers[eventType]
+        handlers = self.handlers[event]
         for cb in handlers:
             cb(data or {})
+
+
+class EventHandler:
+    def __init__(self, handler, data=True):
+        self.handler = handler
+        self.data = data
+
+        self.lastHandler: EventHandler = self
+        self.nextHandler = None
+
+    def setNext(self, handler: "EventHandler"):
+        self.nextHandler = handler
+
+    def chain(self, handler, data=True):
+        nextHandler = EventHandler(handler, data)
+        self.lastHandler.setNext(nextHandler)
+        self.lastHandler = nextHandler.lastHandler
+        return self
+
+    def __call__(self, data):
+        output = None
+        if self.data:
+            output = self.handler(data)
+        else:
+            output = self.handler()
+
+        newData = data.copy()
+        if output:
+            newData.update(output)
+        if self.nextHandler is not None:
+            self.nextHandler(newData)
+
+
+def injectData(getData, eventHandler: EventHandler = None):
+    def updateData(data):
+        data = data.copy()
+        data.update(getData())
+        return data
+
+    if eventHandler is None:
+        return EventHandler(updateData)
+
+    return eventHandler.chain(updateData)
 
 
 def subscribe(eventlog: EventLog, event: str, handler):

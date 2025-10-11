@@ -1,231 +1,102 @@
-from src.app.backend.graph.service import gs
 from src.app.frontend.context import Context
-from src.app.frontend.events import EventLog, EventType
-from src.router.routing import Client, Dispatcher, Link
+from src.app.frontend.events import EventLog, injectData
+from src.app.frontend.workspace.events import WKEvents
+from src.router.routing import Dispatcher
 
-from .controller import GraphController
+from .components import GraphRepository, GraphSerializer, GraphSerializerComponent
+from .gui import GraphUI, GraphUIComponent
 from .widget import GraphWidget
 
 
-class GraphRepository:
-    def __init__(self, dispatcher: Dispatcher):
-        self.client = Client("Graph Repository", dispatcher)
+class ContextManager:
+    def __init__(self, context: Context):
+        self.context = context
+        self.context.add("activeScene", None)
+        self.context.add("activeNode", None)
+        self.context.add("sceneParents", {})
+        self.context.add("workspaceViewMapping", {})
+        self.context.add("workspaceNodeMapping", {})
 
-    def getContext(self):
-        link = Link(gs.NAME, gs.CONTEXT)
-        return self.client.get(link)
+    def getData(self):
+        return self.context.toDict()
 
-    def setContext(self, context):
-        link = Link(gs.NAME, gs.CONTEXT)
-        self.client.post(link, context)
+    def updateActiveScene(self, data):
+        sceneID = data.get("sceneID")
+        self.context.put("activeScene", sceneID)
 
-    def createGraph(self):
-        link = Link(gs.NAME, gs.GRAPH)
-        response = self.client.post(link)
-        sceneID = response["graphID"]
+    def updateSceneParents(self, data):
+        sceneID = data.get("sceneID")
 
-        return sceneID
+        activeID = self.context.get("activeScene")
+        if activeID:
+            self.context.get("sceneParents")[sceneID] = activeID
 
-    def createNode(self, graphID):
-        link = Link(gs.NAME, gs.GRAPH, graphID, gs.NODE)
-        response = self.client.post(link)
+    def updateSceneBinding(self, data):
+        wksID = data.get("id")
+        sceneID = data.get("sceneID")
 
-        nodeID = response["nodeID"]
-        return nodeID
+        self.context.get("workspaceViewMapping")[wksID] = sceneID
 
-    def updateNode(self, graphID, nodeID, data):
-        link = Link(gs.NAME, gs.GRAPH, graphID, gs.NODE, nodeID)
-        self.client.put(link, data)
+    def updateNodeBinding(self, data):
+        wksID = data.get("id")
+        nodeID = data.get("nodeID")
 
-    def createEdge(self, graphID):
-        link = Link(gs.NAME, gs.GRAPH, graphID, gs.EDGE)
-        response = self.client.post(link)
-
-        edgeID = response["edgeID"]
-        return edgeID
-
-    def updateEdge(self, graphID, edgeID, data):
-        link = Link(gs.NAME, gs.GRAPH, graphID, gs.EDGE, edgeID)
-        self.client.put(link, data)
-
-    def getGraph(self):
-        link = Link(gs.NAME, gs.GRAPH)
-        return self.client.get(link)
-
-    def exportGraph(self):
-        link = Link(gs.NAME, gs.GRAPH, gs.EXPORT)
-        self.client.post(link)
-
-    def importGraph(self):
-        link = Link(gs.NAME, gs.GRAPH, gs.IMPORT)
-        self.client.post(link)
-
-
-class GraphSerializer:
-    def __init__(
-        self,
-        controller: GraphController,
-        repository: GraphRepository,
-    ):
-        self.controller = controller
-        self.repository = repository
-
-    def export(self):
-        graphs = self.repository.getGraph()
-
-        for graphID, graphData in graphs.items():
-            nodes = graphData.get("nodes")
-            edges = graphData.get("edges")
-            graphConfig = graphData.get("data")
-
-            for nodeID in nodes:
-                nodeData = self.controller.readNode(graphID, nodeID)
-                self.repository.updateNode(graphID, nodeID, nodeData)
-
-        self.repository.exportGraph()
-
-    def restore(self):
-        self.controller.clearState()
-        self.repository.importGraph()
-
-        graphs = self.repository.getGraph()
-
-        for graphID, graphData in graphs.items():
-            nodes = graphData.get("nodes")
-            edges = graphData.get("edges")
-            graphConfig = graphData.get("data")
-            self.controller.createGraph(graphID)
-
-            for nodeID, nodeData in nodes.items():
-                self.controller.createNode(graphID, nodeID)
-                self.controller.updateNode(graphID, nodeID, nodeData)
-
-            for edgeID, edgeData in edges.items():
-                id1 = edgeData.get("id1")
-                id2 = edgeData.get("id2")
-                self.controller.createEdge(graphID, edgeID, id1, id2)
-
-
-class GraphBuilder:
-    def __init__(
-        self,
-        controller: GraphController,
-        repository: GraphRepository,
-        eventLog: EventLog,
-    ):
-        self.repository = repository
-        self.eventLog = eventLog
-        self.controller = controller
-
-    def createGraph(self):
-        sceneID = self.repository.createGraph()
-        scene = self.controller.createGraph(sceneID)
-        return sceneID, scene
-
-    def createNode(self, graphID):
-        nodeID = self.repository.createNode(graphID)
-        self.controller.createNode(graphID, nodeID)
-        return nodeID
-
-    def updateNode(self, graphID, nodeID, data):
-        self.controller.updateNode(graphID, nodeID, data)
-
-    def createEdge(self, graphID):
-        if not self.controller.canCreateEdge():
-            return
-
-        edgeID = self.repository.createEdge(graphID)
-        ids = self.controller.createEdge(graphID, edgeID)
-        if ids:
-            self.repository.updateEdge(graphID, edgeID, {"id1": ids[0], "id2": ids[1]})
+        self.context.get("workspaceNodeMapping")[wksID] = nodeID
 
 
 class GraphCore:
     def __init__(
         self,
         widget: GraphWidget,
-        controller: GraphController,
         context: Context,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
         self.widget = widget
-        self.controller = controller
 
         self.context = context
-        self.context.add("activeScene", None)
-        self.context.add("sceneParents", {})
-        self.context.add("workspaceViewMapping", {})
-        self.context.add("workspaceNodeMapping", {})
-
-        self.widget.setE1Btn.clicked.connect(
-            lambda: self.controller.setE1(self.context.get("activeScene"))
-        )
-        self.widget.setE2Btn.clicked.connect(
-            lambda: self.controller.setE2(self.context.get("activeScene"))
-        )
-        self.widget.createEdgeBtn.clicked.connect(self.onEdgeCreated)
+        self.ctxManager = ContextManager(context)
 
         self.repository = GraphRepository(dispatcher)
-        self.builder = GraphBuilder(controller, self.repository, eventLog)
-        self.serializer = GraphSerializer(controller, self.repository)
+
+        self.graphUI = GraphUI(self.widget, self.repository, self.context)
+        self.guiCpt = GraphUIComponent(self.graphUI)
+        createGraphUI = self.guiCpt.useAction(self.guiCpt.CREATE_GRAPH)
+        createNodeUI = self.guiCpt.useAction(self.guiCpt.CREATE_NODE)
+        createEdgeUI = self.guiCpt.useAction(self.guiCpt.CREATE_EDGE)
+        updateNodeUI = self.guiCpt.useAction(self.guiCpt.UPDATE_NODE)
+        setSceneUI = self.guiCpt.useAction(self.guiCpt.SET_SCENE)
+
+        # self.serializer = GraphSerializer(self.controller, self.repository)
+        # self.serialCpt = GraphSerializerComponent(self.serializer)
+        # serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
+        # serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
 
         self.eventLog = eventLog
-        self.eventLog.register(
-            EventType.WORKSPACE_CREATED,
-            self.onWorkspaceCreated,
-        )
-        self.eventLog.register(EventType.WORKSPACE_UPDATED, self.onWorkspaceUpdated)
-        self.eventLog.register(EventType.WORKSPACE_FOCUSED, self.onWorkspaceFocused)
-        self.eventLog.register(
-            EventType.WORKSPACE_EXPORTED, lambda x: self.serializer.export()
-        )
-        self.eventLog.register(
-            EventType.WORKSPACE_IMPORTED, lambda x: self.serializer.restore()
-        )
 
-    def setScene(self, sceneID):
-        scene = self.controller.scene(sceneID)
-        self.widget.setScene(scene)
-        self.context.put("activeScene", sceneID)
+        createRootHandler = injectData(self.ctxManager.getData)
+        createRootHandler.chain(createGraphUI)
+        createRootHandler.chain(self.ctxManager.updateSceneBinding)
+        createRootHandler.chain(self.ctxManager.updateActiveScene)
 
-    def onWorkspaceCreated(self, data):
-        wksID = data.get("id")
-        sceneID, scene = self.builder.createGraph()
-        nodeID = None
-        activeID = self.context.get("activeScene")
-        self.context.get("workspaceViewMapping")[wksID] = sceneID
-        if not activeID:
-            self.setScene(sceneID)
+        createdHandler = injectData(self.ctxManager.getData)
+        createdHandler.chain(createGraphUI)
+        createdHandler.chain(self.ctxManager.updateSceneBinding)
+        createdHandler.chain(createNodeUI)
+        createdHandler.chain(self.ctxManager.updateNodeBinding)
+        createdHandler.chain(self.ctxManager.updateSceneParents)
 
-        else:
-            nodeID = self.builder.createNode(activeID)
-            self.context.get("sceneParents")[sceneID] = activeID
-            self.context.get("workspaceNodeMapping")[wksID] = nodeID
+        updatedHandler = injectData(self.ctxManager.getData)
+        updatedHandler.chain(updateNodeUI)
 
-    def onWorkspaceUpdated(self, data):
-        wksID = data.get("id")
-        text = data.get("text")
+        focusedHandler = injectData(self.ctxManager.getData)
+        focusedHandler.chain(setSceneUI)
+        # importHandler = EventHandler(serialImport, data=False)
+        # exportHandler = EventHandler(serialExport, data=False)
 
-        sceneID = self.context.get("workspaceViewMapping").get(wksID)
-        nodeID = self.context.get("workspaceNodeMapping").get(wksID)
-
-        nodeData = {"displayText": text}
-
-        if nodeID:
-            parentScene = self.context.get("sceneParents").get(sceneID)
-            self.builder.updateNode(parentScene, nodeID, nodeData)
-
-    def onWorkspaceFocused(self, data):
-        wksID = data.get("id")
-
-        sceneID = self.context.get("workspaceViewMapping").get(wksID)
-        nodeID = self.context.get("workspaceNodeMapping").get(wksID)
-
-        if sceneID:
-            self.setScene(sceneID)
-
-    def onEdgeCreated(self):
-        activeID = self.context.get("activeScene")
-        if activeID:
-            self.builder.createEdge(activeID)
+        self.eventLog.register(WKEvents.WK_CREATED_ROOT, createRootHandler)
+        self.eventLog.register(WKEvents.WK_CREATED, createdHandler)
+        self.eventLog.register(WKEvents.WK_UPDATED, updatedHandler)
+        self.eventLog.register(WKEvents.WK_FOCUSED, focusedHandler)
+        # self.eventLog.register(WKEvents.WK_EXPORTED, exportHandler)
+        # self.eventLog.register(WKEvents.WK_IMPORTED, importHandler)
