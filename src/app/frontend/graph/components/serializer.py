@@ -1,7 +1,6 @@
 from src.app.frontend.components import Capability, Component, Serializer
 
-from .controller import GraphController
-from .repository import GraphRepository
+from .gui import GraphUI
 
 
 class GraphSerializerComponent(Component):
@@ -23,14 +22,13 @@ class GraphSerializerComponent(Component):
 
 
 class GraphSerializer(Serializer):
-    def __init__(
-        self,
-        controller: GraphController,
-        repository: GraphRepository,
-    ):
+    def __init__(self, graphUI: GraphUI):
         super().__init__()
-        self.controller = controller
-        self.repository = repository
+        self.gui = graphUI
+        self.repository = graphUI.repository
+
+    def controller(self, graphID):
+        return self.gui.controller(graphID)
 
     def export(self):
         graphs = self.repository.getGraph()
@@ -40,29 +38,32 @@ class GraphSerializer(Serializer):
             edges = graphData.get("edges")
             graphConfig = graphData.get("data")
 
+            controller = self.controller(graphID)
             for nodeID in nodes:
-                nodeData = self.controller.readNode(graphID, nodeID)
+                nodeData = controller.readNode(graphID, nodeID)
                 self.repository.updateNode(graphID, nodeID, nodeData)
 
         self.repository.exportGraph()
 
     def restore(self):
-        self.controller.clearState()
-        self.repository.importGraph()
+        self.gui.clear()
 
         graphs = self.repository.getGraph()
 
         for graphID, graphData in graphs.items():
+            controller, _ = self.gui.createController(graphID)
+
             nodes = graphData.get("nodes")
             edges = graphData.get("edges")
             graphConfig = graphData.get("data")
-            self.controller.createGraph(graphID)
+
+            controller.createGraph(graphID)
 
             for nodeID, nodeData in nodes.items():
-                self.controller.createNode(graphID, nodeID)
-                self.controller.updateNode(graphID, nodeID, nodeData)
+                controller.createNode(graphID, nodeID)
+                controller.updateNode(graphID, nodeID, nodeData)
 
             for edgeID, edgeData in edges.items():
                 id1 = edgeData.get("id1")
                 id2 = edgeData.get("id2")
-                self.controller.createEdge(graphID, edgeID, id1, id2)
+                controller.createEdge(graphID, edgeID, id1, id2)

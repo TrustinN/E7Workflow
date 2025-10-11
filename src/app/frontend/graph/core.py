@@ -3,8 +3,13 @@ from src.app.frontend.events import EventLog, injectData
 from src.app.frontend.workspace.events import WKEvents
 from src.router.routing import Dispatcher
 
-from .components import GraphRepository, GraphSerializer, GraphSerializerComponent
-from .gui import GraphUI, GraphUIComponent
+from .components import (
+    GraphRepository,
+    GraphSerializer,
+    GraphSerializerComponent,
+    GraphUI,
+    GraphUIComponent,
+)
 from .widget import GraphWidget
 
 
@@ -54,12 +59,11 @@ class GraphCore:
     ):
         self.widget = widget
 
-        self.context = context
         self.ctxManager = ContextManager(context)
 
         self.repository = GraphRepository(dispatcher)
 
-        self.graphUI = GraphUI(self.widget, self.repository, self.context)
+        self.graphUI = GraphUI(self.widget, self.repository)
         self.guiCpt = GraphUIComponent(self.graphUI)
         createGraphUI = self.guiCpt.useAction(self.guiCpt.CREATE_GRAPH)
         createNodeUI = self.guiCpt.useAction(self.guiCpt.CREATE_NODE)
@@ -67,10 +71,10 @@ class GraphCore:
         updateNodeUI = self.guiCpt.useAction(self.guiCpt.UPDATE_NODE)
         setSceneUI = self.guiCpt.useAction(self.guiCpt.SET_SCENE)
 
-        # self.serializer = GraphSerializer(self.controller, self.repository)
-        # self.serialCpt = GraphSerializerComponent(self.serializer)
-        # serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
-        # serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
+        self.serializer = GraphSerializer(self.graphUI)
+        self.serialCpt = GraphSerializerComponent(self.serializer)
+        serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
+        serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
 
         self.eventLog = eventLog
 

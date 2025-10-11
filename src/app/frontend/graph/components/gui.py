@@ -1,8 +1,9 @@
 from src.app.frontend.components import Capability, Component, JsonFormatter
-from src.app.frontend.context import Context
 
-from .components import GraphController, GraphRepository, GraphView
-from .widget import GraphWidget
+from ..widget import GraphWidget
+from .controller import GraphController
+from .repository import GraphRepository
+from .view import GraphView
 
 
 class GraphUIComponent(Component):
@@ -76,12 +77,9 @@ class GraphUIComponent(Component):
 
 
 class GraphUI:
-    def __init__(
-        self, widget: GraphWidget, repository: GraphRepository, context: Context
-    ):
+    def __init__(self, widget: GraphWidget, repository: GraphRepository):
         self.widget = widget
         self.repository = repository
-        self.context = context
 
         self.controllers = {}
         self.views = {}
@@ -93,14 +91,16 @@ class GraphUI:
         view = self.views[graphID]
         self.widget.setScene(view)
 
-    def createGraph(self):
+    def createController(self, graphID):
         view = GraphView()
         controller = GraphController(view)
+        self.controllers[graphID] = controller
+        self.views[graphID] = view
+        return controller, view
 
+    def createGraph(self):
         sceneID = self.repository.createGraph()
-
-        self.views[sceneID] = view
-        self.controllers[sceneID] = controller
+        _, view = self.createController(sceneID)
 
         if self.widget.scene is None:
             self.widget.setScene(view)
@@ -128,3 +128,10 @@ class GraphUI:
         ids = controller.createEdge(edgeID)
         if ids:
             self.repository.updateEdge(graphID, edgeID, {"id1": ids[0], "id2": ids[1]})
+
+    def clear(self):
+        for view in self.views:
+            view.deleteLater()
+
+        self.views.clear()
+        self.controllers.clear()

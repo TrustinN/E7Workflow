@@ -1,96 +1,48 @@
 {
-    "HYRo6VnCqyFoWWTh0ZBsk": {
-        "id": "HYRo6VnCqyFoWWTh0ZBsk",
+    "6AqFVePjodZw5SguUeB6w": {
+        "id": "6AqFVePjodZw5SguUeB6w",
         "padding": 15,
         "text": "Root",
         "geometry": [
             [
-                678,
-                163
+                673,
+                236
             ],
             [
-                1418,
-                651
+                1520,
+                770
             ]
         ]
     },
-    "3ISSKRMZ1vQ2248YQ2TT1": {
-        "id": "3ISSKRMZ1vQ2248YQ2TT1",
+    "I5bHhMDjYJ3600GENnXPK": {
+        "id": "I5bHhMDjYJ3600GENnXPK",
         "text": "WS Name",
-        "parentID": "HYRo6VnCqyFoWWTh0ZBsk",
+        "parentID": "6AqFVePjodZw5SguUeB6w",
         "padding": 0,
         "geometry": [
             [
-                1020,
-                347
+                688,
+                456
             ],
             [
-                1304,
-                561
+                1187,
+                755
             ]
         ]
     },
-    "7w_F337X5SnA-3Dhpjp1e": {
-        "id": "7w_F337X5SnA-3Dhpjp1e",
+    "c0eOvzFcN_OgOFn2m51xm": {
+        "id": "c0eOvzFcN_OgOFn2m51xm",
         "text": "WS Name",
-        "parentID": "HYRo6VnCqyFoWWTh0ZBsk",
+        "parentID": "6AqFVePjodZw5SguUeB6w",
         "padding": 0,
         "geometry": [
             [
-                1118,
-                178
+                1006,
+                251
             ],
             [
-                1403,
-                391
-            ]
-        ]
-    },
-    "k6zvuBFUXid9sk9n-fUI3": {
-        "id": "k6zvuBFUXid9sk9n-fUI3",
-        "text": "WS Name",
-        "parentID": "HYRo6VnCqyFoWWTh0ZBsk",
-        "padding": 0,
-        "geometry": [
-            [
-                693,
-                386
-            ],
-            [
-                1111,
-                636
-            ]
-        ]
-    },
-    "LUTevB84RSahmiU2FwCy-": {
-        "id": "LUTevB84RSahmiU2FwCy-",
-        "text": "\\",
-        "parentID": "k6zvuBFUXid9sk9n-fUI3",
-        "padding": 0,
-        "geometry": [
-            [
-                693,
-                465
-            ],
-            [
-                986,
-                636
-            ]
-        ]
-    },
-    "MW3KixSRmthwe6fz5Vi1p": {
-        "id": "MW3KixSRmthwe6fz5Vi1p",
-        "text": "WS Name",
-        "parentID": "k6zvuBFUXid9sk9n-fUI3",
-        "padding": 0,
-        "geometry": [
-            [
-                818,
-                386
-            ],
-            [
-                1111,
-                557
+                1505,
+                550
             ]
         ]
     }
