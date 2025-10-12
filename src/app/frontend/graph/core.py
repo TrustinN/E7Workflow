@@ -37,12 +37,12 @@ class GraphCore:
 
         self.eventLog = eventLog
 
-        handlers = self._createHandlers()
+        capabilities = self._getCapabilities()
+        handlers = self._createHandlers(capabilities)
         for event, handler in handlers.items():
             self.eventLog.register(event, handler)
 
-    def _createHandlers(self):
-        capabilities = self._getCapabilities()
+    def _createHandlers(self, capabilities):
         createGraphUI = capabilities.get("createGraph")
         createNodeUI = capabilities.get("createNode")
         createEdgeUI = capabilities.get("createEdge")
