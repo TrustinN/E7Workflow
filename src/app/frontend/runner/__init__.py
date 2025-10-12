@@ -1,2 +1,1 @@
-from .component import RunnerComponent
-from .widget import RunnerWidget
+from .core import RunnerComponent

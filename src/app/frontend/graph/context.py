@@ -1,11 +1,11 @@
-from src.app.frontend.context import Context, ContextManager
+from src.app.frontend.context import ContextManager
 
 GRAPH_CTX = "GRAPH CTX"
 
 
 class GraphContextManager:
-    def __init__(self, context: Context):
-        self.context = context
+    def __init__(self, ctxManager: ContextManager):
+        self.context = ctxManager.addContext(GRAPH_CTX)
         self.context.add("activeScene", None)
         self.context.add("activeNode", None)
         self.context.add("sceneParents", {})

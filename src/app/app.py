@@ -4,9 +4,9 @@ from src.router.routing import Dispatcher
 
 from .frontend.context import ContextManager
 from .frontend.events import AppEvents, EventLog
-from .frontend.graph import GraphCore, GraphWidget
-from .frontend.runner import RunnerComponent, RunnerWidget
-from .frontend.workspace import WorkspaceCore, WorkspaceWidget
+from .frontend.graph import GraphComponent
+from .frontend.runner import RunnerComponent
+from .frontend.workspace import WorkspaceComponent
 
 
 class MainWindow(QMainWindow):
@@ -31,27 +31,12 @@ class App(QApplication):
         self.ctxManager = ContextManager()
         self.eventLog = EventLog()
 
-        self.workspaceWidget = WorkspaceWidget()
-        self.workspaceCore = WorkspaceCore(
-            self.workspaceWidget,
-            self.ctxManager,
-            self.eventLog,
-            dispatcher,
-        )
+        self.wkCpt = WorkspaceComponent(self.ctxManager, self.eventLog, dispatcher)
+        self.graphCpt = GraphComponent(self.ctxManager, self.eventLog, dispatcher)
+        self.runnerCpt = RunnerComponent(self.ctxManager)
 
-        self.graphWidget = GraphWidget()
-        self.graphCore = GraphCore(
-            self.graphWidget,
-            self.ctxManager,
-            self.eventLog,
-            dispatcher,
-        )
-
-        self.runnerWidget = RunnerWidget()
-        self.runnerComponent = RunnerComponent(self.runnerWidget, self.ctxManager)
-
-        self.layout.addWidget(self.workspaceWidget)
-        self.layout.addWidget(self.graphWidget)
-        self.layout.addWidget(self.runnerWidget)
+        self.layout.addWidget(self.wkCpt.widget)
+        self.layout.addWidget(self.graphCpt.widget)
+        self.layout.addWidget(self.runnerCpt.widget)
 
         self.eventLog.processEvent(AppEvents.APP_LOADED)

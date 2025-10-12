@@ -68,14 +68,18 @@ class EventHandler:
         self.lastHandler: EventHandler = self
         self.nextHandler = None
 
-    def setNext(self, handler: "EventHandler"):
+    def _setNext(self, handler: "EventHandler"):
         self.nextHandler = handler
 
     def chain(self, handler, data=True):
         nextHandler = EventHandler(handler, data)
-        self.lastHandler.setNext(nextHandler)
+        self.lastHandler._setNext(nextHandler)
         self.lastHandler = nextHandler.lastHandler
         return self
+
+    def transform(self, dataTransform):
+
+        pass
 
     def __call__(self, data):
         output = None

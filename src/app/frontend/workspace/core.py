@@ -21,25 +21,24 @@ from .events import WKEvents
 from .widget import WorkspaceWidget
 
 
-class WorkspaceCore:
+class WorkspaceComponent:
     def __init__(
         self,
-        widget: WorkspaceWidget,
         ctxManager: ContextManager,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
-
         self.ctxManager = ctxManager
+        self.eventLog = eventLog
+
+        self.widget = WorkspaceWidget()
 
         self.repository = WorkspaceRepository(dispatcher)
-        self.wkUI = WorkspaceUI(widget, self.repository)
+        self.wkUI = WorkspaceUI(self.widget, self.repository)
         self.guiCpt = WorkspaceUIComponent(self.wkUI)
 
         self.serializer = WorkspaceSerializer(self.wkUI)
         self.serialCpt = WorkspaceSerializerComponent(self.serializer)
-
-        self.eventLog = eventLog
 
         capabilities = self._getCapabilities()
         self._initSignals()

@@ -1,2 +1,1 @@
-from .core import GraphCore
-from .widget import GraphWidget
+from .core import GraphComponent

@@ -1,2 +1,1 @@
-from .core import WorkspaceCore
-from .widget import WorkspaceWidget
+from .core import WorkspaceComponent

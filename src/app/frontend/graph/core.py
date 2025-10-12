@@ -10,22 +10,20 @@ from .components import (
     GraphUI,
     GraphUIComponent,
 )
-from .context import GRAPH_CTX, GraphContextManager
+from .context import GraphContextManager
 from .widget import GraphWidget
 
 
-class GraphCore:
+class GraphComponent:
     def __init__(
         self,
-        widget: GraphWidget,
         ctxManager: ContextManager,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
-        self.widget = widget
-
-        context = ctxManager.addContext(GRAPH_CTX)
-        self.ctxManager = GraphContextManager(context)
+        self.ctxManager = GraphContextManager(ctxManager)
+        self.widget = GraphWidget()
+        self.eventLog = eventLog
 
         self.repository = GraphRepository(dispatcher)
 
@@ -34,8 +32,6 @@ class GraphCore:
 
         self.serializer = GraphSerializer(self.graphUI)
         self.serialCpt = GraphSerializerComponent(self.serializer)
-
-        self.eventLog = eventLog
 
         capabilities = self._getCapabilities()
         handlers = self._createHandlers(capabilities)
