@@ -43,14 +43,18 @@ class EventLog:
 class EventSignal:
     def __init__(self, signal):
         self.signal = signal
+        self.reformat = None
 
-    def setCallback(self, cb, reformat: OutputFormatter = None):
+    def setFormatter(self, reformat: OutputFormatter = None):
+        self.reformat = reformat
+
+    def setCallback(self, cb):
 
         def updatedCall(*args):
-            data = reformat.format(args)
+            data = self.reformat.format(args)
             return cb(data)
 
-        if reformat:
+        if self.reformat is not None:
             self.signal(updatedCall)
         else:
             self.signal(lambda: cb({}))

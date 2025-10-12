@@ -35,14 +35,67 @@ class WorkspaceCore:
         self.repository = WorkspaceRepository(dispatcher)
         self.wkUI = WorkspaceUI(widget, self.repository)
         self.guiCpt = WorkspaceUIComponent(self.wkUI)
-        createWkUI = self.guiCpt.useAction(self.guiCpt.CREATE_WK)
-        updateWkUI = self.guiCpt.useAction(self.guiCpt.UPDATE_WK)
-        getWkNameUI = self.guiCpt.useAction(self.guiCpt.GET_WK_NAME)
 
         self.serializer = WorkspaceSerializer(self.wkUI)
         self.serialCpt = WorkspaceSerializerComponent(self.serializer)
-        serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
-        serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
+
+        self.eventLog = eventLog
+
+        capabilities = self._getCapabilities()
+        self._initSignals()
+        self._createHandlers(capabilities)
+        self._bindSignals()
+
+    def _bindSignals(self):
+        signalNames = ["create", "restore", "export", "focused"]
+
+        for name in signalNames:
+            signal = self.signals.get(f"{name}Signal")
+            handler = self.handlers.get(f"{name}Handler")
+
+            signal.setCallback(handler)
+
+        loadedHandler = self.handlers.get("loadedHandler")
+        self.eventLog.register(AppEvents.APP_LOADED, loadedHandler)
+
+    def _createHandlers(self, capabilities):
+        createWkUI = capabilities.get("createWk")
+        updateWkUI = capabilities.get("updateWk")
+        getWkNameUI = capabilities.get("getWkName")
+        serialImport = capabilities.get("serialImport")
+        serialExport = capabilities.get("serialExport")
+
+        createHandler = EventHandler(createWkUI)
+        createHandler.chain(emitHandler(self.eventLog, WKEvents.WK_CREATED))
+        createHandler.chain(getWkNameUI)
+        createHandler.chain(updateWkUI)
+        createHandler.chain(emitHandler(self.eventLog, WKEvents.WK_UPDATED))
+
+        restoreHandler = EventHandler(serialImport, data=False)
+        restoreHandler.chain(self.ctxManager.loadContext, data=False)
+        restoreHandler.chain(emitHandler(self.eventLog, WKEvents.WK_IMPORTED))
+
+        exportHandler = EventHandler(serialExport, data=False)
+        exportHandler.chain(self.ctxManager.saveContext, data=False)
+        exportHandler.chain(emitHandler(self.eventLog, WKEvents.WK_EXPORTED))
+
+        focusedHandler = EventHandler(emitHandler(self.eventLog, WKEvents.WK_FOCUSED))
+
+        loadedHandler = EventHandler(createWkUI)
+        loadedHandler.chain(emitHandler(self.eventLog, WKEvents.WK_CREATED_ROOT))
+        loadedHandler.chain(inject(lambda: {"padding": 15, "text": "Root"}))
+        loadedHandler.chain(updateWkUI)
+        loadedHandler.chain(emitHandler(self.eventLog, WKEvents.WK_UPDATED))
+
+        self.handlers = {
+            "createHandler": createHandler,
+            "restoreHandler": restoreHandler,
+            "exportHandler": exportHandler,
+            "focusedHandler": focusedHandler,
+            "loadedHandler": loadedHandler,
+        }
+
+    def _initSignals(self):
 
         idFormatter = JsonFormatter(["id"])
 
@@ -51,38 +104,27 @@ class WorkspaceCore:
         exportSignal = EventSignal(self.wkUI.workspaceExport_.connect)
         focusedSignal = EventSignal(self.wkUI.workspacePressed_.connect)
 
-        createHandler = EventHandler(createWkUI)
-        createHandler.chain(emitHandler(eventLog, WKEvents.WK_CREATED))
-        createHandler.chain(getWkNameUI)
-        createHandler.chain(updateWkUI)
-        createHandler.chain(emitHandler(eventLog, WKEvents.WK_UPDATED))
+        focusedSignal.setFormatter(idFormatter)
 
-        restoreHandler = EventHandler(serialImport, data=False)
-        restoreHandler.chain(self.ctxManager.loadContext, data=False)
-        restoreHandler.chain(emitHandler(eventLog, WKEvents.WK_IMPORTED))
+        self.signals = {
+            "createSignal": createSignal,
+            "restoreSignal": restoreSignal,
+            "exportSignal": exportSignal,
+            "focusedSignal": focusedSignal,
+        }
 
-        exportHandler = EventHandler(serialExport, data=False)
-        exportHandler.chain(self.ctxManager.saveContext, data=False)
-        exportHandler.chain(emitHandler(eventLog, WKEvents.WK_EXPORTED))
+    def _getCapabilities(self):
+        createWkUI = self.guiCpt.useAction(self.guiCpt.CREATE_WK)
+        updateWkUI = self.guiCpt.useAction(self.guiCpt.UPDATE_WK)
+        getWkNameUI = self.guiCpt.useAction(self.guiCpt.GET_WK_NAME)
 
-        focusedHandler = EventHandler(emitHandler(eventLog, WKEvents.WK_FOCUSED))
+        serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
+        serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
 
-        createSignal.setCallback(createHandler)
-        restoreSignal.setCallback(restoreHandler)
-        exportSignal.setCallback(exportHandler)
-        focusedSignal.setCallback(focusedHandler, idFormatter)
-
-        # self.widget.restoreWorkspaceBtn.clicked.connect(self.ctxManager.loadContext)
-        # self.widget.restoreWorkspaceBtn.clicked.connect(self.serializer.restore)
-        # self.widget.exportWorkspaceBtn.clicked.connect(self.ctxManager.saveContext)
-        # self.widget.exportWorkspaceBtn.clicked.connect(self.serializer.export)
-
-        self.eventLog = eventLog
-
-        loadedHandler = EventHandler(createWkUI)
-        loadedHandler.chain(emitHandler(eventLog, WKEvents.WK_CREATED_ROOT))
-        loadedHandler.chain(inject(lambda: {"padding": 15, "text": "Root"}))
-        loadedHandler.chain(updateWkUI)
-        loadedHandler.chain(emitHandler(eventLog, WKEvents.WK_UPDATED))
-
-        self.eventLog.register(AppEvents.APP_LOADED, loadedHandler)
+        return {
+            "createWk": createWkUI,
+            "updateWk": updateWkUI,
+            "getWkName": getWkNameUI,
+            "serialImport": serialImport,
+            "serialExport": serialExport,
+        }

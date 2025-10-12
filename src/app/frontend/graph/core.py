@@ -1,4 +1,4 @@
-from src.app.frontend.context import Context, ContextManager
+from src.app.frontend.context import ContextManager
 from src.app.frontend.events import EventHandler, EventLog, inject
 from src.app.frontend.workspace.events import WKEvents
 from src.router.routing import Dispatcher
@@ -31,18 +31,25 @@ class GraphCore:
 
         self.graphUI = GraphUI(self.widget, self.repository)
         self.guiCpt = GraphUIComponent(self.graphUI)
-        createGraphUI = self.guiCpt.useAction(self.guiCpt.CREATE_GRAPH)
-        createNodeUI = self.guiCpt.useAction(self.guiCpt.CREATE_NODE)
-        createEdgeUI = self.guiCpt.useAction(self.guiCpt.CREATE_EDGE)
-        updateNodeUI = self.guiCpt.useAction(self.guiCpt.UPDATE_NODE)
-        setSceneUI = self.guiCpt.useAction(self.guiCpt.SET_SCENE)
 
         self.serializer = GraphSerializer(self.graphUI)
         self.serialCpt = GraphSerializerComponent(self.serializer)
-        serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
-        serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
 
         self.eventLog = eventLog
+
+        handlers = self._createHandlers()
+        for event, handler in handlers.items():
+            self.eventLog.register(event, handler)
+
+    def _createHandlers(self):
+        capabilities = self._getCapabilities()
+        createGraphUI = capabilities.get("createGraph")
+        createNodeUI = capabilities.get("createNode")
+        createEdgeUI = capabilities.get("createEdge")
+        updateNodeUI = capabilities.get("updateNode")
+        setSceneUI = capabilities.get("setScene")
+        serialImport = capabilities.get("serialImport")
+        serialExport = capabilities.get("serialExport")
 
         createRootHandler = EventHandler(inject(self.ctxManager.getData))
         createRootHandler.chain(createGraphUI)
@@ -66,9 +73,31 @@ class GraphCore:
 
         exportHandler = EventHandler(serialExport, data=False)
 
-        self.eventLog.register(WKEvents.WK_CREATED_ROOT, createRootHandler)
-        self.eventLog.register(WKEvents.WK_CREATED, createdHandler)
-        self.eventLog.register(WKEvents.WK_UPDATED, updatedHandler)
-        self.eventLog.register(WKEvents.WK_FOCUSED, focusedHandler)
-        self.eventLog.register(WKEvents.WK_EXPORTED, exportHandler)
-        self.eventLog.register(WKEvents.WK_IMPORTED, importHandler)
+        return {
+            WKEvents.WK_CREATED_ROOT: createRootHandler,
+            WKEvents.WK_CREATED: createdHandler,
+            WKEvents.WK_UPDATED: updatedHandler,
+            WKEvents.WK_FOCUSED: focusedHandler,
+            WKEvents.WK_IMPORTED: importHandler,
+            WKEvents.WK_EXPORTED: exportHandler,
+        }
+
+    def _getCapabilities(self):
+        createGraphUI = self.guiCpt.useAction(self.guiCpt.CREATE_GRAPH)
+        createNodeUI = self.guiCpt.useAction(self.guiCpt.CREATE_NODE)
+        createEdgeUI = self.guiCpt.useAction(self.guiCpt.CREATE_EDGE)
+        updateNodeUI = self.guiCpt.useAction(self.guiCpt.UPDATE_NODE)
+        setSceneUI = self.guiCpt.useAction(self.guiCpt.SET_SCENE)
+
+        serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
+        serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
+
+        return {
+            "createGraph": createGraphUI,
+            "createNode": createNodeUI,
+            "createEdge": createEdgeUI,
+            "updateNode": updateNodeUI,
+            "setScene": setSceneUI,
+            "serialImport": serialImport,
+            "serialExport": serialExport,
+        }
