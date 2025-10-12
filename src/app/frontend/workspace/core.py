@@ -1,13 +1,21 @@
-from src.app.frontend.context import Context
-from src.app.frontend.events import AppEvents, EventHandler, EventLog
+from src.app.frontend.components import JsonFormatter
+from src.app.frontend.context import ContextManager
+from src.app.frontend.events import (
+    AppEvents,
+    EventHandler,
+    EventLog,
+    EventSignal,
+    emitHandler,
+    inject,
+)
 from src.router.routing import Dispatcher
 
 from .components import (
-    WorkspaceBuilder,
-    WorkspaceController,
     WorkspaceRepository,
     WorkspaceSerializer,
-    WorkspaceView,
+    WorkspaceSerializerComponent,
+    WorkspaceUI,
+    WorkspaceUIComponent,
 )
 from .events import WKEvents
 from .widget import WorkspaceWidget
@@ -17,53 +25,64 @@ class WorkspaceCore:
     def __init__(
         self,
         widget: WorkspaceWidget,
-        context: Context,
+        ctxManager: ContextManager,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
-        self.view = WorkspaceView()
-        self.view.workspacePressed_.connect(self.onWorkspaceFocused)
 
-        self.controller = WorkspaceController()
-        self.controller.setView(self.view)
-
-        self.context = context
+        self.ctxManager = ctxManager
 
         self.repository = WorkspaceRepository(dispatcher)
-        self.builder = WorkspaceBuilder(self.controller, self.repository)
-        self.serializer = WorkspaceSerializer(
-            self.controller, self.repository, eventLog
-        )
+        self.wkUI = WorkspaceUI(widget, self.repository)
+        self.guiCpt = WorkspaceUIComponent(self.wkUI)
+        createWkUI = self.guiCpt.useAction(self.guiCpt.CREATE_WK)
+        updateWkUI = self.guiCpt.useAction(self.guiCpt.UPDATE_WK)
+        getWkNameUI = self.guiCpt.useAction(self.guiCpt.GET_WK_NAME)
 
-        self.widget = widget
-        self.widget.createWorkspaceBtn.clicked.connect(self.onWorkspaceCreated)
-        self.widget.restoreWorkspaceBtn.clicked.connect(self.context.load)
-        self.widget.restoreWorkspaceBtn.clicked.connect(self.serializer.restore)
-        self.widget.exportWorkspaceBtn.clicked.connect(self.context.save)
-        self.widget.exportWorkspaceBtn.clicked.connect(self.serializer.export)
+        self.serializer = WorkspaceSerializer(self.wkUI)
+        self.serialCpt = WorkspaceSerializerComponent(self.serializer)
+        serialImport = self.serialCpt.useAction(self.serialCpt.IMPORT)
+        serialExport = self.serialCpt.useAction(self.serialCpt.EXPORT)
+
+        idFormatter = JsonFormatter(["id"])
+
+        createSignal = EventSignal(self.wkUI.workspaceCreated_.connect)
+        restoreSignal = EventSignal(self.wkUI.workspaceImport_.connect)
+        exportSignal = EventSignal(self.wkUI.workspaceExport_.connect)
+        focusedSignal = EventSignal(self.wkUI.workspacePressed_.connect)
+
+        createHandler = EventHandler(createWkUI)
+        createHandler.chain(emitHandler(eventLog, WKEvents.WK_CREATED))
+        createHandler.chain(getWkNameUI)
+        createHandler.chain(updateWkUI)
+        createHandler.chain(emitHandler(eventLog, WKEvents.WK_UPDATED))
+
+        restoreHandler = EventHandler(serialImport, data=False)
+        restoreHandler.chain(self.ctxManager.loadContext, data=False)
+        restoreHandler.chain(emitHandler(eventLog, WKEvents.WK_IMPORTED))
+
+        exportHandler = EventHandler(serialExport, data=False)
+        exportHandler.chain(self.ctxManager.saveContext, data=False)
+        exportHandler.chain(emitHandler(eventLog, WKEvents.WK_EXPORTED))
+
+        focusedHandler = EventHandler(emitHandler(eventLog, WKEvents.WK_FOCUSED))
+
+        createSignal.setCallback(createHandler)
+        restoreSignal.setCallback(restoreHandler)
+        exportSignal.setCallback(exportHandler)
+        focusedSignal.setCallback(focusedHandler, idFormatter)
+
+        # self.widget.restoreWorkspaceBtn.clicked.connect(self.ctxManager.loadContext)
+        # self.widget.restoreWorkspaceBtn.clicked.connect(self.serializer.restore)
+        # self.widget.exportWorkspaceBtn.clicked.connect(self.ctxManager.saveContext)
+        # self.widget.exportWorkspaceBtn.clicked.connect(self.serializer.export)
 
         self.eventLog = eventLog
 
-        loadedHandler = EventHandler(lambda data: self._createRootWorkspace())
+        loadedHandler = EventHandler(createWkUI)
+        loadedHandler.chain(emitHandler(eventLog, WKEvents.WK_CREATED_ROOT))
+        loadedHandler.chain(inject(lambda: {"padding": 15, "text": "Root"}))
+        loadedHandler.chain(updateWkUI)
+        loadedHandler.chain(emitHandler(eventLog, WKEvents.WK_UPDATED))
+
         self.eventLog.register(AppEvents.APP_LOADED, loadedHandler)
-
-    def _createRootWorkspace(self):
-        id = self.builder.create()
-        self.eventLog.processEvent(WKEvents.WK_CREATED_ROOT, {"id": id})
-
-        data = {"id": id, "padding": 15, "text": "Root"}
-        self.builder.update(id, data)
-        self.eventLog.processEvent(WKEvents.WK_UPDATED, data)
-
-    def onWorkspaceCreated(self):
-        parentID = self.view.focusedWorkspace
-        id = self.builder.create(parentID)
-        self.eventLog.processEvent(WKEvents.WK_CREATED, {"id": id})
-
-        name = self.widget.getWorkspaceName()
-        data = {"id": id, "text": name, "parentID": parentID}
-        self.builder.update(id, data)
-        self.eventLog.processEvent(WKEvents.WK_UPDATED, data)
-
-    def onWorkspaceFocused(self, id):
-        self.eventLog.processEvent(WKEvents.WK_FOCUSED, {"id": id})

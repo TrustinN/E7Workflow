@@ -22,26 +22,18 @@ class GraphUIComponent(Component):
         createGraphFmt = JsonFormatter(["sceneID"])
         createNodeFmt = JsonFormatter(["nodeID"])
 
-        createGraphCapability = Capability(
-            self.CREATE_GRAPH,
-            self.createGraph,
-            reformat=createGraphFmt,
-        )
-        createNodeCapability = Capability(
-            self.CREATE_NODE,
-            self.createNode,
-            reformat=createNodeFmt,
-        )
-        createEdgeCapability = Capability(self.CREATE_EDGE, self.createEdge)
-        updateNodeCapability = Capability(self.UPDATE_NODE, self.updateNode)
+        createGraphCapability = Capability(self.createGraph, reformat=createGraphFmt)
+        createNodeCapability = Capability(self.createNode, reformat=createNodeFmt)
+        createEdgeCapability = Capability(self.createEdge)
+        updateNodeCapability = Capability(self.updateNode)
 
-        setSceneCapability = Capability(self.SET_SCENE, self.setScene)
+        setSceneCapability = Capability(self.setScene)
 
-        self.registerCapability(createGraphCapability)
-        self.registerCapability(createNodeCapability)
-        self.registerCapability(createEdgeCapability)
-        self.registerCapability(updateNodeCapability)
-        self.registerCapability(setSceneCapability)
+        self.registerCapability(self.CREATE_GRAPH, createGraphCapability)
+        self.registerCapability(self.CREATE_NODE, createNodeCapability)
+        self.registerCapability(self.CREATE_EDGE, createEdgeCapability)
+        self.registerCapability(self.UPDATE_NODE, updateNodeCapability)
+        self.registerCapability(self.SET_SCENE, setSceneCapability)
 
     def createGraph(self, data):
         return self.gui.createGraph()
@@ -130,7 +122,7 @@ class GraphUI:
             self.repository.updateEdge(graphID, edgeID, {"id1": ids[0], "id2": ids[1]})
 
     def clear(self):
-        for view in self.views:
+        for view in self.views.values():
             view.deleteLater()
 
         self.views.clear()

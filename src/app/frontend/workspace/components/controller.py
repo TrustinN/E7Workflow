@@ -2,10 +2,7 @@ from .view import WorkspaceView
 
 
 class WorkspaceController:
-    def __init__(self):
-        pass
-
-    def setView(self, view: WorkspaceView):
+    def __init__(self, view: WorkspaceView):
         self.view = view
 
     def clearState(self):

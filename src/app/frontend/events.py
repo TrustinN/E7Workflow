@@ -1,4 +1,8 @@
+from functools import partial
+
 from nanoid import generate
+
+from .components import OutputFormatter
 
 
 class EventIDProvider:
@@ -36,6 +40,22 @@ class EventLog:
             cb(data or {})
 
 
+class EventSignal:
+    def __init__(self, signal):
+        self.signal = signal
+
+    def setCallback(self, cb, reformat: OutputFormatter = None):
+
+        def updatedCall(*args):
+            data = reformat.format(args)
+            return cb(data)
+
+        if reformat:
+            self.signal(updatedCall)
+        else:
+            self.signal(lambda: cb({}))
+
+
 class EventHandler:
     def __init__(self, handler, data=True):
         self.handler = handler
@@ -67,16 +87,17 @@ class EventHandler:
             self.nextHandler(newData)
 
 
-def injectData(getData, eventHandler: EventHandler = None):
+def inject(getData):
     def updateData(data):
         data = data.copy()
         data.update(getData())
         return data
 
-    if eventHandler is None:
-        return EventHandler(updateData)
+    return updateData
 
-    return eventHandler.chain(updateData)
+
+def emitHandler(eventLog: EventLog, signal):
+    return partial(eventLog.processEvent, signal)
 
 
 def subscribe(eventlog: EventLog, event: str, handler):

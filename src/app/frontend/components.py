@@ -16,16 +16,19 @@ class JsonFormatter(OutputFormatter):
             return {}
 
         elif isinstance(output, tuple):
-            kvPairs = zip(self.labels, output)
-            return dict([(label, out) for label, out in kvPairs])
+            data = {}
+            for i in range(len(self.labels)):
+                label = self.labels[i]
+                data[label] = output[i]
+
+            return data
 
         else:
             return {self.labels[0]: output}
 
 
 class Capability:
-    def __init__(self, name, func, reformat: OutputFormatter = None):
-        self.name = name
+    def __init__(self, func, reformat: OutputFormatter = None):
         self.func = func
         self.reformat = reformat
 
@@ -44,8 +47,8 @@ class Component:
     def useAction(self, capability: str):
         return self.capabilities[capability]
 
-    def registerCapability(self, capability: Capability):
-        self.capabilities[capability.name] = capability
+    def registerCapability(self, name: str, capability: Capability):
+        self.capabilities[name] = capability
 
 
 class Serializer:
@@ -57,27 +60,3 @@ class Serializer:
 
     def export(self):
         pass
-
-
-class EventDispatcher:
-    def __init__(self):
-        self.receivers = []
-
-    def register(self, receiver):
-        self.receivers.append(receiver)
-
-    def process(self, topic, data):
-        for receiver in self.receivers:
-            receiver.process(topic, data)
-
-
-class EventReceiver:
-    def __init__(self, dispatcher: EventDispatcher):
-        self.callbacks = {}
-
-    def register(self, topic, cb):
-        self.callbacks.setdefault(topic, []).append(cb)
-
-    def process(self, topic, data):
-        for cb in self.callbacks[topic]:
-            cb(data)

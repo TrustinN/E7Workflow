@@ -14,11 +14,11 @@ class GraphSerializerComponent(Component):
         super().__init__()
         self.serializer = serializer
 
-        importCapability = Capability(self.IMPORT, self.serializer.restore)
-        exportCapability = Capability(self.EXPORT, self.serializer.export)
+        importCapability = Capability(self.serializer.restore)
+        exportCapability = Capability(self.serializer.export)
 
-        self.registerCapability(importCapability)
-        self.registerCapability(exportCapability)
+        self.registerCapability(self.IMPORT, importCapability)
+        self.registerCapability(self.EXPORT, exportCapability)
 
 
 class GraphSerializer(Serializer):
@@ -40,7 +40,7 @@ class GraphSerializer(Serializer):
 
             controller = self.controller(graphID)
             for nodeID in nodes:
-                nodeData = controller.readNode(graphID, nodeID)
+                nodeData = controller.readNode(nodeID)
                 self.repository.updateNode(graphID, nodeID, nodeData)
 
         self.repository.exportGraph()
@@ -48,6 +48,7 @@ class GraphSerializer(Serializer):
     def restore(self):
         self.gui.clear()
 
+        self.repository.importGraph()
         graphs = self.repository.getGraph()
 
         for graphID, graphData in graphs.items():
@@ -57,13 +58,11 @@ class GraphSerializer(Serializer):
             edges = graphData.get("edges")
             graphConfig = graphData.get("data")
 
-            controller.createGraph(graphID)
-
             for nodeID, nodeData in nodes.items():
-                controller.createNode(graphID, nodeID)
-                controller.updateNode(graphID, nodeID, nodeData)
+                controller.createNode(nodeID)
+                controller.updateNode(nodeID, nodeData)
 
             for edgeID, edgeData in edges.items():
                 id1 = edgeData.get("id1")
                 id2 = edgeData.get("id2")
-                controller.createEdge(graphID, edgeID, id1, id2)
+                controller.createEdge(edgeID, id1, id2)

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
 
 from src.router.routing import Dispatcher
 
-from .frontend.context import Context
+from .frontend.context import ContextManager
 from .frontend.events import AppEvents, EventLog
 from .frontend.graph import GraphCore, GraphWidget
 from .frontend.runner import RunnerComponent, RunnerWidget
@@ -28,13 +28,13 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.context = Context()
+        self.ctxManager = ContextManager()
         self.eventLog = EventLog()
 
         self.workspaceWidget = WorkspaceWidget()
         self.workspaceCore = WorkspaceCore(
             self.workspaceWidget,
-            self.context,
+            self.ctxManager,
             self.eventLog,
             dispatcher,
         )
@@ -42,13 +42,13 @@ class App(QApplication):
         self.graphWidget = GraphWidget()
         self.graphCore = GraphCore(
             self.graphWidget,
-            self.context,
+            self.ctxManager,
             self.eventLog,
             dispatcher,
         )
 
         self.runnerWidget = RunnerWidget()
-        self.runnerComponent = RunnerComponent(self.runnerWidget, self.context)
+        self.runnerComponent = RunnerComponent(self.runnerWidget, self.ctxManager)
 
         self.layout.addWidget(self.workspaceWidget)
         self.layout.addWidget(self.graphWidget)

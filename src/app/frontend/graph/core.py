@@ -1,5 +1,5 @@
-from src.app.frontend.context import Context
-from src.app.frontend.events import EventLog, injectData
+from src.app.frontend.context import Context, ContextManager
+from src.app.frontend.events import EventHandler, EventLog, inject
 from src.app.frontend.workspace.events import WKEvents
 from src.router.routing import Dispatcher
 
@@ -10,56 +10,22 @@ from .components import (
     GraphUI,
     GraphUIComponent,
 )
+from .context import GRAPH_CTX, GraphContextManager
 from .widget import GraphWidget
-
-
-class ContextManager:
-    def __init__(self, context: Context):
-        self.context = context
-        self.context.add("activeScene", None)
-        self.context.add("activeNode", None)
-        self.context.add("sceneParents", {})
-        self.context.add("workspaceViewMapping", {})
-        self.context.add("workspaceNodeMapping", {})
-
-    def getData(self):
-        return self.context.toDict()
-
-    def updateActiveScene(self, data):
-        sceneID = data.get("sceneID")
-        self.context.put("activeScene", sceneID)
-
-    def updateSceneParents(self, data):
-        sceneID = data.get("sceneID")
-
-        activeID = self.context.get("activeScene")
-        if activeID:
-            self.context.get("sceneParents")[sceneID] = activeID
-
-    def updateSceneBinding(self, data):
-        wksID = data.get("id")
-        sceneID = data.get("sceneID")
-
-        self.context.get("workspaceViewMapping")[wksID] = sceneID
-
-    def updateNodeBinding(self, data):
-        wksID = data.get("id")
-        nodeID = data.get("nodeID")
-
-        self.context.get("workspaceNodeMapping")[wksID] = nodeID
 
 
 class GraphCore:
     def __init__(
         self,
         widget: GraphWidget,
-        context: Context,
+        ctxManager: ContextManager,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
         self.widget = widget
 
-        self.ctxManager = ContextManager(context)
+        context = ctxManager.addContext(GRAPH_CTX)
+        self.ctxManager = GraphContextManager(context)
 
         self.repository = GraphRepository(dispatcher)
 
@@ -78,29 +44,31 @@ class GraphCore:
 
         self.eventLog = eventLog
 
-        createRootHandler = injectData(self.ctxManager.getData)
+        createRootHandler = EventHandler(inject(self.ctxManager.getData))
         createRootHandler.chain(createGraphUI)
         createRootHandler.chain(self.ctxManager.updateSceneBinding)
         createRootHandler.chain(self.ctxManager.updateActiveScene)
 
-        createdHandler = injectData(self.ctxManager.getData)
+        createdHandler = EventHandler(inject(self.ctxManager.getData))
         createdHandler.chain(createGraphUI)
         createdHandler.chain(self.ctxManager.updateSceneBinding)
         createdHandler.chain(createNodeUI)
         createdHandler.chain(self.ctxManager.updateNodeBinding)
         createdHandler.chain(self.ctxManager.updateSceneParents)
 
-        updatedHandler = injectData(self.ctxManager.getData)
+        updatedHandler = EventHandler(inject(self.ctxManager.getData))
         updatedHandler.chain(updateNodeUI)
 
-        focusedHandler = injectData(self.ctxManager.getData)
+        focusedHandler = EventHandler(inject(self.ctxManager.getData))
         focusedHandler.chain(setSceneUI)
-        # importHandler = EventHandler(serialImport, data=False)
-        # exportHandler = EventHandler(serialExport, data=False)
+
+        importHandler = EventHandler(serialImport, data=False)
+
+        exportHandler = EventHandler(serialExport, data=False)
 
         self.eventLog.register(WKEvents.WK_CREATED_ROOT, createRootHandler)
         self.eventLog.register(WKEvents.WK_CREATED, createdHandler)
         self.eventLog.register(WKEvents.WK_UPDATED, updatedHandler)
         self.eventLog.register(WKEvents.WK_FOCUSED, focusedHandler)
-        # self.eventLog.register(WKEvents.WK_EXPORTED, exportHandler)
-        # self.eventLog.register(WKEvents.WK_IMPORTED, importHandler)
+        self.eventLog.register(WKEvents.WK_EXPORTED, exportHandler)
+        self.eventLog.register(WKEvents.WK_IMPORTED, importHandler)
