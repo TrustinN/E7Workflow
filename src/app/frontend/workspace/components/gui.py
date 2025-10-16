@@ -1,8 +1,10 @@
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
-from src.app.frontend.components import Capability, Component, JsonFormatter
+from src.app.frontend.components import Capability, Component
+from src.app.frontend.events import EventLog
 
+from ..events import WKEvents
 from ..widget import WorkspaceWidget
 from .controller import WorkspaceController
 from .repository import WorkspaceRepository
@@ -15,37 +17,49 @@ class WorkspaceUIComponent(Component):
 
     GET_WK_NAME = "Get Workspace Name"
 
-    def __init__(self, wkUI: "WorkspaceUI"):
+    def __init__(self, wkUI: "WorkspaceUI", eventLog: EventLog):
         super().__init__()
         self.gui = wkUI
+        self.eventLog = eventLog
 
-        createFormatter = JsonFormatter(["id", "parentID"])
-        getNameFormatter = JsonFormatter(["text"])
+        self.gui.wkPressed_.connect(self.focusedWk)
 
-        createWkCapability = Capability(self.createWk, reformat=createFormatter)
+        createWkCapability = Capability(self.createWk)
         updateWkCapability = Capability(self.updateWk)
-        getWkNameCapability = Capability(self.getWkName, reformat=getNameFormatter)
+        getWkNameCapability = Capability(self.getWkName)
 
         self.registerCapability(self.CREATE_WK, createWkCapability)
         self.registerCapability(self.UPDATE_WK, updateWkCapability)
         self.registerCapability(self.GET_WK_NAME, getWkNameCapability)
 
     def createWk(self, data):
-        return self.gui.create()
+        id, parentID = self.gui.create()
+        data.update({"wkID": id, "parentID": parentID})
+        if parentID is None:
+            self.eventLog.processEvent(WKEvents.WK_CREATED_ROOT, data)
+        else:
+            self.eventLog.processEvent(WKEvents.WK_CREATED, data)
+        return data
 
     def updateWk(self, data):
-        id = data.get("id")
+        id = data.get("wkID")
         self.gui.update(id, data)
+        self.eventLog.processEvent(WKEvents.WK_UPDATED, data)
 
     def getWkName(self, data):
-        return self.gui.reqWkName()
+        name = self.gui.reqWkName()
+        data.update({"text": name})
+        return data
+
+    def focusedWk(self, id):
+        self.eventLog.processEvent(WKEvents.WK_FOCUSED, {"wkID": id})
 
 
 class WorkspaceUI(QWidget):
-    workspacePressed_ = pyqtSignal(str)
-    workspaceCreated_ = pyqtSignal()
-    workspaceImport_ = pyqtSignal()
-    workspaceExport_ = pyqtSignal()
+    wkPressed_ = pyqtSignal(str)
+    wkCreated_ = pyqtSignal()
+    wkImport_ = pyqtSignal()
+    wkExport_ = pyqtSignal()
 
     def __init__(self, widget: WorkspaceWidget, repository: WorkspaceRepository):
         super().__init__()
@@ -55,10 +69,10 @@ class WorkspaceUI(QWidget):
         self.widget = widget
         self.repository = repository
 
-        self.view.workspacePressed_.connect(self.workspacePressed_.emit)
-        self.widget.createWorkspaceBtn.clicked.connect(self.workspaceCreated_.emit)
-        self.widget.exportWorkspaceBtn.clicked.connect(self.workspaceExport_.emit)
-        self.widget.restoreWorkspaceBtn.clicked.connect(self.workspaceImport_.emit)
+        self.view.wkPressed_.connect(self.wkPressed_.emit)
+        self.widget.createBtn.clicked.connect(self.wkCreated_.emit)
+        self.widget.exportBtn.clicked.connect(self.wkExport_.emit)
+        self.widget.restoreBtn.clicked.connect(self.wkImport_.emit)
 
     def create(self):
         parentID = self.view.focusedWorkspace

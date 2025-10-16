@@ -1,4 +1,5 @@
-from src.app.frontend.components import Capability, Component, JsonFormatter
+from src.app.frontend.components import Capability, Component
+from src.app.frontend.formatters import JsonFormatter
 
 from ..widget import GraphWidget
 from .controller import GraphController
@@ -43,7 +44,7 @@ class GraphUIComponent(Component):
         return self.gui.createNode(graphID)
 
     def updateNode(self, data):
-        wksID = data.get("id")
+        wksID = data.get("wkID")
         text = data.get("text")
 
         sceneID = data.get("workspaceViewMapping").get(wksID)
@@ -61,7 +62,7 @@ class GraphUIComponent(Component):
             return self.gui.createEdge(graphID)
 
     def setScene(self, data):
-        wksID = data.get("id")
+        wksID = data.get("wkID")
 
         mapping = data.get("workspaceViewMapping")
         graphID = mapping.get(wksID)

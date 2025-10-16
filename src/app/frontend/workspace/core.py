@@ -1,11 +1,9 @@
-from src.app.frontend.components import JsonFormatter
 from src.app.frontend.context import ContextManager
 from src.app.frontend.events import (
     AppEvents,
     EventHandler,
     EventLog,
-    EventSignal,
-    emitHandler,
+    PyQtSignalAdaptor,
     inject,
 )
 from src.router.routing import Dispatcher
@@ -17,7 +15,6 @@ from .components import (
     WorkspaceUI,
     WorkspaceUIComponent,
 )
-from .events import WKEvents
 from .widget import WorkspaceWidget
 
 
@@ -35,10 +32,10 @@ class WorkspaceComponent:
 
         self.repository = WorkspaceRepository(dispatcher)
         self.wkUI = WorkspaceUI(self.widget, self.repository)
-        self.guiCpt = WorkspaceUIComponent(self.wkUI)
+        self.guiCpt = WorkspaceUIComponent(self.wkUI, self.eventLog)
 
         self.serializer = WorkspaceSerializer(self.wkUI)
-        self.serialCpt = WorkspaceSerializerComponent(self.serializer)
+        self.serialCpt = WorkspaceSerializerComponent(self.serializer, self.eventLog)
 
         capabilities = self._getCapabilities()
         self._initSignals()
@@ -46,13 +43,13 @@ class WorkspaceComponent:
         self._bindSignals()
 
     def _bindSignals(self):
-        signalNames = ["create", "restore", "export", "focused"]
+        signalNames = ["create", "restore", "export"]
 
         for name in signalNames:
             signal = self.signals.get(f"{name}Signal")
             handler = self.handlers.get(f"{name}Handler")
 
-            signal.setCallback(handler)
+            signal.connect(handler)
 
         loadedHandler = self.handlers.get("loadedHandler")
         self.eventLog.register(AppEvents.APP_LOADED, loadedHandler)
@@ -65,51 +62,36 @@ class WorkspaceComponent:
         serialExport = capabilities.get("serialExport")
 
         createHandler = EventHandler(createWkUI)
-        createHandler.chain(emitHandler(self.eventLog, WKEvents.WK_CREATED))
         createHandler.chain(getWkNameUI)
         createHandler.chain(updateWkUI)
-        createHandler.chain(emitHandler(self.eventLog, WKEvents.WK_UPDATED))
 
         restoreHandler = EventHandler(serialImport, data=False)
         restoreHandler.chain(self.ctxManager.loadContext, data=False)
-        restoreHandler.chain(emitHandler(self.eventLog, WKEvents.WK_IMPORTED))
 
         exportHandler = EventHandler(serialExport, data=False)
         exportHandler.chain(self.ctxManager.saveContext, data=False)
-        exportHandler.chain(emitHandler(self.eventLog, WKEvents.WK_EXPORTED))
-
-        focusedHandler = EventHandler(emitHandler(self.eventLog, WKEvents.WK_FOCUSED))
 
         loadedHandler = EventHandler(createWkUI)
-        loadedHandler.chain(emitHandler(self.eventLog, WKEvents.WK_CREATED_ROOT))
         loadedHandler.chain(inject(lambda: {"padding": 15, "text": "Root"}))
         loadedHandler.chain(updateWkUI)
-        loadedHandler.chain(emitHandler(self.eventLog, WKEvents.WK_UPDATED))
 
         self.handlers = {
             "createHandler": createHandler,
             "restoreHandler": restoreHandler,
             "exportHandler": exportHandler,
-            "focusedHandler": focusedHandler,
             "loadedHandler": loadedHandler,
         }
 
     def _initSignals(self):
 
-        idFormatter = JsonFormatter(["id"])
-
-        createSignal = EventSignal(self.wkUI.workspaceCreated_.connect)
-        restoreSignal = EventSignal(self.wkUI.workspaceImport_.connect)
-        exportSignal = EventSignal(self.wkUI.workspaceExport_.connect)
-        focusedSignal = EventSignal(self.wkUI.workspacePressed_.connect)
-
-        focusedSignal.setFormatter(idFormatter)
+        createSignal = PyQtSignalAdaptor(self.wkUI.wkCreated_)
+        restoreSignal = PyQtSignalAdaptor(self.wkUI.wkImport_)
+        exportSignal = PyQtSignalAdaptor(self.wkUI.wkExport_)
 
         self.signals = {
             "createSignal": createSignal,
             "restoreSignal": restoreSignal,
             "exportSignal": exportSignal,
-            "focusedSignal": focusedSignal,
         }
 
     def _getCapabilities(self):

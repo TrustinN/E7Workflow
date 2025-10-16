@@ -1,5 +1,7 @@
 from src.app.frontend.components import Capability, Component, Serializer
+from src.app.frontend.events import EventLog
 
+from ..events import WKEvents
 from .gui import WorkspaceUI
 
 
@@ -7,15 +9,24 @@ class WorkspaceSerializerComponent(Component):
     IMPORT = "Import"
     EXPORT = "Export"
 
-    def __init__(self, serializer: Serializer):
+    def __init__(self, serializer: Serializer, eventLog: EventLog):
         super().__init__()
         self.serializer = serializer
+        self.eventLog = eventLog
 
-        importCapability = Capability(self.serializer.restore)
-        exportCapability = Capability(self.serializer.export)
+        importCapability = Capability(self.restore)
+        exportCapability = Capability(self.export)
 
         self.registerCapability(self.IMPORT, importCapability)
         self.registerCapability(self.EXPORT, exportCapability)
+
+    def export(self):
+        self.serializer.export()
+        self.eventLog.processEvent(WKEvents.WK_EXPORTED)
+
+    def restore(self):
+        self.serializer.restore()
+        self.eventLog.processEvent(WKEvents.WK_IMPORTED)
 
 
 class WorkspaceSerializer:
@@ -38,7 +49,6 @@ class WorkspaceSerializer:
             self.repository.updateWorkspace(id, config)
 
         self.repository.exportWorkspaces()
-        # self.eventLog.processEvent(WKEvents.WK_EXPORTED)
 
     def restore(self):
         self.gui.clear()
@@ -51,8 +61,6 @@ class WorkspaceSerializer:
 
             self.controller.createWorkspace(id, parentID)
             self.controller.updateWorkspace(id, data)
-
-        # self.eventLog.processEvent(WKEvents.WK_IMPORTED)
 
 
 # class WorkspaceSerializer:

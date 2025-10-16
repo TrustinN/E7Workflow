@@ -8,13 +8,13 @@ class WorkspaceWidget(QWidget):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.createWorkspaceBtn = QPushButton("Create Workspace")
-        self.exportWorkspaceBtn = QPushButton("Export Workspace")
-        self.restoreWorkspaceBtn = QPushButton("Restore Workspace")
+        self.createBtn = QPushButton("Create Workspace")
+        self.exportBtn = QPushButton("Export Workspace")
+        self.restoreBtn = QPushButton("Restore Workspace")
 
-        self.layout.addWidget(self.createWorkspaceBtn)
-        self.layout.addWidget(self.exportWorkspaceBtn)
-        self.layout.addWidget(self.restoreWorkspaceBtn)
+        self.layout.addWidget(self.createBtn)
+        self.layout.addWidget(self.exportBtn)
+        self.layout.addWidget(self.restoreBtn)
 
     def getWorkspaceName(self):
         name, ok = QInputDialog.getText(

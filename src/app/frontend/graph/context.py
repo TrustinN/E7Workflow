@@ -6,8 +6,8 @@ GRAPH_CTX = "GRAPH CTX"
 class GraphContextManager:
     def __init__(self, ctxManager: ContextManager):
         self.context = ctxManager.addContext(GRAPH_CTX)
-        self.context.add("activeScene", None)
         self.context.add("activeNode", None)
+        self.context.add("activeScene", None)
         self.context.add("sceneParents", {})
         self.context.add("workspaceViewMapping", {})
         self.context.add("workspaceNodeMapping", {})
@@ -27,13 +27,13 @@ class GraphContextManager:
             self.context.get("sceneParents")[sceneID] = activeID
 
     def updateSceneBinding(self, data):
-        wksID = data.get("id")
+        wksID = data.get("wkID")
         sceneID = data.get("sceneID")
 
         self.context.get("workspaceViewMapping")[wksID] = sceneID
 
     def updateNodeBinding(self, data):
-        wksID = data.get("id")
+        wksID = data.get("wkID")
         nodeID = data.get("nodeID")
 
         self.context.get("workspaceNodeMapping")[wksID] = nodeID

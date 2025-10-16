@@ -6,7 +6,7 @@ from .workspace import Workspace
 
 
 class WorkspaceView(QObject):
-    workspacePressed_ = pyqtSignal(str)
+    wkPressed_ = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -41,7 +41,7 @@ class WorkspaceView(QObject):
 
     def onWorkspacePressed(self, id):
         self.focusedWorkspace = id
-        self.workspacePressed_.emit(id)
+        self.wkPressed_.emit(id)
 
     def clearState(self):
         self.focusedWorkspace = None

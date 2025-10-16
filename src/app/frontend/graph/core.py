@@ -1,6 +1,6 @@
+from src.app.frontend.components import Component
 from src.app.frontend.context import ContextManager
 from src.app.frontend.events import EventHandler, EventLog, inject
-from src.app.frontend.workspace.events import WKEvents
 from src.router.routing import Dispatcher
 
 from .components import (
@@ -14,13 +14,21 @@ from .context import GraphContextManager
 from .widget import GraphWidget
 
 
-class GraphComponent:
+class GraphComponent(Component):
+    CREATE_ROOT = "Create Root Scene"
+    CREATE_SCENE = "Create Scene and Node"
+    UPDATE_NODE = "Update Node"
+    ON_FOCUS = "On Focus"
+    IMPORT = "Import"
+    EXPORT = "Export"
+
     def __init__(
         self,
         ctxManager: ContextManager,
         eventLog: EventLog,
         dispatcher: Dispatcher,
     ):
+        super().__init__()
         self.ctxManager = GraphContextManager(ctxManager)
         self.widget = GraphWidget()
         self.eventLog = eventLog
@@ -35,8 +43,8 @@ class GraphComponent:
 
         capabilities = self._getCapabilities()
         handlers = self._createHandlers(capabilities)
-        for event, handler in handlers.items():
-            self.eventLog.register(event, handler)
+        for name, capability in handlers.items():
+            self.registerCapability(name, capability)
 
     def _createHandlers(self, capabilities):
         createGraphUI = capabilities.get("createGraph")
@@ -70,12 +78,12 @@ class GraphComponent:
         exportHandler = EventHandler(serialExport, data=False)
 
         return {
-            WKEvents.WK_CREATED_ROOT: createRootHandler,
-            WKEvents.WK_CREATED: createdHandler,
-            WKEvents.WK_UPDATED: updatedHandler,
-            WKEvents.WK_FOCUSED: focusedHandler,
-            WKEvents.WK_IMPORTED: importHandler,
-            WKEvents.WK_EXPORTED: exportHandler,
+            self.CREATE_ROOT: createRootHandler,
+            self.CREATE_SCENE: createdHandler,
+            self.UPDATE_NODE: updatedHandler,
+            self.ON_FOCUS: focusedHandler,
+            self.IMPORT: importHandler,
+            self.EXPORT: exportHandler,
         }
 
     def _getCapabilities(self):

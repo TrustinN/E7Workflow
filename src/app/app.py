@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
 
+from src.app.frontend.workspace.events import WKEvents
 from src.router.routing import Dispatcher
 
 from .frontend.context import ContextManager
@@ -39,4 +40,21 @@ class App(QApplication):
         self.layout.addWidget(self.graphCpt.widget)
         self.layout.addWidget(self.runnerCpt.widget)
 
+        self._registerCapabilities()
+
         self.eventLog.processEvent(AppEvents.APP_LOADED)
+
+    def _registerCapabilities(self):
+        graphCreateRoot = self.graphCpt.useAction(self.graphCpt.CREATE_ROOT)
+        graphCreate = self.graphCpt.useAction(self.graphCpt.CREATE_SCENE)
+        graphUpdateNode = self.graphCpt.useAction(self.graphCpt.UPDATE_NODE)
+        graphFocus = self.graphCpt.useAction(self.graphCpt.ON_FOCUS)
+        graphExport = self.graphCpt.useAction(self.graphCpt.EXPORT)
+        graphImport = self.graphCpt.useAction(self.graphCpt.IMPORT)
+
+        self.eventLog.register(WKEvents.WK_CREATED_ROOT, graphCreateRoot)
+        self.eventLog.register(WKEvents.WK_CREATED, graphCreate)
+        self.eventLog.register(WKEvents.WK_UPDATED, graphUpdateNode)
+        self.eventLog.register(WKEvents.WK_FOCUSED, graphFocus)
+        self.eventLog.register(WKEvents.WK_EXPORTED, graphExport)
+        self.eventLog.register(WKEvents.WK_IMPORTED, graphImport)

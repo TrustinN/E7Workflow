@@ -2,7 +2,7 @@ from functools import partial
 
 from nanoid import generate
 
-from .components import OutputFormatter
+from .formatters import OutputFormatter
 
 
 class EventIDProvider:
@@ -40,24 +40,22 @@ class EventLog:
             cb(data or {})
 
 
-class EventSignal:
-    def __init__(self, signal):
+class PyQtSignalAdaptor:
+    def __init__(self, signal, formatter: OutputFormatter = None):
         self.signal = signal
-        self.reformat = None
+        self.formatter = formatter
 
-    def setFormatter(self, reformat: OutputFormatter = None):
-        self.reformat = reformat
+    def connect(self, callback):
 
-    def setCallback(self, cb):
+        def wrapped(*args):
+            if self.formatter:
+                data = self.formatter.format(args)
+            else:
+                # Fallback: convert args tuple into numbered dict
+                data = {}
+            callback(data)
 
-        def updatedCall(*args):
-            data = self.reformat.format(args)
-            return cb(data)
-
-        if self.reformat is not None:
-            self.signal(updatedCall)
-        else:
-            self.signal(lambda: cb({}))
+        self.signal.connect(wrapped)
 
 
 class EventHandler:
@@ -76,10 +74,6 @@ class EventHandler:
         self.lastHandler._setNext(nextHandler)
         self.lastHandler = nextHandler.lastHandler
         return self
-
-    def transform(self, dataTransform):
-
-        pass
 
     def __call__(self, data):
         output = None
