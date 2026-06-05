@@ -1,1 +1,1 @@
-from .core import GraphComponent
+from .main import GraphComponent

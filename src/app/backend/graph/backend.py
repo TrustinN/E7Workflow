@@ -5,37 +5,39 @@ class GraphBackend:
     def __init__(self):
         self.graphs = {}
 
-    def createGraph(self, userData=None):
-        userData = userData or {}
+    def createGraph(self, data):
+        data = data or {"nodes": {}, "edges": {}}
 
         graphID = generate()
-        data = {"nodes": {}, "edges": {}, "data": userData}
         self.graphs[graphID] = data
         return graphID, data
 
     def updateGraph(self, graphID, data):
-        self.graphs[graphID]["data"].update(data)
+        data = data or {}
+        self.graphs[graphID].update(data)
 
-    def createNode(self, graphID, userData=None):
-        userData = userData or {}
+    def createNode(self, graphID, data):
+        data = data or {}
 
         nodes = self.graphs[graphID]["nodes"]
         nodeID = generate()
-        nodes[nodeID] = userData
-        return nodeID, userData
+        nodes[nodeID] = data
+        return nodeID, data
 
     def updateNode(self, graphID, nodeID, data):
+        data = data or {}
         self.graphs[graphID]["nodes"][nodeID].update(data)
 
-    def createEdge(self, graphID, userData=None):
-        userData = userData or {}
+    def createEdge(self, graphID, data):
+        data = data or {}
 
         edges = self.graphs[graphID]["edges"]
         edgeID = generate()
-        edges[edgeID] = userData
-        return edgeID, userData
+        edges[edgeID] = data
+        return edgeID, data
 
     def updateEdge(self, graphID, edgeID, data):
+        data = data or {}
         self.graphs[graphID]["edges"][edgeID].update(data)
 
     def clear(self):

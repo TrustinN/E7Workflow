@@ -33,9 +33,11 @@ class GraphService(EndpointService):
         self.addRoute(RequestType.POST, nodeRoute, self.createNode)
         self.addRoute(RequestType.POST, edgeRoute, self.createEdge)
 
+        graphRoute = route(gs.GRAPH, ":id")
         edgeRoute = route(gs.GRAPH, ":id", gs.EDGE, ":id")
         nodeRoute = route(gs.GRAPH, ":id", gs.NODE, ":id")
 
+        self.addRoute(RequestType.PUT, graphRoute, self.updateGraph)
         self.addRoute(RequestType.PUT, edgeRoute, self.updateEdge)
         self.addRoute(RequestType.PUT, nodeRoute, self.updateNode)
 
@@ -43,14 +45,15 @@ class GraphService(EndpointService):
         self.addRoute(RequestType.POST, route(gs.GRAPH, gs.IMPORT), self.importGraph)
 
     def createGraph(self, data):
-        userData = data.get("userData")
-        graphID, graphData = self.backend.createGraph(userData=userData)
+        graphID, graphData = self.backend.createGraph(data)
 
         return {"graphID": graphID, "graphData": graphData}
 
+    def updateGraph(self, graphID, data):
+        self.backend.updateGraph(graphID, data)
+
     def createNode(self, graphID, data):
-        userData = data.get("userData")
-        nodeID, nodeData = self.backend.createNode(graphID, userData=userData)
+        nodeID, nodeData = self.backend.createNode(graphID, data)
 
         return {"nodeID": nodeID}
 
@@ -81,4 +84,4 @@ class GraphService(EndpointService):
             self.backend.overwrite(data)
 
     def deleteAllGraphs(self, data):
-        self.backend.clear
+        self.backend.clear()

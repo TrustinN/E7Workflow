@@ -1,5 +1,3 @@
-from .controller import WorkspaceController
-from .gui import WorkspaceUI, WorkspaceUIComponent
+from .mv import WorkspaceMV
 from .repository import WorkspaceRepository
-from .serializer import WorkspaceSerializer, WorkspaceSerializerComponent
-from .view import WorkspaceView
+from .serializer import WorkspaceSerializer

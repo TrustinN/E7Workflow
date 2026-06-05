@@ -15,6 +15,7 @@ class GraphView(QGraphicsScene):
         self.setSceneRect(0, 0, 400, 300)
         self.nodes: dict[str, GraphicsNodeItem] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
+        self.edgeIds: dict[tuple[str, str], str] = {}
         self.state = {"nodeSelected": None}
 
     def selectedNode(self):
@@ -52,12 +53,32 @@ class GraphView(QGraphicsScene):
         n2.emitter.onMove_.connect(arrow.setEnd)
 
         self.edges[id] = arrow
+        self.edgeIds[(id1, id2)] = id
         self.addItem(arrow)
 
     def readEdge(self, id1, id2):
-        edge = self.edges[(id1, id2)]
+        edgeID = self.edgeIds[(id1, id2)]
+        edge = self.edges[edgeID]
         return edge.getData()
 
     def updateEdge(self, id1, id2, data):
-        edge = self.edges[(id1, id2)]
+        edgeID = self.edgeIds[(id1, id2)]
+        edge = self.edges[edgeID]
         edge.setData(data)
+
+    def getData(self):
+        nodeData = {}
+        edgeData = {}
+        for id in self.nodes:
+            nodeData[id] = self.readNode(id)
+
+        for nid1, nid2 in self.edgeIds:
+            data = self.readEdge(nid1, nid2)
+            data["id1"] = nid1
+            data["id2"] = nid2
+            edgeData[id] = data
+
+        return {
+            "nodes": nodeData,
+            "edges": edgeData,
+        }

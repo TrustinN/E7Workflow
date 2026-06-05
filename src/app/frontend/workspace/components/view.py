@@ -35,6 +35,9 @@ class WorkspaceView(QObject):
     def readWorkspace(self, id):
         return self.workspaces[id].getData()
 
+    def allWorkspaces(self):
+        return list(self.workspaces.keys())
+
     def updateWorkspace(self, id, data):
         workspace = self.workspaces[id]
         workspace.setData(data)

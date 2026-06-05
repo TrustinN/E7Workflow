@@ -1,12 +1,9 @@
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
 
-from src.app.frontend.workspace.events import WKEvents
-from src.router.routing import Dispatcher
-
-from .frontend.context import ContextManager
-from .frontend.events import AppEvents, EventLog
+from .frontend.events import PubSubHandler
 from .frontend.graph import GraphComponent
-from .frontend.runner import RunnerComponent
+
+# from .frontend.runner import RunnerComponent
 from .frontend.workspace import WorkspaceComponent
 
 
@@ -19,7 +16,7 @@ class MainWindow(QMainWindow):
 
 
 class App(QApplication):
-    def __init__(self, dispatcher: Dispatcher):
+    def __init__(self):
         super().__init__([])
 
         self.window = MainWindow()
@@ -29,32 +26,15 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.ctxManager = ContextManager()
-        self.eventLog = EventLog()
-
-        self.wkCpt = WorkspaceComponent(self.ctxManager, self.eventLog, dispatcher)
-        self.graphCpt = GraphComponent(self.ctxManager, self.eventLog, dispatcher)
-        self.runnerCpt = RunnerComponent(self.ctxManager)
+        self.wkCpt = WorkspaceComponent()
+        self.graphCpt = GraphComponent()
+        # self.runnerCpt = RunnerComponent(self.ctxManager)
 
         self.layout.addWidget(self.wkCpt.widget)
-        self.layout.addWidget(self.graphCpt.widget)
-        self.layout.addWidget(self.runnerCpt.widget)
+        self.layout.addWidget(self.graphCpt)
+        # self.layout.addWidget(self.runnerCpt.widget)
 
-        self._registerCapabilities()
-
-        self.eventLog.processEvent(AppEvents.APP_LOADED)
-
-    def _registerCapabilities(self):
-        graphCreateRoot = self.graphCpt.useAction(self.graphCpt.CREATE_ROOT)
-        graphCreate = self.graphCpt.useAction(self.graphCpt.CREATE_SCENE)
-        graphUpdateNode = self.graphCpt.useAction(self.graphCpt.UPDATE_NODE)
-        graphFocus = self.graphCpt.useAction(self.graphCpt.ON_FOCUS)
-        graphExport = self.graphCpt.useAction(self.graphCpt.EXPORT)
-        graphImport = self.graphCpt.useAction(self.graphCpt.IMPORT)
-
-        self.eventLog.register(WKEvents.WK_CREATED_ROOT, graphCreateRoot)
-        self.eventLog.register(WKEvents.WK_CREATED, graphCreate)
-        self.eventLog.register(WKEvents.WK_UPDATED, graphUpdateNode)
-        self.eventLog.register(WKEvents.WK_FOCUSED, graphFocus)
-        self.eventLog.register(WKEvents.WK_EXPORTED, graphExport)
-        self.eventLog.register(WKEvents.WK_IMPORTED, graphImport)
+        self.pubSubHandler = PubSubHandler()
+        self.pubSubHandler.registerNode(self.wkCpt)
+        self.pubSubHandler.registerNode(self.graphCpt.miniViewNode)
+        self.pubSubHandler.handlePublish("/App/Loaded")

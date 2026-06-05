@@ -15,5 +15,8 @@ class WorkspaceController:
     def readWorkspace(self, id):
         return self.view.readWorkspace(id)
 
+    def workspaces(self):
+        return self.view.allWorkspaces()
+
     def updateWorkspace(self, id, data):
         self.view.updateWorkspace(id, data)

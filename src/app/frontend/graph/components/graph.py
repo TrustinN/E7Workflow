@@ -22,8 +22,8 @@ class GraphicsArrowItem(QGraphicsItem):
 
     def getData(self):
         return {
-            "startPosition": self.start,
-            "endPosition": self.end,
+            "startPosition": [self.start.x(), self.start.y()],
+            "endPosition": [self.end.x(), self.end.y()],
         }
 
     def setData(self, data):

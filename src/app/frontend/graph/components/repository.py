@@ -13,6 +13,10 @@ class GraphRepository:
 
         return sceneID
 
+    def updateGraph(self, graphID, data):
+        link = Link(gs.NAME, gs.GRAPH, graphID)
+        self.client.put(link, data)
+
     def createNode(self, graphID):
         link = Link(gs.NAME, gs.GRAPH, graphID, gs.NODE)
         response = self.client.post(link)

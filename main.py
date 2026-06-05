@@ -16,7 +16,7 @@ def main():
     _ = GraphService(dispatcher, graphBackend)
     _ = RunnerService(dispatcher, runnerBackend)
 
-    app = App(dispatcher)
+    app = App()
     app.exec()
 
 

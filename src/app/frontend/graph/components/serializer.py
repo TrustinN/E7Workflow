@@ -1,68 +1,58 @@
-from src.app.frontend.components import Capability, Component, Serializer
+import json
 
-from .gui import GraphUI
+from .mv import GraphMV
 
 
-class GraphSerializerComponent(Component):
-    IMPORT = "Import"
-    EXPORT = "Export"
-
-    def __init__(
-        self,
-        serializer: Serializer,
-    ):
+class GraphSerializer:
+    def __init__(self, graphmv: GraphMV):
         super().__init__()
-        self.serializer = serializer
-
-        importCapability = Capability(self.serializer.restore)
-        exportCapability = Capability(self.serializer.export)
-
-        self.registerCapability(self.IMPORT, importCapability)
-        self.registerCapability(self.EXPORT, exportCapability)
-
-
-class GraphSerializer(Serializer):
-    def __init__(self, graphUI: GraphUI):
-        super().__init__()
-        self.gui = graphUI
-        self.repository = graphUI.repository
+        self.graphmv = graphmv
+        self.path = "graphConfig"
 
     def controller(self, graphID):
-        return self.gui.controller(graphID)
+        return self.graphmv.controller(graphID)
 
     def export(self):
-        graphs = self.repository.getGraph()
+        graphIDs = self.graphmv.controllerIDs()
+        config = {}
 
-        for graphID, graphData in graphs.items():
-            nodes = graphData.get("nodes")
-            edges = graphData.get("edges")
-            graphConfig = graphData.get("data")
-
+        for graphID in graphIDs:
             controller = self.controller(graphID)
-            for nodeID in nodes:
-                nodeData = controller.readNode(nodeID)
-                self.repository.updateNode(graphID, nodeID, nodeData)
+            graphData = controller.readScene()
 
-        self.repository.exportGraph()
+            nodes = graphData["nodes"]
+            for nodeID in nodes:
+                nodeData = self.graphmv.nodeData(nodeID)
+                nodes[nodeID]["data"] = nodeData
+
+            graphData["data"] = self.graphmv.graphData(graphID)
+            config[graphID] = graphData
+
+        with open(self.path, "w") as f:
+            json.dump(config, f, indent=4)
 
     def restore(self):
-        self.gui.clear()
+        self.graphmv.clear()
 
-        self.repository.importGraph()
-        graphs = self.repository.getGraph()
+        with open(self.path, "r") as f:
+            graphs = json.load(f)
 
-        for graphID, graphData in graphs.items():
-            controller, _ = self.gui.createController(graphID)
+            for graphID, graphData in graphs.items():
+                self.graphmv.createController(graphID)
+                controller = self.graphmv.controller(graphID)
 
-            nodes = graphData.get("nodes")
-            edges = graphData.get("edges")
-            graphConfig = graphData.get("data")
+                nodes = graphData.get("nodes")
+                edges = graphData.get("edges")
+                data = graphData.get("data")
+                self.graphmv.setGraphData(graphID, data)
 
-            for nodeID, nodeData in nodes.items():
-                controller.createNode(nodeID)
-                controller.updateNode(nodeID, nodeData)
+                for nodeID, nodeData in nodes.items():
+                    controller.createNode(nodeID)
+                    controller.updateNode(nodeID, nodeData)
+                    nodeDataID = nodeData["data"]
+                    self.graphmv.setNodeData(nodeID, nodeDataID)
 
-            for edgeID, edgeData in edges.items():
-                id1 = edgeData.get("id1")
-                id2 = edgeData.get("id2")
-                controller.createEdge(edgeID, id1, id2)
+                for edgeID, edgeData in edges.items():
+                    id1 = edgeData.get("id1")
+                    id2 = edgeData.get("id2")
+                    controller.createEdge(edgeID, id1, id2)
