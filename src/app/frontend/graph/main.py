@@ -16,7 +16,7 @@ class GraphComponent(QWidget):
         self.graphMiniViewModel = GraphModel()
         self.graphFullViewModel = GraphModel()
 
-        self.graphNode = GraphNode(self.graphModel)
+        self.node = GraphNode(self.graphModel)
 
         self.buttons = GraphButtonsWidget()
         self.miniView = GraphMiniView(

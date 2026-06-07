@@ -1,1 +1,1 @@
-from .selection import SelectionModel, SelectionModelNode
+from .selection import SelectionModel, SelectionNode

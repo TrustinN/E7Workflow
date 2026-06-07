@@ -4,7 +4,7 @@ from .frontend.events import PubSubHandler
 from .frontend.graph import GraphComponent
 
 # from .frontend.runner import RunnerComponent
-from .frontend.state import SelectionModel, SelectionModelNode
+from .frontend.state import SelectionModel, SelectionNode
 from .frontend.workspace import WorkspaceComponent
 
 
@@ -28,7 +28,7 @@ class App(QApplication):
         self.window.show()
 
         self.selectionModel = SelectionModel()
-        self.selectionNode = SelectionModelNode(self.selectionModel)
+        self.selectionNode = SelectionNode(self.selectionModel)
 
         self.wkCpt = WorkspaceComponent(self.selectionModel)
         self.graphCpt = GraphComponent(self.selectionModel)
@@ -40,6 +40,6 @@ class App(QApplication):
 
         self.pubSubHandler = PubSubHandler()
         self.pubSubHandler.registerNode(self.wkCpt.node)
-        self.pubSubHandler.registerNode(self.graphCpt.graphNode)
+        self.pubSubHandler.registerNode(self.graphCpt.node)
         self.pubSubHandler.registerNode(self.selectionNode)
         self.pubSubHandler.handlePublish("/App/Loaded")

@@ -28,7 +28,7 @@ class SelectionModel(QObject):
         self.selected_.emit(None)
 
 
-class SelectionModelNode(Node):
+class SelectionNode(Node):
     def __init__(self, model: SelectionModel):
         super().__init__()
         self.model = model
