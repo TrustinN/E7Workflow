@@ -1,7 +1,9 @@
+import os
+
 from nanoid import generate
 
 from src.app.frontend.events import Node
-from src.app.frontend.models import TreeModel, TreeModelSerializer
+from src.app.frontend.models import Serializer, TreeModel
 from src.app.frontend.state import SelectionModel
 
 
@@ -13,8 +15,10 @@ class WorkspaceNode(Node):
         self.workspaceModel = model
         self.viewModel = viewModel
         self.selectionModel = selectionModel
+        self.serializer = Serializer()
 
-        self.serializer = TreeModelSerializer()
+        self.modelFile = "ws_data.json"
+        self.viewFile = "ws_view.json"
 
         self.subscribe("/App/Loaded", self.createRootWorkspace)
         self.subscribe("/App/Export", self.workspaceExport)
@@ -50,12 +54,22 @@ class WorkspaceNode(Node):
         )
 
     def workspaceExport(self, data):
-        self.serializer.export(self.workspaceModel, "ws_data.json")
-        self.serializer.export(self.viewModel, "ws_view.json")
+        path = data["path"]
+
+        modelPath = os.path.join(path, self.modelFile)
+        viewPath = os.path.join(path, self.viewFile)
+
+        self.serializer.export(self.workspaceModel, modelPath)
+        self.serializer.export(self.viewModel, viewPath)
 
     def workspaceImport(self, data):
-        modelState = self.serializer.restore("ws_data.json")
-        viewModelState = self.serializer.restore("ws_view.json")
+        path = data["path"]
+
+        modelPath = os.path.join(path, self.modelFile)
+        viewPath = os.path.join(path, self.viewFile)
+
+        modelState = self.serializer.restore(modelPath)
+        viewModelState = self.serializer.restore(viewPath)
 
         self.workspaceModel.deserialize(modelState)
         self.viewModel.deserialize(viewModelState)

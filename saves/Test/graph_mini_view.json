@@ -1,14 +1,23 @@
 {
-    "nodes": [
-        "3LdaV6ejvwXreyXU95kAB",
-        "KPk9VuHWdv3j7HHL8i33B"
-    ],
-    "edges": [],
-    "nodeData": {
-        "3LdaV6ejvwXreyXU95kAB": {
+    "root": "YdsS6OlGvTbKgddojHYZJ",
+    "parents": {
+        "z8QMJ0SvZz7C4GCnY1QDV": "YdsS6OlGvTbKgddojHYZJ",
+        "OFj6_kM_R7767h_V2vBIh": "YdsS6OlGvTbKgddojHYZJ"
+    },
+    "children": {
+        "YdsS6OlGvTbKgddojHYZJ": [
+            "z8QMJ0SvZz7C4GCnY1QDV",
+            "OFj6_kM_R7767h_V2vBIh"
+        ],
+        "z8QMJ0SvZz7C4GCnY1QDV": [],
+        "OFj6_kM_R7767h_V2vBIh": []
+    },
+    "data": {
+        "YdsS6OlGvTbKgddojHYZJ": {},
+        "z8QMJ0SvZz7C4GCnY1QDV": {
             "position": [
-                63.0,
-                157.0
+                80.0,
+                163.0
             ],
             "color": [
                 20,
@@ -23,10 +32,10 @@
             ],
             "displayText": "WS Name"
         },
-        "KPk9VuHWdv3j7HHL8i33B": {
+        "OFj6_kM_R7767h_V2vBIh": {
             "position": [
-                225.0,
-                37.0
+                239.0,
+                77.0
             ],
             "color": [
                 20,
@@ -41,6 +50,5 @@
             ],
             "displayText": "WS Name"
         }
-    },
-    "edgeData": {}
+    }
 }

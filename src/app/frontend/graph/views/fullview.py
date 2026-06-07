@@ -9,6 +9,7 @@ from src.app.frontend.state import SelectionModel
 class GraphFullView(GraphViewWidget):
     graphCreated_ = pyqtSignal(str)
     nodeCreated_ = pyqtSignal(str)
+    nodeUpdated_ = pyqtSignal(str)
 
     def __init__(
         self,
@@ -29,6 +30,7 @@ class GraphFullView(GraphViewWidget):
 
         self.graphCreated_.connect(self.viewModelGraphCreate)
         self.nodeCreated_.connect(self.viewModelNodeCreate)
+        self.nodeUpdated_.connect(self.viewModelNodeUpdate)
         self.viewModel.modelReset_.connect(self.onViewModelReset)
 
     def onSelectionChanged(self, id):
@@ -37,18 +39,26 @@ class GraphFullView(GraphViewWidget):
         else:
             self.scene.clearSelection()
 
-    def onGraphCreate(self, graphID: str):
+    def _createScene(self, id: str):
         scene = GraphScene()
 
-        if self.scene is None:
-            self.setScene(scene)
-            self.scene.nodeSelected_.connect(self.selectionModel.setSelected)
-            self.scene.nodeDeselected_.connect(
-                lambda: self.selectionModel.setSelected(graphID)
-            )
-            self.scene.nodeMoved_.connect(self.viewModelNodeUpdate)
+        scene.nodeSelected_.connect(self.selectionModel.setSelected)
+        scene.nodeDeselected_.connect(lambda: self.selectionModel.setSelected(id))
+        scene.nodeMoved_.connect(self.nodeUpdated_)
+        return scene
 
+    def createGraph(self, graphID):
+        scene = self._createScene(graphID)
+        self.setScene(scene)
         self.graphCreated_.emit(graphID)
+
+    def createNode(self, nodeID):
+        self.scene.createNode(nodeID)
+        self.nodeCreated_.emit(nodeID)
+
+    def updateNode(self, nodeID, data):
+        self.scene.updateNode(nodeID, data)
+        self.nodeUpdated_.emit(nodeID)
 
     def onNodeCreate(self, nodeID: str):
         nodeData = self.model.getNodeData(nodeID)
@@ -56,13 +66,11 @@ class GraphFullView(GraphViewWidget):
         parentID = nodeData["parentID"]
         isRoot = parentID == nodeID
         if isRoot:
-            self.onGraphCreate(nodeID)
+            self.createGraph(nodeID)
             return
 
-        self.scene.createNode(nodeID)
-        self.scene.updateNode(nodeID, {"displayText": nodeData["text"]})
-
-        self.nodeCreated_.emit(nodeID)
+        self.createNode(nodeID)
+        self.updateNode(nodeID, {"displayText": nodeData["text"]})
 
     def onEdgeCreate(self, edgeIDs: tuple[str, str]):
         pass
@@ -80,8 +88,15 @@ class GraphFullView(GraphViewWidget):
 
     def onViewModelReset(self):
         for nodeID in self.viewModel.nodeIter():
+            nodeData = self.model.getNodeData(nodeID)
+
+            parentID = nodeData["parentID"]
+            isRoot = parentID == nodeID
+            if isRoot:
+                continue
+
             renderData = self.viewModel.getNodeData(nodeID)
-            self.scene.updateNode(nodeID, renderData)
+            self.updateNode(nodeID, renderData)
 
         for edgeID in self.viewModel.edgeIter():
             renderData = self.viewModel.getEdgeData(edgeID[0], edgeID[1])

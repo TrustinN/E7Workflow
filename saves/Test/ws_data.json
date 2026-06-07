@@ -1,0 +1,30 @@
+{
+    "root": "YdsS6OlGvTbKgddojHYZJ",
+    "parents": {
+        "z8QMJ0SvZz7C4GCnY1QDV": "YdsS6OlGvTbKgddojHYZJ",
+        "OFj6_kM_R7767h_V2vBIh": "YdsS6OlGvTbKgddojHYZJ"
+    },
+    "children": {
+        "YdsS6OlGvTbKgddojHYZJ": [
+            "z8QMJ0SvZz7C4GCnY1QDV",
+            "OFj6_kM_R7767h_V2vBIh"
+        ]
+    },
+    "data": {
+        "YdsS6OlGvTbKgddojHYZJ": {
+            "text": "Root",
+            "id": "YdsS6OlGvTbKgddojHYZJ",
+            "parentID": "YdsS6OlGvTbKgddojHYZJ"
+        },
+        "z8QMJ0SvZz7C4GCnY1QDV": {
+            "text": "WS Name",
+            "id": "z8QMJ0SvZz7C4GCnY1QDV",
+            "parentID": "YdsS6OlGvTbKgddojHYZJ"
+        },
+        "OFj6_kM_R7767h_V2vBIh": {
+            "text": "WS Name",
+            "id": "OFj6_kM_R7767h_V2vBIh",
+            "parentID": "YdsS6OlGvTbKgddojHYZJ"
+        }
+    }
+}

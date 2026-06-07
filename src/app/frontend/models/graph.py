@@ -1,13 +1,11 @@
-import json
+from PyQt5.QtCore import pyqtSignal
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from .model import Model
 
 
-class GraphModel(QObject):
+class GraphModel(Model):
     nodeCreated_ = pyqtSignal(str)
     edgeCreated_ = pyqtSignal(str, str)
-    modelClear_ = pyqtSignal()
-    modelReset_ = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -88,17 +86,3 @@ class GraphModel(QObject):
             self.createEdge(edgeID[0], edgeID[1], data)
 
         self.modelReset_.emit()
-
-
-class GraphModelSerializer:
-    def __init__(self):
-        pass
-
-    def export(self, model: GraphModel, path: str):
-        state = model.serialize()
-        with open(path, "w") as f:
-            json.dump(state, f, indent=4)
-
-    def restore(self, path: str):
-        with open(path, "r") as f:
-            return json.load(f)

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from .node import SerializationNode
 
@@ -21,8 +21,24 @@ class SerializationComponent(QWidget):
         self.importBtn.clicked.connect(self.handleImport)
 
     def handleExport(self):
-        self.node.requestExport()
+        name, ok = QInputDialog.getText(
+            self,
+            "QInputDialog.getText()",
+            "Config Name:",
+            QLineEdit.Normal,
+            "Untitled",
+        )
+        if name and ok:
+            self.node.requestExport(name)
 
     def handleImport(self):
-        self.node.requestReset()
-        self.node.requestImport()
+        name, ok = QInputDialog.getText(
+            self,
+            "QInputDialog.getText()",
+            "Config Name:",
+            QLineEdit.Normal,
+            "Untitled",
+        )
+        if name and ok:
+            self.node.requestReset()
+            self.node.requestImport(name)

@@ -1,14 +1,13 @@
-import json
 from collections import defaultdict, deque
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
+
+from .model import Model
 
 
-class TreeModel(QObject):
+class TreeModel(Model):
     nodeCreated_ = pyqtSignal(str)
     nodeUpdated_ = pyqtSignal(str)
-    modelClear_ = pyqtSignal()
-    modelReset_ = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -43,6 +42,9 @@ class TreeModel(QObject):
             return None
 
         return self.parents[nodeID]
+
+    def isRoot(self, nodeID):
+        return nodeID == self.root
 
     def nodeData(self, nodeID):
         return self.data[nodeID]
@@ -89,7 +91,7 @@ class TreeModel(QObject):
 
         nodeIter = self.nodeIter(rootID, children)
         for id in nodeIter:
-            if id == rootID:
+            if self.isRoot(id):
                 continue
 
             data = state["data"][id]
@@ -100,17 +102,3 @@ class TreeModel(QObject):
             )
 
         self.modelReset_.emit()
-
-
-class TreeModelSerializer:
-    def __init__(self):
-        pass
-
-    def export(self, model: TreeModel, path: str):
-        state = model.serialize()
-        with open(path, "w") as f:
-            json.dump(state, f, indent=4)
-
-    def restore(self, path: str):
-        with open(path, "r") as f:
-            return json.load(f)

@@ -1,2 +1,3 @@
-from .graph import GraphModel, GraphModelSerializer
-from .tree import TreeModel, TreeModelSerializer
+from .graph import GraphModel
+from .serializer import Serializer
+from .tree import TreeModel

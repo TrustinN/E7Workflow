@@ -63,9 +63,8 @@ class GraphScene(QGraphicsScene):
         return node.getData()
 
     def updateNode(self, id, data):
-        if id in self.nodes:
-            node = self.nodes[id]
-            node.setData(data)
+        node = self.nodes[id]
+        node.setData(data)
 
     def createEdge(self, id, id1, id2):
         n1 = self.nodes[id1]

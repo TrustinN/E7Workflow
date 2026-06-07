@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
-from src.app.frontend.models import GraphModel
+from src.app.frontend.models import GraphModel, TreeModel
 
 from .node import GraphNode
 from .views import GraphFullView, GraphMiniView
@@ -16,7 +16,7 @@ class GraphComponent(QWidget):
 
         self.graphModel = GraphModel()
         self.graphFullViewModel = GraphModel()
-        self.graphMiniViewModel = GraphModel()
+        self.graphMiniViewModel = TreeModel()
 
         self.node = GraphNode(
             self.graphModel, self.graphFullViewModel, self.graphMiniViewModel
