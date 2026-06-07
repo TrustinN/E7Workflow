@@ -14,7 +14,6 @@ class GraphNode(Node):
 
         self.subscribe("/WS Component/RootWSCreated", self.createNode)
         self.subscribe("/WS Component/WSCreated", self.createNode)
-        self.subscribe("/WS Component/WSClear", self.clearGraph)
         self.subscribe("/App/Export", self.graphExport)
         self.subscribe("/App/Import", self.graphImport)
 
@@ -23,9 +22,6 @@ class GraphNode(Node):
 
     def createEdge(self, data):
         self.model.createEdge(data["id1"], data["id2"])
-
-    def clearGraph(self, data):
-        self.model.clear()
 
     def graphExport(self, data):
         self.serializer.export(self.model, "graph_data.json")
