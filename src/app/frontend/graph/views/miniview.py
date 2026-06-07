@@ -47,24 +47,30 @@ class GraphMiniView(GraphViewWidget):
             parentID = self.viewModel.parent(prevID)
             if parentID:
                 scene = self.scenes[parentID]
-                scene.clearSelection()
+                scene.unselectNode(prevID)
 
         id = id or self.root
         scene = self.scenes.get(id)
         self.setScene(scene)
 
     def onNodeSelected(self, id):
+        if self._updatingSelection:
+            return
+
         self._updatingSelection = True
         prevID = self.selectionModel.getPrevSelected()
         if prevID:
             parentID = self.viewModel.parent(prevID)
             if parentID:
                 scene = self.scenes[parentID]
-                scene.clearSelection()
+                scene.unselectNode(prevID)
         self.selectionModel.setSelected(id)
         self._updatingSelection = False
 
     def onNodeDeselected(self, sceneID):
+        if self._updatingSelection:
+            return
+
         self.selectionModel.setSelected(sceneID)
 
     def onNodeCreate(self, nodeID: str):

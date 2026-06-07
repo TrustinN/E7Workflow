@@ -31,8 +31,9 @@ class SelectionModel(QObject):
         self.selected_.emit(None)
 
     def reset(self):
-        self.clearSelection()
+        self.selected = None
         self.prevSelected = None
+        self.selected_.emit(None)
 
 
 class SelectionNode(Node):

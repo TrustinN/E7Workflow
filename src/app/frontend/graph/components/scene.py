@@ -17,16 +17,16 @@ class GraphScene(QGraphicsScene):
         self.setSceneRect(0, 0, 400, 300)
         self.nodes: dict[str, GraphicsNodeItem] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
-        self.state = {"nodeSelected": None}
         self.selectionChanged.connect(self.onSelectionChanged)
-
-    def selectedNode(self):
-        return self.state["nodeSelected"]
 
     def selectNode(self, id):
         with QSignalBlocker(self):
             super().clearSelection()
             self.nodes[id].setSelected(True)
+
+    def unselectNode(self, id):
+        self.nodes[id].setSelected(False)
+        self.nodeDeselected_.emit()
 
     def clearSelection(self):
         with QSignalBlocker(self):
@@ -35,14 +35,12 @@ class GraphScene(QGraphicsScene):
     def onSelectionChanged(self):
         selected = self.selectedItems()
         if not selected:
-            self.state["nodeSelected"] = None
             self.nodeDeselected_.emit()
             return
 
         node = selected[0]
         for id, graphicsNode in self.nodes.items():
             if graphicsNode is node:
-                self.state["nodeSelected"] = id
                 self.nodeSelected_.emit(id)
                 break
 
