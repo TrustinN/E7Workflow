@@ -7,6 +7,7 @@ from src.app.frontend.events import Node
 class SerializationNode(Node):
     def __init__(self):
         super().__init__()
+        os.makedirs(SAVE_DIR, exist_ok=True)
 
     def requestReset(self):
         self.publish("/App/Reset")
