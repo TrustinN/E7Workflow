@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
-from .mvc import TreeModel, WorkspaceView
+from src.app.frontend.models import TreeModel
+
 from .node import WorkspaceNode
+from .views import WorkspaceView
 from .widgets import WorkspaceButtons
 
 

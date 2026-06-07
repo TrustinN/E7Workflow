@@ -1,8 +1,8 @@
 from PyQt5.QtCore import pyqtSignal
 
 from src.app.frontend.graph.components import GraphScene
-from src.app.frontend.graph.mvc.model import GraphModel
 from src.app.frontend.graph.widgets import GraphViewWidget
+from src.app.frontend.models import GraphModel
 from src.app.frontend.state import SelectionModel
 
 
@@ -27,25 +27,41 @@ class GraphMiniView(GraphViewWidget):
         self.model.edgeCreated_.connect(self.onEdgeCreate)
         self.model.modelClear_.connect(self.clearState)
 
-        self.selectionModel.selected_.connect(self.onObjectSelection)
+        self.selectionModel.selected_.connect(self.onExternalSelection)
 
         self.nodeCreated_.connect(self.viewModelNodeCreate)
         self.viewModel.modelReset_.connect(self.onViewModelReset)
 
-    def onObjectSelection(self, id):
+    def onExternalSelection(self, id):
         id = id or self.root
         scene = self.scenes.get(id)
         self.setScene(scene)
 
-    def onGraphCreate(self, graphID: str):
+    def onNodeSelected(self, id):
+        self.selectionModel.selected_.disconnect(self.onExternalSelection)
+        self.selectionModel.setSelected(id)
+        self.selectionModel.selected_.connect(self.onExternalSelection)
+
+    def onNodeDeselected(self, sceneID):
+        self.selectionModel.setSelected(sceneID)
+
+    def onNodeMoved(self, id):
+        self.viewModelNodeUpdate(id)
+
+    def _createScene(self, id):
         scene = GraphScene()
+        scene.nodeSelected_.connect(self.onNodeSelected)
+        scene.nodeDeselected_.connect(lambda: self.onNodeDeselected(id))
+        scene.nodeMoved_.connect(self.onNodeMoved)
+        return scene
+
+    def onGraphCreate(self, graphID: str):
+        scene = self._createScene(graphID)
         self.scenes[graphID] = scene
 
         if self.scene is None:
             self.setScene(scene)
             self.root = graphID
-
-        scene.nodeMoved_.connect(self.viewModelNodeUpdate)
 
     def onNodeCreate(self, nodeID: str):
         nodeData = self.model.getNodeData(nodeID)

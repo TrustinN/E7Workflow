@@ -2,11 +2,10 @@ from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from src.app.frontend.models import TreeModel
 from src.app.frontend.state import SelectionModel
 from src.app.frontend.workspace.components import Workspace
 from src.app.frontend.workspace.components.utils.colors import Alpha, Colors, with_alpha
-
-from .model import TreeModel
 
 
 class WorkspaceView(QObject):
@@ -89,16 +88,10 @@ class WorkspaceView(QObject):
             )
 
     def onViewModelReset(self):
-        for workspace in self.workspaces.values():
-            workspace.blockSignals(True)
-
         for nodeID in self.viewModel.nodeIter():
             data = self.viewModel.nodeData(nodeID)
             workspace = self.workspaces[nodeID]
-            workspace.setData(data)
-
-        for workspace in self.workspaces.values():
-            workspace.blockSignals(False)
+            workspace.restoreData(data)
 
     def clearState(self):
         rootID = self.model.root

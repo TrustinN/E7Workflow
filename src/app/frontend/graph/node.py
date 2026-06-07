@@ -1,5 +1,5 @@
 from src.app.frontend.events import Node
-from src.app.frontend.graph.mvc import GraphModel, GraphModelSerializer
+from src.app.frontend.models import GraphModel, GraphModelSerializer
 
 
 class GraphNode(Node):

@@ -2,13 +2,7 @@ import numpy as np
 from PyQt5.QtCore import QPoint, QRect, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
 
-from .utils.utils import (
-    applyPadding,
-    bboxToLayout,
-    colorToList,
-    layoutToBBox,
-    listToColor,
-)
+from .utils.utils import applyPadding, bboxToLayout, layoutToBBox
 from .window import SelectionWindow
 
 
@@ -29,6 +23,22 @@ class Workspace(SelectionWindow):
             "text": self.name,
             "geometry": bboxToLayout(self.getBBox()),
         }
+
+    def restoreData(self, data):
+        padding = data.get("padding")
+        text = data.get("text")
+        geometry = data.get("geometry")
+
+        if padding is not None:
+            self.padding = padding
+
+        if text is not None:
+            self.name = text
+
+        if geometry is not None:
+            self.restoreGeometry(layoutToBBox(geometry))
+
+        self.update()
 
     def setData(self, data):
         padding = data.get("padding")
@@ -266,6 +276,9 @@ class Workspace(SelectionWindow):
         self.resize([newTl, newBr])
         self.resizeSignal.emit()
 
+    def restoreGeometry(self, rect):
+        super().setGeometry(rect)
+
     def hide(self):
         super().hide()
         for wkspace in self.wkspaces:
@@ -285,36 +298,3 @@ class Workspace(SelectionWindow):
         super().unlock()
         for wkspace in self.wkspaces:
             wkspace.unlock()
-
-
-def exportData(wks: Workspace, extract_):
-    data = dict(config=extract_(wks), children={})
-    children = data["children"]
-    for child in wks.wkspaces:
-        children[child.id] = exportData(child, extract_)
-
-    return data
-
-
-def importData(wks: Workspace, data, import_):
-    import_(wks, data["config"])
-    children = data["children"]
-    for child in wks.wkspaces:
-        childData = children[child.id]
-        importData(child, childData, import_)
-
-
-def applyGeometry(wks, config):
-    wks.setGeometry(layoutToBBox(config))
-
-
-def extractGeometry(wks):
-    return bboxToLayout(wks.getBBox())
-
-
-def applyColor(wks, config):
-    wks.setColor(listToColor(config))
-
-
-def extractColor(wks):
-    return colorToList(wks.getColor())

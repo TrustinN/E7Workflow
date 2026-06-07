@@ -1,9 +1,8 @@
 from nanoid import generate
 
 from src.app.frontend.events import Node
+from src.app.frontend.models import TreeModel, TreeModelSerializer
 from src.app.frontend.state import SelectionModel
-
-from .mvc import TreeModel, TreeModelSerializer
 
 
 class WorkspaceNode(Node):

@@ -1,8 +1,8 @@
 from PyQt5.QtCore import pyqtSignal
 
 from src.app.frontend.graph.components import GraphScene
-from src.app.frontend.graph.mvc.model import GraphModel
 from src.app.frontend.graph.widgets import GraphViewWidget
+from src.app.frontend.models import GraphModel
 from src.app.frontend.state import SelectionModel
 
 

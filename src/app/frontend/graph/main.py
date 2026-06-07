@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
-from .mvc import GraphFullView, GraphMiniView, GraphModel
+from src.app.frontend.models import GraphModel
+
 from .node import GraphNode
+from .views import GraphFullView, GraphMiniView
 from .widgets import GraphButtonsWidget
 
 
