@@ -4,6 +4,8 @@ from PyQt5.QtCore import QObject, pyqtSignal
 class GraphModel(QObject):
     nodeCreated_ = pyqtSignal(str)
     edgeCreated_ = pyqtSignal(str, str)
+    modelClear_ = pyqtSignal()
+    modelReset_ = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -28,10 +30,10 @@ class GraphModel(QObject):
         self.edgeData[edgeID] = data
         self.edgeCreated_.emit(nid1, nid2)
 
-    def setNodeData(self, nodeID, data):
+    def updateNode(self, nodeID, data):
         self.nodeData[nodeID] = data
 
-    def setEdgeData(self, nid1, nid2, data):
+    def updateEdge(self, nid1, nid2, data):
         edgeID = (nid1, nid2)
         self.edgeData[edgeID] = data
 
@@ -42,9 +44,45 @@ class GraphModel(QObject):
         edgeID = (nid1, nid2)
         return self.edgeData[edgeID]
 
+    def nodeIter(self):
+        for nodeID in self.nodes:
+            yield nodeID
+
+    def edgeIter(self):
+        for edgeID in self.edges:
+            yield edgeID
+
     def clear(self):
+        self.modelClear_.emit()
+
         self.nodes.clear()
         self.edges.clear()
 
         self.nodeData.clear()
         self.edgeData.clear()
+
+    def serialize(self):
+        return {
+            "nodes": self.nodes,
+            "edges": self.edges,
+            "nodeData": self.nodeData,
+            "edgeData": self.edgeData,
+        }
+
+    def deserialize(self, state):
+        self.clear()
+
+        nodes = state["nodes"]
+        edges = state["edges"]
+        nodeData = state["nodeData"]
+        edgeData = state["edgeData"]
+
+        for nodeID in nodes:
+            data = nodeData[nodeID]
+            self.createNode(nodeID, data)
+
+        for edgeID in edges:
+            data = edgeData[edgeID]
+            self.createEdge(edgeID[0], edgeID[1], data)
+
+        self.modelReset_.emit()

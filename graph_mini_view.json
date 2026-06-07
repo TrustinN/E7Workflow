@@ -1,0 +1,46 @@
+{
+    "nodes": [
+        "3LdaV6ejvwXreyXU95kAB",
+        "KPk9VuHWdv3j7HHL8i33B"
+    ],
+    "edges": [],
+    "nodeData": {
+        "3LdaV6ejvwXreyXU95kAB": {
+            "position": [
+                63.0,
+                157.0
+            ],
+            "color": [
+                20,
+                20,
+                20
+            ],
+            "rect": [
+                0.0,
+                0.0,
+                50.0,
+                50.0
+            ],
+            "displayText": "WS Name"
+        },
+        "KPk9VuHWdv3j7HHL8i33B": {
+            "position": [
+                225.0,
+                37.0
+            ],
+            "color": [
+                20,
+                20,
+                20
+            ],
+            "rect": [
+                0.0,
+                0.0,
+                50.0,
+                50.0
+            ],
+            "displayText": "WS Name"
+        }
+    },
+    "edgeData": {}
+}

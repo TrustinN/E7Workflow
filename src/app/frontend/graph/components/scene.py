@@ -1,13 +1,13 @@
 from functools import partial
 
-from PyQt5.QtCore import QPointF, QSignalBlocker, pyqtSignal
+from PyQt5.QtCore import QSignalBlocker, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene
 
 from .graph import GraphicsArrowItem, GraphicsNodeItem
 
 
 class GraphScene(QGraphicsScene):
-    nodeMoved_ = pyqtSignal(str, QPointF)
+    nodeMoved_ = pyqtSignal(str)
     nodePressed_ = pyqtSignal(str)
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
@@ -17,7 +17,6 @@ class GraphScene(QGraphicsScene):
         self.setSceneRect(0, 0, 400, 300)
         self.nodes: dict[str, GraphicsNodeItem] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
-        self.edgeIds: dict[tuple[str, str], str] = {}
         self.state = {"nodeSelected": None}
         self.selectionChanged.connect(self.onSelectionChanged)
 
@@ -54,7 +53,7 @@ class GraphScene(QGraphicsScene):
         onNodeMoved = partial(self.nodeMoved_.emit, id)
         # onNodePressed = partial(self.onNodePressed, id)
 
-        node.emitter.onMove_.connect(onNodeMoved)
+        node.emitter.onMove_.connect(lambda pos: onNodeMoved())
         # node.emitter.onMousePress_.connect(onNodePressed)
 
         self.addItem(node)
@@ -64,8 +63,9 @@ class GraphScene(QGraphicsScene):
         return node.getData()
 
     def updateNode(self, id, data):
-        node = self.nodes[id]
-        node.setData(data)
+        if id in self.nodes:
+            node = self.nodes[id]
+            node.setData(data)
 
     def createEdge(self, id, id1, id2):
         n1 = self.nodes[id1]
@@ -74,19 +74,18 @@ class GraphScene(QGraphicsScene):
         n1.emitter.onMove_.connect(arrow.setStart)
         n2.emitter.onMove_.connect(arrow.setEnd)
 
-        self.edges[id] = arrow
-        self.edgeIds[(id1, id2)] = id
+        self.edges[(id1, id2)] = arrow
         self.addItem(arrow)
 
     def readEdge(self, id1, id2):
-        edgeID = self.edgeIds[(id1, id2)]
-        edge = self.edges[edgeID]
+        edge = self.edges[(id1, id2)]
         return edge.getData()
 
     def updateEdge(self, id1, id2, data):
-        edgeID = self.edgeIds[(id1, id2)]
-        edge = self.edges[edgeID]
-        edge.setData(data)
+        edgeID = (id1, id2)
+        if edgeID in self.edges:
+            edge = self.edges[edgeID]
+            edge.setData(data)
 
     def getData(self):
         nodeData = {}
@@ -94,10 +93,8 @@ class GraphScene(QGraphicsScene):
         for id in self.nodes:
             nodeData[id] = self.readNode(id)
 
-        for nid1, nid2 in self.edgeIds:
+        for nid1, nid2 in self.edges:
             data = self.readEdge(nid1, nid2)
-            data["id1"] = nid1
-            data["id2"] = nid2
             edgeData[id] = data
 
         return {

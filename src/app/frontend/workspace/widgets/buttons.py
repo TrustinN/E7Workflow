@@ -11,14 +11,10 @@ class WorkspaceButtons(QWidget):
         self.setLayout(self.layout)
 
         self.createBtn = QPushButton("Create Workspace")
-        self.exportBtn = QPushButton("Export Workspace")
-        self.importBtn = QPushButton("Import Workspace")
 
         self.createBtn.clicked.connect(self.onWorkspaceCreate)
 
         self.layout.addWidget(self.createBtn)
-        self.layout.addWidget(self.exportBtn)
-        self.layout.addWidget(self.importBtn)
 
     def onWorkspaceCreate(self):
         name, ok = QInputDialog.getText(

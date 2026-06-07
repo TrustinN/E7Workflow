@@ -19,6 +19,9 @@ class SelectionModel(QObject):
     def getSelected(self):
         return self.selected
 
+    def hasSelected(self):
+        return self.setSelected is not None
+
     def getPrevSelected(self):
         return self.prevSelected
 
@@ -27,6 +30,10 @@ class SelectionModel(QObject):
         self.selected = None
         self.selected_.emit(None)
 
+    def reset(self):
+        self.clearSelection()
+        self.prevSelected = None
+
 
 class SelectionNode(Node):
     def __init__(self, model: SelectionModel):
@@ -34,6 +41,10 @@ class SelectionNode(Node):
         self.model = model
 
         self.subscribe("/Selection", self.onSelection)
+        self.subscribe("/App/Reset", self.resetSelection)
 
     def onSelection(self, data):
         self.model.setSelected(data["id"])
+
+    def resetSelection(self, data):
+        self.model.reset()

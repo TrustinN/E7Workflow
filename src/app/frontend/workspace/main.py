@@ -17,12 +17,12 @@ class WorkspaceComponent(QWidget):
         self.viewModel = TreeModel()
         self.selectionModel = selectionModel
 
-        self.node = WorkspaceNode(self.workspaceModel, self.selectionModel)
+        self.node = WorkspaceNode(
+            self.workspaceModel, self.viewModel, self.selectionModel
+        )
         self.view = WorkspaceView(
             self.workspaceModel, self.viewModel, self.selectionModel
         )
 
         self.buttons.createWorkspace_.connect(self.node.createWorkspace)
-        # self.buttons.exportBtn.clicked.connect(self.workspaceExport)
-        # self.buttons.importBtn.clicked.connect(self.workspaceImport)
         self.layout.addWidget(self.buttons)

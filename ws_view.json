@@ -1,0 +1,57 @@
+{
+    "root": "IRxE5eeRTD7GcN0_PYCV6",
+    "parents": {
+        "3LdaV6ejvwXreyXU95kAB": "IRxE5eeRTD7GcN0_PYCV6",
+        "KPk9VuHWdv3j7HHL8i33B": "IRxE5eeRTD7GcN0_PYCV6"
+    },
+    "children": {
+        "IRxE5eeRTD7GcN0_PYCV6": [
+            "3LdaV6ejvwXreyXU95kAB",
+            "KPk9VuHWdv3j7HHL8i33B"
+        ]
+    },
+    "data": {
+        "IRxE5eeRTD7GcN0_PYCV6": {
+            "padding": 15,
+            "text": "Root",
+            "geometry": [
+                [
+                    91,
+                    198
+                ],
+                [
+                    922,
+                    752
+                ]
+            ]
+        },
+        "3LdaV6ejvwXreyXU95kAB": {
+            "padding": 0,
+            "text": "WS Name",
+            "geometry": [
+                [
+                    408,
+                    438
+                ],
+                [
+                    907,
+                    737
+                ]
+            ]
+        },
+        "KPk9VuHWdv3j7HHL8i33B": {
+            "padding": 0,
+            "text": "WS Name",
+            "geometry": [
+                [
+                    106,
+                    213
+                ],
+                [
+                    605,
+                    512
+                ]
+            ]
+        }
+    }
+}

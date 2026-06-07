@@ -13,10 +13,12 @@ class GraphComponent(QWidget):
         self.setLayout(self.layout)
 
         self.graphModel = GraphModel()
-        self.graphMiniViewModel = GraphModel()
         self.graphFullViewModel = GraphModel()
+        self.graphMiniViewModel = GraphModel()
 
-        self.node = GraphNode(self.graphModel)
+        self.node = GraphNode(
+            self.graphModel, self.graphFullViewModel, self.graphMiniViewModel
+        )
 
         self.buttons = GraphButtonsWidget()
         self.miniView = GraphMiniView(
