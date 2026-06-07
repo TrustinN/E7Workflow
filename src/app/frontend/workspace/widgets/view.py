@@ -2,7 +2,7 @@ from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from .workspace import Workspace
+from src.app.frontend.workspace.components import Workspace
 
 
 class WorkspaceView(QObject):
@@ -25,7 +25,7 @@ class WorkspaceView(QObject):
 
         self.workspaces[id] = workspace
 
-        parentID = self.focusedWorkspace
+        # parentID = self.focusedWorkspace
         if parentID:
             self.workspaces[parentID].addChild(workspace)
         else:

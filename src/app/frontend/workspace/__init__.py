@@ -1,1 +1,1 @@
-from .core import WorkspaceComponent
+from .main import WorkspaceComponent

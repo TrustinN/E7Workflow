@@ -1,14 +1,16 @@
 from functools import partial
 
-from PyQt5.QtCore import QPointF, pyqtSignal
+from PyQt5.QtCore import QPointF, QSignalBlocker, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene
 
 from .graph import GraphicsArrowItem, GraphicsNodeItem
 
 
-class GraphView(QGraphicsScene):
+class GraphScene(QGraphicsScene):
     nodeMoved_ = pyqtSignal(str, QPointF)
     nodePressed_ = pyqtSignal(str)
+    nodeSelected_ = pyqtSignal(str)
+    nodeDeselected_ = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -17,23 +19,43 @@ class GraphView(QGraphicsScene):
         self.edges: dict[str, GraphicsArrowItem] = {}
         self.edgeIds: dict[tuple[str, str], str] = {}
         self.state = {"nodeSelected": None}
+        self.selectionChanged.connect(self.onSelectionChanged)
 
     def selectedNode(self):
         return self.state["nodeSelected"]
 
-    def onNodePressed(self, id):
-        self.state["nodeSelected"] = id
-        self.nodePressed_.emit(id)
+    def selectNode(self, id):
+        with QSignalBlocker(self):
+            super().clearSelection()
+            self.nodes[id].setSelected(True)
+
+    def clearSelection(self):
+        with QSignalBlocker(self):
+            super().clearSelection()
+
+    def onSelectionChanged(self):
+        selected = self.selectedItems()
+        if not selected:
+            self.state["nodeSelected"] = None
+            self.nodeDeselected_.emit()
+            return
+
+        node = selected[0]
+        for id, graphicsNode in self.nodes.items():
+            if graphicsNode is node:
+                self.state["nodeSelected"] = id
+                self.nodeSelected_.emit(id)
+                break
 
     def createNode(self, id):
         node = GraphicsNodeItem()
         self.nodes[id] = node
 
         onNodeMoved = partial(self.nodeMoved_.emit, id)
-        onNodePressed = partial(self.onNodePressed, id)
+        # onNodePressed = partial(self.onNodePressed, id)
 
         node.emitter.onMove_.connect(onNodeMoved)
-        node.emitter.onMousePress_.connect(onNodePressed)
+        # node.emitter.onMousePress_.connect(onNodePressed)
 
         self.addItem(node)
 
