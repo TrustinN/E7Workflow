@@ -1,12 +1,13 @@
 from PyQt5.QtCore import pyqtSignal
 
 from src.app.frontend.graph.components import GraphScene
-from src.app.frontend.graph.widgets import GraphViewWidget
 from src.app.frontend.models import GraphModel, TreeModel
 from src.app.frontend.state import SelectionModel
 
+from .view import GraphView
 
-class GraphMiniView(GraphViewWidget):
+
+class GraphMiniView(GraphView):
     rootCreated_ = pyqtSignal(str)
     nodeCreated_ = pyqtSignal(str, str)
 

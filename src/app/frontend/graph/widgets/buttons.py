@@ -1,8 +1,7 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QGraphicsView, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 
-class GraphButtonsWidget(QWidget):
+class GraphButtons(QWidget):
 
     def __init__(self):
         super().__init__()

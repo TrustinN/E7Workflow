@@ -4,7 +4,7 @@ from src.app.frontend.models import GraphModel, TreeModel
 
 from .node import GraphNode
 from .views import GraphFullView, GraphMiniView
-from .widgets import GraphButtonsWidget
+from .widgets import GraphButtons
 
 
 class GraphComponent(QWidget):
@@ -14,15 +14,20 @@ class GraphComponent(QWidget):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
+        self.buttons = GraphButtons()
+
         self.graphModel = GraphModel()
         self.graphFullViewModel = GraphModel()
         self.graphMiniViewModel = TreeModel()
 
         self.node = GraphNode(
-            self.graphModel, self.graphFullViewModel, self.graphMiniViewModel
+            self.graphModel,
+            self.graphFullViewModel,
+            self.graphMiniViewModel,
+            selectionModel,
+            self.buttons,
         )
 
-        self.buttons = GraphButtonsWidget()
         self.miniView = GraphMiniView(
             self.graphModel,
             self.graphMiniViewModel,

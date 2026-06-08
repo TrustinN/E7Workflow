@@ -8,6 +8,7 @@ from .graph import GraphicsArrowItem, GraphicsNodeItem
 
 class GraphScene(QGraphicsScene):
     nodeMoved_ = pyqtSignal(str)
+    edgeMoved_ = pyqtSignal(str, str)
     nodePressed_ = pyqtSignal(str)
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
@@ -25,8 +26,8 @@ class GraphScene(QGraphicsScene):
             self.nodes[id].setSelected(True)
 
     def unselectNode(self, id):
-        self.nodes[id].setSelected(False)
-        self.nodeDeselected_.emit()
+        with QSignalBlocker(self):
+            self.nodes[id].setSelected(False)
 
     def clearSelection(self):
         with QSignalBlocker(self):
@@ -64,12 +65,16 @@ class GraphScene(QGraphicsScene):
         node = self.nodes[id]
         node.setData(data)
 
-    def createEdge(self, id, id1, id2):
+    def createEdge(self, id1, id2):
         n1 = self.nodes[id1]
         n2 = self.nodes[id2]
         arrow = GraphicsArrowItem(n1.pos(), n2.pos())
         n1.emitter.onMove_.connect(arrow.setStart)
         n2.emitter.onMove_.connect(arrow.setEnd)
+
+        edgeMoved = partial(self.edgeMoved_.emit, id1, id2)
+        n1.emitter.onMove_.connect(edgeMoved)
+        n2.emitter.onMove_.connect(edgeMoved)
 
         self.edges[(id1, id2)] = arrow
         self.addItem(arrow)

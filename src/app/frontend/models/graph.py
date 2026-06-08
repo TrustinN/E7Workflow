@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from PyQt5.QtCore import pyqtSignal
 
 from .model import Model
@@ -62,11 +64,17 @@ class GraphModel(Model):
         self.edgeData.clear()
 
     def serialize(self):
+        # Reformat so keys are not tuples
+        edgeData = defaultdict(dict[str, object])
+
+        for e1, e2 in self.edgeData:
+            edgeData[e1][e2] = self.getEdgeData(e1, e2)
+
         return {
             "nodes": self.nodes,
             "edges": self.edges,
             "nodeData": self.nodeData,
-            "edgeData": self.edgeData,
+            "edgeData": edgeData,
         }
 
     def deserialize(self, state):
@@ -81,8 +89,8 @@ class GraphModel(Model):
             data = nodeData[nodeID]
             self.createNode(nodeID, data)
 
-        for edgeID in edges:
-            data = edgeData[edgeID]
-            self.createEdge(edgeID[0], edgeID[1], data)
+        for e1, e2 in edges:
+            data = edgeData[e1][e2]
+            self.createEdge(e1, e2, data)
 
         self.modelReset_.emit()

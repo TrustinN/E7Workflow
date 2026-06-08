@@ -1,8 +1,10 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QWidget
 
+from src.app.frontend.graph.components.scene import GraphScene
 
-class GraphViewWidget(QWidget):
+
+class GraphView(QWidget):
 
     def __init__(self):
         super().__init__()
@@ -17,7 +19,7 @@ class GraphViewWidget(QWidget):
         self.layout.addWidget(self.view)
 
     @property
-    def scene(self):
+    def scene(self) -> GraphScene:
         return self.view.scene()
 
     def setScene(self, scene):

@@ -8,6 +8,11 @@ NODE_DEFAULT_COLOR = QColor(20, 20, 20, 255)
 NODE_HIGHLIGHT_COLOR = QColor(0, 163, 255, 255)
 
 
+class GraphicsEmitter(QObject):
+    onMove_ = pyqtSignal(QPointF)
+    onMousePress_ = pyqtSignal()
+
+
 class GraphicsArrowItem(QGraphicsItem):
     def __init__(
         self,
@@ -94,11 +99,6 @@ class GraphicsArrowItem(QGraphicsItem):
         yMax = max(self.start.y(), self.end.y()) + extra
 
         return QRectF(xMin, yMin, xMax - xMin, yMax - yMin)
-
-
-class GraphicsEmitter(QObject):
-    onMove_ = pyqtSignal(QPointF)
-    onMousePress_ = pyqtSignal()
 
 
 class GraphicsNodeItem(QGraphicsRectItem):

@@ -1,15 +1,18 @@
 from PyQt5.QtCore import pyqtSignal
 
 from src.app.frontend.graph.components import GraphScene
-from src.app.frontend.graph.widgets import GraphViewWidget
 from src.app.frontend.models import GraphModel
 from src.app.frontend.state import SelectionModel
 
+from .view import GraphView
 
-class GraphFullView(GraphViewWidget):
+
+class GraphFullView(GraphView):
     graphCreated_ = pyqtSignal(str)
     nodeCreated_ = pyqtSignal(str)
     nodeUpdated_ = pyqtSignal(str)
+    edgeCreated_ = pyqtSignal(str, str)
+    edgeUpdated_ = pyqtSignal(str, str)
 
     def __init__(
         self,
@@ -31,6 +34,7 @@ class GraphFullView(GraphViewWidget):
         self.graphCreated_.connect(self.viewModelGraphCreate)
         self.nodeCreated_.connect(self.viewModelNodeCreate)
         self.nodeUpdated_.connect(self.viewModelNodeUpdate)
+        self.edgeUpdated_.connect(self.viewModelEdgeUpdate)
         self.viewModel.modelReset_.connect(self.onViewModelReset)
 
     def onSelectionChanged(self, id):
@@ -45,6 +49,7 @@ class GraphFullView(GraphViewWidget):
         scene.nodeSelected_.connect(self.selectionModel.setSelected)
         scene.nodeDeselected_.connect(lambda: self.selectionModel.setSelected(id))
         scene.nodeMoved_.connect(self.nodeUpdated_)
+        scene.edgeMoved_.connect(self.edgeUpdated_)
         return scene
 
     def createGraph(self, graphID):
@@ -72,8 +77,13 @@ class GraphFullView(GraphViewWidget):
         self.createNode(nodeID)
         self.updateNode(nodeID, {"displayText": nodeData["text"]})
 
-    def onEdgeCreate(self, edgeIDs: tuple[str, str]):
-        pass
+    def onEdgeCreate(self, e1, e2):
+        self.scene.createEdge(e1, e2)
+        self.edgeCreated_.emit(e1, e2)
+
+    def updateEdge(self, e1, e2, data):
+        self.scene.updateEdge(e1, e2, data)
+        self.edgeUpdated_.emit(e1, e2)
 
     def viewModelGraphCreate(self, graphID: str):
         self.viewModel.createNode(graphID, {})
@@ -85,6 +95,14 @@ class GraphFullView(GraphViewWidget):
     def viewModelNodeUpdate(self, nodeID: str):
         nodeData = self.scene.readNode(nodeID)
         self.viewModel.updateNode(nodeID, nodeData)
+
+    def viewModelEdgeCreate(self, edgeID1: str, edgeID2: str):
+        edgeData = self.scene.readEdge(edgeID1, edgeID2)
+        self.viewModel.createEdge(edgeID1, edgeID2, edgeData)
+
+    def viewModelEdgeUpdate(self, edgeID1: str, edgeID2: str):
+        edgeData = self.scene.readEdge(edgeID1, edgeID2)
+        self.viewModel.updateEdge(edgeID1, edgeID2, edgeData)
 
     def onViewModelReset(self):
         for nodeID in self.viewModel.nodeIter():
@@ -100,7 +118,7 @@ class GraphFullView(GraphViewWidget):
 
         for edgeID in self.viewModel.edgeIter():
             renderData = self.viewModel.getEdgeData(edgeID[0], edgeID[1])
-            self.scene.updateEdge(edgeID[0], edgeID[1], renderData)
+            self.updateEdge(edgeID[0], edgeID[1], renderData)
 
     def clearState(self):
         self.scene.deleteLater()
