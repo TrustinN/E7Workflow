@@ -3,7 +3,8 @@ from functools import partial
 from PyQt5.QtCore import QSignalBlocker, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene
 
-from .graph import GraphicsArrowItem, GraphicsNodeItem
+from .arrow import GraphicsArrowItem
+from .node import GraphicsCircleNode, GraphicsNode, GraphicsRectNode, NodeType
 
 
 class GraphScene(QGraphicsScene):
@@ -16,7 +17,7 @@ class GraphScene(QGraphicsScene):
     def __init__(self):
         super().__init__()
         self.setSceneRect(0, 0, 400, 300)
-        self.nodes: dict[str, GraphicsNodeItem] = {}
+        self.nodes: dict[str, GraphicsNode] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
         self.selectionChanged.connect(self.onSelectionChanged)
 
@@ -45,8 +46,14 @@ class GraphScene(QGraphicsScene):
                 self.nodeSelected_.emit(id)
                 break
 
-    def createNode(self, id):
-        node = GraphicsNodeItem()
+    def createNode(self, id, nodeType=NodeType.RECTANGLE):
+        node = None
+        if nodeType == NodeType.RECTANGLE:
+            node = GraphicsRectNode()
+
+        elif nodeType == NodeType.CIRCLE:
+            node = GraphicsCircleNode()
+
         self.nodes[id] = node
 
         onNodeMoved = partial(self.nodeMoved_.emit, id)
@@ -68,7 +75,7 @@ class GraphScene(QGraphicsScene):
     def createEdge(self, id1, id2):
         n1 = self.nodes[id1]
         n2 = self.nodes[id2]
-        arrow = GraphicsArrowItem(n1.pos(), n2.pos())
+        arrow = GraphicsArrowItem(n1.center(), n2.center())
         n1.emitter.onMove_.connect(arrow.setStart)
         n2.emitter.onMove_.connect(arrow.setEnd)
 

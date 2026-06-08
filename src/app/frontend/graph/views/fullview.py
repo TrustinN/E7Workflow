@@ -1,6 +1,6 @@
 from PyQt5.QtCore import pyqtSignal
 
-from src.app.frontend.graph.components import GraphScene
+from src.app.frontend.graph.components import GraphScene, NodeType
 from src.app.frontend.models import GraphModel
 from src.app.frontend.state import SelectionModel
 
@@ -59,7 +59,7 @@ class GraphFullView(GraphView):
         self.graphCreated_.emit(graphID)
 
     def createNode(self, nodeID):
-        self.scene.createNode(nodeID)
+        self.scene.createNode(nodeID, NodeType.CIRCLE)
         self.nodeCreated_.emit(nodeID)
 
     def updateNode(self, nodeID, data):
@@ -76,7 +76,7 @@ class GraphFullView(GraphView):
             return
 
         self.createNode(nodeID)
-        self.updateNode(nodeID, {"displayText": nodeData["text"]})
+        self.updateNode(nodeID, {"displayText": nodeData["grouping"]})
 
     def onEdgeCreate(self, e1, e2):
         self.scene.createEdge(e1, e2)

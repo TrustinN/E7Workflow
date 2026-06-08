@@ -71,19 +71,41 @@ class Workspace(SelectionWindow):
         if wks == self.childFocused:
             self.childFocused = None
 
+    def fitChildToCenter(self, wks, scale=0.7):
+        tl, br = self.getBBox()
+        tl, br = applyPadding((tl, br), self.padding)
+
+        parentW = br.x() - tl.x()
+        parentH = br.y() - tl.y()
+
+        margin = 10
+        parentW -= 2 * margin
+        parentH -= 2 * margin
+
+        childW = parentW * scale
+        childH = parentH * scale
+
+        cx = tl.x() + margin + parentW / 2
+        cy = tl.y() + margin + parentH / 2
+
+        newTl = QPoint(int(cx - childW / 2), int(cy - childH / 2))
+        newBr = QPoint(int(cx + childW / 2), int(cy + childH / 2))
+
+        wks.setGeometry(QRect(newTl, newBr))
+
     def addChild(self, wks):
+        self.fitChildToCenter(wks)
         self.wkspaces.append(wks)
         wks.connectSignals(self.updateGeometry)
         wks.onDelete.connect(lambda: self.deleteChild(wks))
         wks.focusParent.connect(self.mousePressEvent)
-        self.updateGeometry()
 
     def setChild(self, idx, wks):
+        self.fitChildToCenter(wks)
         self.wkspaces[idx] = wks
         wks.connectSignals(self.updateGeometry)
         wks.onDelete.connect(lambda: self.deleteChild(wks))
         wks.focusParent.connect(self.mousePressEvent)
-        self.updateGeometry()
 
     def childAt(self, idx):
         return self.wkspaces[idx]

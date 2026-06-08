@@ -36,9 +36,6 @@ class WorkspaceView(QObject):
         workspace.show()
         workspace.unlock()
 
-        workspaceData = self.model.nodeData(id)
-        workspace.setName(workspaceData["text"])
-
         onWorkspacePressed = partial(self.onWorkspacePressed, id)
         workspace.mousePress.connect(onWorkspacePressed)
 
@@ -49,10 +46,14 @@ class WorkspaceView(QObject):
         self.workspaces[id] = workspace
         parentID = self.model.parent(id)
 
+        data = self.model.nodeData(id)
+
         if parentID:
             self.workspaces[parentID].addChild(workspace)
+            workspace.setName(f"{data["grouping"]} - {data["text"]}")
         else:
             workspace.setPadding(15)
+            workspace.setName(data["text"])
 
         self.workspaceCreated_.emit(id)
 

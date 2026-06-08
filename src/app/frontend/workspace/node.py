@@ -20,9 +20,17 @@ class WorkspaceNode(Node):
         self.modelFile = "ws_data.json"
         self.viewFile = "ws_view.json"
 
+        self.availableGroups = set(chr(ord("A") + i) for i in range(26))
+
         self.subscribe("/App/Loaded", self.createRootWorkspace)
+        self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Export", self.workspaceExport)
         self.subscribe("/App/Import", self.workspaceImport)
+
+    def popGroup(self):
+        group = min(self.availableGroups)
+        self.availableGroups.remove(group)
+        return group
 
     def createRootWorkspace(self, data):
         id = generate()
@@ -31,6 +39,7 @@ class WorkspaceNode(Node):
             "text": name,
             "id": id,
             "parentID": id,
+            "grouping": None,
         }
         self.workspaceModel.createRoot(id, data)
         self.publish(
@@ -42,10 +51,18 @@ class WorkspaceNode(Node):
     def createWorkspace(self, name):
         id = generate()
         parentID = self.selectionModel.getSelected()
+        grouping = None
+        if self.workspaceModel.isRoot(parentID):
+            grouping = self.popGroup()
+        else:
+            parentData = self.workspaceModel.nodeData(parentID)
+            grouping = parentData["grouping"]
+
         data = {
             "text": name,
             "id": id,
             "parentID": parentID,
+            "grouping": grouping,
         }
         self.workspaceModel.createNode(id, parentID, data)
         self.publish(
@@ -73,3 +90,6 @@ class WorkspaceNode(Node):
 
         self.workspaceModel.deserialize(modelState)
         self.viewModel.deserialize(viewModelState)
+
+    def resetState(self, data):
+        self.availableGroups = set(chr(ord("A") + i) for i in range(26))
