@@ -28,6 +28,7 @@ class GraphNode(Node):
 
         self.subscribe("/WS Component/RootWSCreated", self.createNode)
         self.subscribe("/WS Component/WSCreated", self.createNode)
+        self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Export", self.graphExport)
         self.subscribe("/App/Import", self.graphImport)
 
@@ -51,7 +52,8 @@ class GraphNode(Node):
     def createEdge(self):
         cond1 = self.firstEdge is not None
         cond2 = self.secondEdge is not None
-        if cond1 and cond2:
+        cond3 = self.firstEdge != self.secondEdge
+        if cond1 and cond2 and cond3:
             self.model.createEdge(self.firstEdge, self.secondEdge, {})
             self.firstEdge = None
             self.secondEdge = None
@@ -78,11 +80,10 @@ class GraphNode(Node):
         fullViewModelState = self.serializer.restore(fullViewPath)
         miniViewModelState = self.serializer.restore(miniViewPath)
 
-        self.resetState()
         self.model.deserialize(modelState)
         self.fullViewModel.deserialize(fullViewModelState)
         self.miniViewModel.deserialize(miniViewModelState)
 
-    def resetState(self):
+    def resetState(self, data):
         self.firstEdge = None
         self.secondEdge = None
