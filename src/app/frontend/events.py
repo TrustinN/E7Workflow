@@ -7,7 +7,6 @@ class Node(QObject):
     def __init__(self):
         super().__init__()
         self.subscriptionList_ = {}
-        pass
 
     def publish(self, route: str, msg=None):
         if msg is None:
@@ -21,7 +20,6 @@ class Node(QObject):
 class PubSubHandler:
     def __init__(self):
         self.nodes: list[Node] = []
-        pass
 
     def registerNode(self, node: Node):
         node.publish_.connect(self.handlePublish)

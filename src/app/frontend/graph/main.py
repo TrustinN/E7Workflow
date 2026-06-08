@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 from src.app.frontend.models import GraphModel, TreeModel
+from src.app.frontend.state import SelectionModel
 
 from .node import GraphNode
 from .views import GraphFullView, GraphMiniView
@@ -9,7 +10,7 @@ from .widgets import GraphButtons
 
 class GraphComponent(QWidget):
 
-    def __init__(self, selectionModel):
+    def __init__(self, selectionModel: SelectionModel):
         super().__init__()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)

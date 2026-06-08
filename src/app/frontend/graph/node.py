@@ -55,6 +55,9 @@ class GraphNode(Node):
         cond3 = self.firstEdge != self.secondEdge
         if cond1 and cond2 and cond3:
             self.model.createEdge(self.firstEdge, self.secondEdge, {})
+            self.publish(
+                "/Graph/EdgeCreated", {"id1": self.firstEdge, "id2": self.secondEdge}
+            )
             self.firstEdge = None
             self.secondEdge = None
 

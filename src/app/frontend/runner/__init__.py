@@ -1,1 +1,1 @@
-from .core import RunnerComponent
+from .main import RunnerComponent
