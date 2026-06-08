@@ -40,11 +40,11 @@ class GraphModel(Model):
         self.edgeData[edgeID] = data
 
     def getNodeData(self, nodeID):
-        return self.nodeData[nodeID]
+        return dict(self.nodeData[nodeID])
 
     def getEdgeData(self, nid1, nid2):
         edgeID = (nid1, nid2)
-        return self.edgeData[edgeID]
+        return dict(self.edgeData[edgeID])
 
     def nodeIter(self):
         for nodeID in self.nodes:
@@ -69,6 +69,10 @@ class GraphModel(Model):
 
         for e1, e2 in self.edgeData:
             edgeData[e1][e2] = self.getEdgeData(e1, e2)
+
+        edges = []
+        for e1, e2 in self.edges:
+            edges.append([e1, e2])
 
         return {
             "nodes": self.nodes,

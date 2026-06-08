@@ -41,4 +41,3 @@ class GraphComponent(QWidget):
 
         self.layout.addWidget(self.miniView)
         self.layout.addWidget(self.fullView)
-        self.layout.addWidget(self.buttons)

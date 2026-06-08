@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QWidget
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from .frontend.events import PubSubHandler
 from .frontend.graph import GraphComponent
@@ -23,7 +23,11 @@ class App(QApplication):
 
         self.window = MainWindow()
         self.widget = QWidget()
+
         self.layout = QHBoxLayout()
+        self.layoutLeft = QVBoxLayout()
+        self.layout.addLayout(self.layoutLeft)
+
         self.widget.setLayout(self.layout)
         self.window.setCentralWidget(self.widget)
         self.window.show()
@@ -36,9 +40,10 @@ class App(QApplication):
         self.serialCpt = SerializationComponent()
         # self.runnerCpt = RunnerComponent(self.ctxManager)
 
-        self.layout.addWidget(self.wkCpt)
+        self.layoutLeft.addWidget(self.wkCpt)
+        self.layoutLeft.addWidget(self.graphCpt.buttons)
+        self.layoutLeft.addWidget(self.serialCpt)
         self.layout.addWidget(self.graphCpt)
-        self.layout.addWidget(self.serialCpt)
         # self.layout.addWidget(self.runnerCpt.widget)
 
         self.pubSubHandler = PubSubHandler()

@@ -47,7 +47,7 @@ class TreeModel(Model):
         return nodeID == self.root
 
     def nodeData(self, nodeID):
-        return self.data[nodeID]
+        return dict(self.data[nodeID])
 
     def clear(self):
         self.modelClear_.emit()

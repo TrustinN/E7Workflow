@@ -36,10 +36,10 @@ class GraphicsArrowItem(QGraphicsItem):
         endPosition = data.get("endPosition")
 
         if startPosition is not None:
-            self.setStart(startPosition)
+            self.setStart(QPointF(*startPosition))
 
         if endPosition is not None:
-            self.setEnd(endPosition)
+            self.setEnd(QPointF(*endPosition))
 
     def setStart(self, start: QPointF):
         self.start = start

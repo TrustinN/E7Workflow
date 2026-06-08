@@ -34,6 +34,7 @@ class GraphFullView(GraphView):
         self.graphCreated_.connect(self.viewModelGraphCreate)
         self.nodeCreated_.connect(self.viewModelNodeCreate)
         self.nodeUpdated_.connect(self.viewModelNodeUpdate)
+        self.edgeCreated_.connect(self.viewModelEdgeCreate)
         self.edgeUpdated_.connect(self.viewModelEdgeUpdate)
         self.viewModel.modelReset_.connect(self.onViewModelReset)
 

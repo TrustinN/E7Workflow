@@ -10,8 +10,10 @@ from .view import GraphView
 class GraphMiniView(GraphView):
     rootCreated_ = pyqtSignal(str)
     nodeCreated_ = pyqtSignal(str, str)
+    edgeCreated_ = pyqtSignal(str, str)
 
     nodeUpdated_ = pyqtSignal(str)
+    edgeUpdated_ = pyqtSignal(str, str)
 
     def __init__(
         self,
@@ -37,6 +39,8 @@ class GraphMiniView(GraphView):
         self.rootCreated_.connect(self.viewModelRootCreate)
         self.nodeCreated_.connect(self.viewModelNodeCreate)
         self.nodeUpdated_.connect(self.viewModelNodeUpdate)
+        self.edgeCreated_.connect(self.viewModelEdgeCreate)
+        self.edgeUpdated_.connect(self.viewModelEdgeUpdate)
         self.viewModel.modelReset_.connect(self.onViewModelReset)
 
     def onExternalSelection(self, id):
@@ -87,14 +91,21 @@ class GraphMiniView(GraphView):
         self.createNode(parentID, nodeID)
         self.updateNode(nodeID, {"displayText": nodeData["text"]})
 
-    def onEdgeCreate(self, edgeIDs: tuple[str, str]):
-        pass
+    def onEdgeCreate(self, e1, e2):
+        pe1 = self.viewModel.parent(e1)
+        pe2 = self.viewModel.parent(e2)
+
+        if pe1 != pe2:
+            return
+
+        self.createEdge(pe1, e1, e2)
 
     def _createScene(self, id):
         scene = GraphScene()
         scene.nodeSelected_.connect(self.onNodeSelected)
         scene.nodeDeselected_.connect(lambda: self.onNodeDeselected(id))
         scene.nodeMoved_.connect(self.nodeUpdated_)
+        scene.edgeMoved_.connect(self.edgeUpdated_)
         return scene
 
     def createRoot(self, id):
@@ -116,15 +127,28 @@ class GraphMiniView(GraphView):
 
         self.nodeCreated_.emit(nodeID, graphID)
 
-    def createEdge(self, edgeIDs: tuple[str, str]):
-        pass
+    def createEdge(self, graphID: str, e1: str, e2: str):
+        parent = self.scenes[graphID]
+        parent.createEdge(e1, e2)
+
+        self.edgeCreated_.emit(e1, e2)
 
     def updateNode(self, nodeID: str, data):
+        nodeData = self.viewModel.nodeData(nodeID)
+        nodeData.update(data)
+
         parentID = self.viewModel.parent(nodeID)
         parent = self.scenes[parentID]
-        parent.updateNode(nodeID, data)
+        parent.updateNode(nodeID, nodeData)
 
         self.nodeUpdated_.emit(nodeID)
+
+    def updateEdge(self, e1: str, e2: str, data):
+        parentID = self.viewModel.parent(e1)
+        parent = self.scenes[parentID]
+        parent.updateEdge(e1, e2, data)
+
+        self.edgeUpdated_.emit(e1, e2)
 
     def viewModelRootCreate(self, nodeID):
         self.viewModel.createRoot(nodeID, {})
@@ -132,13 +156,29 @@ class GraphMiniView(GraphView):
     def viewModelNodeCreate(self, nodeID, parentID):
         scene = self.scenes[parentID]
         nodeData = scene.readNode(nodeID)
+        nodeData["edges"] = {}
         self.viewModel.createNode(nodeID, parentID, nodeData)
+
+    def viewModelEdgeCreate(self, e1, e2):
+        self.viewModelEdgeUpdate(e1, e2)
 
     def viewModelNodeUpdate(self, nodeID):
         parentID = self.viewModel.parent(nodeID)
         scene = self.scenes[parentID]
-        nodeData = scene.readNode(nodeID)
+
+        data = scene.readNode(nodeID)
+        nodeData = self.viewModel.nodeData(nodeID)
+        nodeData.update(data)
+
         self.viewModel.updateNode(nodeID, nodeData)
+
+    def viewModelEdgeUpdate(self, e1, e2):
+        parentID = self.viewModel.parent(e1)
+        parent = self.scenes[parentID]
+        data = parent.readEdge(e1, e2)
+        nodeData = self.viewModel.nodeData(e1)
+        nodeData["edges"][e2] = data
+        self.viewModel.updateNode(e1, nodeData)
 
     def onViewModelReset(self):
         for nodeID in self.viewModel.nodeIter():
@@ -147,6 +187,13 @@ class GraphMiniView(GraphView):
 
             data = self.viewModel.nodeData(nodeID)
             self.updateNode(nodeID, data)
+
+        for e1 in self.viewModel.nodeIter():
+            nodeData = self.viewModel.nodeData(e1)
+
+            edges = nodeData.get("edges", {})
+            for e2, data in edges.items():
+                self.updateEdge(e1, e2, data)
 
     def clearState(self):
         for scene in self.scenes.values():
