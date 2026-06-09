@@ -2,34 +2,30 @@ from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.frontend.models import TreeModel
-from src.app.frontend.state import SelectionModel
-from src.app.frontend.workspace.components import Workspace
-from src.app.frontend.workspace.components.utils.colors import Alpha, Colors, with_alpha
+from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.widgets.workspace.components import Workspace
+from src.app.frontend.widgets.workspace.components.utils.colors import (
+    Alpha,
+    Colors,
+    with_alpha,
+)
 
 
 class WorkspaceView(QObject):
     workspaceCreated_ = pyqtSignal(str)
 
-    def __init__(
-        self,
-        model: TreeModel,
-        viewModel: TreeModel,
-        selectionModel: SelectionModel,
-    ):
+    def __init__(self, context: WorkspaceContext):
         super().__init__()
-        self.model = model
-        self.viewModel = viewModel
-        self.selectionModel = selectionModel
+        self.context = context
 
         self.workspaces: dict[str, Workspace] = {}
 
-        self.model.nodeCreated_.connect(self.createWorkspace)
-        self.model.modelClear_.connect(self.clearState)
-        self.selectionModel.selected_.connect(self.onSelection)
+        self.context.wsTreeModel.nodeCreated_.connect(self.createWorkspace)
+        self.context.wsTreeModel.modelClear_.connect(self.clearState)
+        self.context.selectionModel.selected_.connect(self.onSelection)
 
         self.workspaceCreated_.connect(self.viewModelWorkspaceCreate)
-        self.viewModel.modelReset_.connect(self.onViewModelReset)
+        self.context.viewModel.modelReset_.connect(self.onViewModelReset)
 
     def createWorkspace(self, id):
         workspace = Workspace()
@@ -44,9 +40,9 @@ class WorkspaceView(QObject):
         workspace.moveSignal.connect(onWorkspaceUpdate)
 
         self.workspaces[id] = workspace
-        parentID = self.model.parent(id)
+        parentID = self.context.wsTreeModel.parent(id)
 
-        data = self.model.nodeData(id)
+        data = self.context.wsTreeModel.nodeData(id)
 
         if parentID:
             self.workspaces[parentID].addChild(workspace)
@@ -58,25 +54,25 @@ class WorkspaceView(QObject):
         self.workspaceCreated_.emit(id)
 
     def viewModelWorkspaceCreate(self, id: str):
-        parentID = self.model.parent(id)
+        parentID = self.context.wsTreeModel.parent(id)
         workspace = self.workspaces[id]
         data = workspace.getData()
 
         if parentID is None:
-            self.viewModel.createRoot(id, data)
+            self.context.viewModel.createRoot(id, data)
         else:
-            self.viewModel.createNode(id, parentID, data)
+            self.context.viewModel.createNode(id, parentID, data)
 
     def viewModelWorkspaceUpdate(self, id: str):
         workspace = self.workspaces[id]
         data = workspace.getData()
-        self.viewModel.updateNode(id, data)
+        self.context.viewModel.updateNode(id, data)
 
     def onWorkspacePressed(self, id):
-        self.selectionModel.setSelected(id)
+        self.context.selectionModel.setSelected(id)
 
     def onSelection(self, id):
-        prevID = self.selectionModel.getPrevSelected()
+        prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
             workspace = self.workspaces[prevID]
             workspace.setColor(Colors.DEFAULT_COLOR, Colors.DEFAULT_BORDER)
@@ -89,13 +85,13 @@ class WorkspaceView(QObject):
             )
 
     def onViewModelReset(self):
-        for nodeID in self.viewModel.nodeIter():
-            data = self.viewModel.nodeData(nodeID)
+        for nodeID in self.context.viewModel.nodeIter():
+            data = self.context.viewModel.nodeData(nodeID)
             workspace = self.workspaces[nodeID]
             workspace.restoreData(data)
 
     def clearState(self):
-        rootID = self.model.root
+        rootID = self.context.wsTreeModel.root
         rootWorkspace = self.workspaces[rootID]
         rootWorkspace.deleteLater()
 

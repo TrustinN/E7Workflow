@@ -36,16 +36,17 @@ class SelectionModel(QObject):
         self.selected_.emit(None)
 
 
-class SelectionNode(Node):
-    def __init__(self, model: SelectionModel):
-        super().__init__()
-        self.model = model
-
-        self.subscribe("/Selection", self.onSelection)
-        self.subscribe("/App/Reset", self.resetSelection)
-
-    def onSelection(self, data):
-        self.model.setSelected(data["id"])
-
-    def resetSelection(self, data):
-        self.model.reset()
+#
+# class SelectionNode(Node):
+#     def __init__(self, model: SelectionModel):
+#         super().__init__()
+#         self.model = model
+#
+#         self.subscribe("/Selection", self.onSelection)
+#         self.subscribe("/App/Reset", self.resetSelection)
+#
+#     def onSelection(self, data):
+#         self.model.setSelected(data["id"])
+#
+#     def resetSelection(self, data):
+#         self.model.reset()

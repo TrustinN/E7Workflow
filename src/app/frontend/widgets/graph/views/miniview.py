@@ -1,8 +1,7 @@
 from PyQt5.QtCore import pyqtSignal
 
-from src.app.frontend.graph.components import GraphScene
-from src.app.frontend.models import GraphModel, TreeModel
-from src.app.frontend.state import SelectionModel
+from src.app.frontend.state import TreeModel, WorkspaceContext
+from src.app.frontend.widgets.graph.components import GraphScene
 
 from .view import GraphView
 
@@ -17,23 +16,21 @@ class GraphMiniView(GraphView):
 
     def __init__(
         self,
-        model: GraphModel,
+        context: WorkspaceContext,
         viewModel: TreeModel,
-        selectionModel: SelectionModel,
     ):
         super().__init__()
-        self.model = model
+        self.context = context
         self.viewModel = viewModel
-        self.selectionModel = selectionModel
 
         self.scenes: dict[str, GraphScene] = {}
         self.root = None
 
-        self.model.nodeCreated_.connect(self.onNodeCreate)
-        self.model.edgeCreated_.connect(self.onEdgeCreate)
-        self.model.modelClear_.connect(self.clearState)
+        self.context.wsGraphModel.nodeCreated_.connect(self.onNodeCreate)
+        self.context.wsGraphModel.edgeCreated_.connect(self.onEdgeCreate)
+        self.context.wsGraphModel.modelClear_.connect(self.clearState)
 
-        self.selectionModel.selected_.connect(self.onExternalSelection)
+        self.context.selectionModel.selected_.connect(self.onExternalSelection)
         self._updatingSelection = False
 
         self.rootCreated_.connect(self.viewModelRootCreate)
@@ -47,7 +44,7 @@ class GraphMiniView(GraphView):
         if self._updatingSelection:
             return
 
-        prevID = self.selectionModel.getPrevSelected()
+        prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
             parentID = self.viewModel.parent(prevID)
             if parentID:
@@ -63,23 +60,23 @@ class GraphMiniView(GraphView):
             return
 
         self._updatingSelection = True
-        prevID = self.selectionModel.getPrevSelected()
+        prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
             parentID = self.viewModel.parent(prevID)
             if parentID:
                 scene = self.scenes[parentID]
                 scene.unselectNode(prevID)
-        self.selectionModel.setSelected(id)
+        self.context.selectionModel.setSelected(id)
         self._updatingSelection = False
 
     def onNodeDeselected(self, sceneID):
         if self._updatingSelection:
             return
 
-        self.selectionModel.setSelected(sceneID)
+        self.context.selectionModel.setSelected(sceneID)
 
     def onNodeCreate(self, nodeID: str):
-        nodeData = self.model.getNodeData(nodeID)
+        nodeData = self.context.wsGraphModel.getNodeData(nodeID)
 
         parentID = nodeData["parentID"]
         isRoot = parentID == nodeID

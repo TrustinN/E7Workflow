@@ -1,8 +1,7 @@
 from PyQt5.QtCore import pyqtSignal
 
-from src.app.frontend.graph.components import GraphScene, NodeType
-from src.app.frontend.models import GraphModel
-from src.app.frontend.state import SelectionModel
+from src.app.frontend.state import GraphModel, WorkspaceContext
+from src.app.frontend.widgets.graph.components import GraphScene, NodeType
 
 from .view import GraphView
 
@@ -16,20 +15,18 @@ class GraphFullView(GraphView):
 
     def __init__(
         self,
-        model: GraphModel,
+        context: WorkspaceContext,
         viewModel: GraphModel,
-        selectionModel: SelectionModel,
     ):
         super().__init__()
-        self.model = model
+        self.context = context
         self.viewModel = viewModel
-        self.selectionModel = selectionModel
 
-        self.model.nodeCreated_.connect(self.onNodeCreate)
-        self.model.edgeCreated_.connect(self.onEdgeCreate)
-        self.model.modelClear_.connect(self.clearState)
+        self.context.wsGraphModel.nodeCreated_.connect(self.onNodeCreate)
+        self.context.wsGraphModel.edgeCreated_.connect(self.onEdgeCreate)
+        self.context.wsGraphModel.modelClear_.connect(self.clearState)
 
-        self.selectionModel.selected_.connect(self.onSelectionChanged)
+        self.context.selectionModel.selected_.connect(self.onSelectionChanged)
 
         self.graphCreated_.connect(self.viewModelGraphCreate)
         self.nodeCreated_.connect(self.viewModelNodeCreate)
@@ -47,8 +44,10 @@ class GraphFullView(GraphView):
     def _createScene(self, id: str):
         scene = GraphScene()
 
-        scene.nodeSelected_.connect(self.selectionModel.setSelected)
-        scene.nodeDeselected_.connect(lambda: self.selectionModel.setSelected(id))
+        scene.nodeSelected_.connect(self.context.selectionModel.setSelected)
+        scene.nodeDeselected_.connect(
+            lambda: self.context.selectionModel.setSelected(id)
+        )
         scene.nodeMoved_.connect(self.nodeUpdated_)
         scene.edgeMoved_.connect(self.edgeUpdated_)
         return scene
@@ -67,7 +66,7 @@ class GraphFullView(GraphView):
         self.nodeUpdated_.emit(nodeID)
 
     def onNodeCreate(self, nodeID: str):
-        nodeData = self.model.getNodeData(nodeID)
+        nodeData = self.context.wsGraphModel.getNodeData(nodeID)
 
         parentID = nodeData["parentID"]
         isRoot = parentID == nodeID
@@ -107,7 +106,7 @@ class GraphFullView(GraphView):
 
     def onViewModelReset(self):
         for nodeID in self.viewModel.nodeIter():
-            nodeData = self.model.getNodeData(nodeID)
+            nodeData = self.context.wsGraphModel.getNodeData(nodeID)
 
             parentID = nodeData["parentID"]
             isRoot = parentID == nodeID

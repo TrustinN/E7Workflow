@@ -1,12 +1,12 @@
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from .frontend.events import PubSubHandler
-from .frontend.graph import GraphComponent
+from .frontend.state import WorkspaceContext, WorkspaceContextManager
 
-# from .frontend.runner import RunnerComponent
-from .frontend.serialization import SerializationComponent
-from .frontend.state import SelectionModel, SelectionNode
-from .frontend.workspace import WorkspaceComponent
+# from .frontend.widgets.runner import RunnerComponent
+from .frontend.widgets.graph import GraphComponent
+from .frontend.widgets.serialization import SerializationComponent
+from .frontend.widgets.workspace import WorkspaceComponent
 
 
 class MainWindow(QMainWindow):
@@ -32,11 +32,11 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.selectionModel = SelectionModel()
-        self.selectionNode = SelectionNode(self.selectionModel)
+        self.context = WorkspaceContext()
+        self.contextManager = WorkspaceContextManager(self.context)
 
-        self.wkCpt = WorkspaceComponent(self.selectionModel)
-        self.graphCpt = GraphComponent(self.selectionModel)
+        self.wkCpt = WorkspaceComponent(self.context)
+        self.graphCpt = GraphComponent(self.context)
         # self.runnerCpt = RunnerComponent(self.selectionModel)
         self.serialCpt = SerializationComponent()
 
@@ -47,9 +47,9 @@ class App(QApplication):
         self.layout.addWidget(self.graphCpt)
 
         self.pubSubHandler = PubSubHandler()
+        self.pubSubHandler.registerNode(self.contextManager)
         self.pubSubHandler.registerNode(self.wkCpt.node)
         self.pubSubHandler.registerNode(self.graphCpt.node)
         # self.pubSubHandler.registerNode(self.runnerCpt.node)
         self.pubSubHandler.registerNode(self.serialCpt.node)
-        self.pubSubHandler.registerNode(self.selectionNode)
         self.pubSubHandler.handlePublish("/App/Loaded")

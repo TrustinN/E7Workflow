@@ -11,8 +11,7 @@ from PyQt5.QtWidgets import (
 )
 
 from src.app.config import SAVE_DIR
-
-from .node import SerializationNode
+from src.app.frontend.events import Node
 
 
 class SerializationComponent(QWidget):
@@ -106,3 +105,21 @@ class SerializationComponent(QWidget):
             for name in os.listdir(SAVE_DIR)
             if os.path.isdir(os.path.join(SAVE_DIR, name))
         ]
+
+
+class SerializationNode(Node):
+    def __init__(self):
+        super().__init__()
+        os.makedirs(SAVE_DIR, exist_ok=True)
+
+    def requestReset(self):
+        self.publish("/App/Reset")
+
+    def requestExport(self, id):
+        path = os.path.join(SAVE_DIR, id)
+        os.makedirs(path, exist_ok=True)
+        self.publish("/App/Export", {"path": path})
+
+    def requestImport(self, id):
+        path = os.path.join(SAVE_DIR, id)
+        self.publish("/App/Import", {"path": path})

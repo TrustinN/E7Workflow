@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QWidget
 
-from src.app.frontend.graph.components.scene import GraphScene
+from src.app.frontend.widgets.graph.components.scene import GraphScene
 
 
 class GraphView(QWidget):
