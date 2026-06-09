@@ -1,16 +1,14 @@
 from PyQt5.QtWidgets import QWidget
 
-from src.app.frontend.models import GraphModel
-from src.app.frontend.state import SelectionModel
+from src.app.frontend.state import WorkspaceContext
+from src.router.routing import Dispatcher
 
 from .node import RunnerNode
-from .widget import RunnerButtons
 
 
 class RunnerComponent(QWidget):
-    def __init__(self, selectionModel: SelectionModel):
+    def __init__(self, context: WorkspaceContext, dispatcher: Dispatcher):
         super().__init__()
 
-        self.buttons = RunnerButtons()
-        self.model = GraphModel()
-        self.node = RunnerNode(self.model, selectionModel, self.buttons)
+        self.context = context
+        self.node = RunnerNode(self.context, dispatcher)

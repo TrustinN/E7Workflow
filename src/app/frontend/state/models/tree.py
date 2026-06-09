@@ -36,6 +36,9 @@ class TreeModel(Model):
     def isRoot(self, nodeID):
         return nodeID == self.root
 
+    def isLeaf(self, nodeID):
+        return len(self.children[nodeID]) == 0
+
     def nodeData(self, nodeID):
         return dict(self.data[nodeID])
 

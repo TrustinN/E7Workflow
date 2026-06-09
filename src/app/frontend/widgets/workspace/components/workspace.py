@@ -2,7 +2,7 @@ import numpy as np
 from PyQt5.QtCore import QPoint, QRect, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
 
-from .utils.utils import applyPadding, bboxToLayout, layoutToBBox
+from .utils import applyPadding, bboxToLayout, layoutToBBox
 from .window import SelectionWindow
 
 

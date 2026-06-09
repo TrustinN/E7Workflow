@@ -3,6 +3,7 @@ from PyQt5.QtGui import QBrush, QColor, QFont, QFontMetrics, QPen
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QGraphicsRectItem
 
 NODE_DEFAULT_COLOR = QColor(20, 20, 20, 255)
+NODE_DEFAULT_BORDER = QColor(255, 255, 255, 255)
 NODE_HIGHLIGHT_COLOR = QColor(0, 163, 255, 255)
 
 
@@ -20,6 +21,7 @@ class GraphicsNode:
     def __init__(self):
         self.displayText = None
         self.color = NODE_DEFAULT_COLOR
+        self.borderColor = NODE_DEFAULT_BORDER
         self.highlightColor = NODE_HIGHLIGHT_COLOR
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -47,9 +49,11 @@ class GraphicsRectNode(QGraphicsRectItem, GraphicsNode):
         pos = self.pos()
         r = self.rect()
         c = self.color
+        bc = self.borderColor
         return {
             "position": [pos.x(), pos.y()],
             "color": [c.red(), c.green(), c.blue()],
+            "borderColor": [bc.red(), bc.green(), bc.blue()],
             "rect": [r.x(), r.y(), r.width(), r.height()],
             "displayText": self.displayText,
         }
@@ -57,6 +61,7 @@ class GraphicsRectNode(QGraphicsRectItem, GraphicsNode):
     def setData(self, data):
         position = data.get("position")
         color = data.get("color")
+        borderColor = data.get("borderColor")
         rect = data.get("rect")
         displayText = data.get("displayText")
 
@@ -65,6 +70,9 @@ class GraphicsRectNode(QGraphicsRectItem, GraphicsNode):
 
         if color is not None:
             self.color = QColor(*color)
+
+        if borderColor is not None:
+            self.borderColor = QColor(*borderColor)
 
         if rect is not None:
             self.setRect(QRectF(*rect))
@@ -149,15 +157,19 @@ class GraphicsRectNode(QGraphicsRectItem, GraphicsNode):
     def paint(self, painter, option, widget):
 
         brush = QBrush(self.color)
+        pen = QPen(self.borderColor, 1)
         painter.setBrush(brush)
+        painter.setPen(pen)
 
         rect = self.rect()
-        painter.drawRect(rect)
+        painter.drawRect(rect.adjusted(2, 2, -2, -2))
 
         if self.isSelected():
             pen = QPen(self.highlightColor, 2)
+            brush = QBrush(self.color)
+            painter.setBrush(Qt.NoBrush)
             painter.setPen(pen)
-            painter.drawRect(self.boundingRect())
+            painter.drawRect(self.rect())
 
         if self.displayText is not None:
             painter.setPen(QPen(QColor(255, 255, 255), 1))
@@ -177,9 +189,12 @@ class GraphicsCircleNode(QGraphicsEllipseItem, GraphicsNode):
         pos = self.pos()
         r = self.rect()
         c = self.color
+        bc = self.borderColor
+
         return {
             "position": [pos.x(), pos.y()],
             "color": [c.red(), c.green(), c.blue()],
+            "borderColor": [bc.red(), bc.green(), bc.blue()],
             "rect": [r.x(), r.y(), r.width(), r.height()],
             "displayText": self.displayText,
         }
@@ -187,13 +202,18 @@ class GraphicsCircleNode(QGraphicsEllipseItem, GraphicsNode):
     def setData(self, data):
         position = data.get("position")
         color = data.get("color")
+        borderColor = data.get("borderColor")
         rect = data.get("rect")
         displayText = data.get("displayText")
+
         if position is not None:
             self.setPos(QPointF(*position))
 
         if color is not None:
             self.color = QColor(*color)
+
+        if borderColor is not None:
+            self.borderColor = QColor(*borderColor)
 
         if rect is not None:
             self.setRect(QRectF(*rect))
@@ -236,9 +256,12 @@ class GraphicsCircleNode(QGraphicsEllipseItem, GraphicsNode):
     def paint(self, painter, option, widget):
         rect = self.rect()
 
-        painter.setBrush(QBrush(self.color))
-        painter.setPen(QPen(QColor(255, 255, 255), 1))
-        painter.drawEllipse(rect)
+        pen = QPen(self.borderColor, 1)
+        brush = QBrush(self.color)
+
+        painter.setPen(pen)
+        painter.setBrush(brush)
+        painter.drawEllipse(rect.adjusted(1, 1, -1, -1))
 
         if self.isSelected():
             painter.setPen(QPen(self.highlightColor, 2))

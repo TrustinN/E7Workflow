@@ -36,7 +36,7 @@ class GraphModel(Model):
     def getEdgeData(self, nid1, nid2):
         return dict(self.edgeData[nid1][nid2])
 
-    def edges(self, nodeID):
+    def getEdges(self, nodeID):
         return self.edges[nodeID]
 
     def nodeIter(self):

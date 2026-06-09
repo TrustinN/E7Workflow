@@ -2,6 +2,7 @@ import os
 
 from src.app.frontend.events import Node
 from src.app.frontend.state import GraphModel, Serializer, TreeModel, WorkspaceContext
+from src.app.frontend.widgets.utils.colors import Colors
 
 from .controllers import GraphFullViewController, GraphMiniViewController
 
@@ -28,6 +29,7 @@ class GraphNode(Node):
 
         self.subscribe("/Workspace/Created", self.createNode)
         self.subscribe("/Graph/EdgeRequested", self.createEdge)
+        self.subscribe("/Runner/EntrySet", self.redrawNode)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Export", self.graphExport)
         self.subscribe("/App/Import", self.graphImport)
@@ -68,6 +70,18 @@ class GraphNode(Node):
             self.context.wsGraphModel.createEdge(self.firstEdge, self.secondEdge, {})
             self.firstEdge = None
             self.secondEdge = None
+
+    def redrawNode(self, data):
+        prevID = data["prevID"]
+        if prevID:
+            nodeData = {"borderColor": list(Colors.WHITE.getRgb())}
+            self.fullViewController.updateNode(prevID, nodeData)
+            self.miniViewController.updateNode(prevID, nodeData)
+
+        curID = data["curID"]
+        nodeData = {"borderColor": list(Colors.MINT.getRgb())}
+        self.fullViewController.updateNode(curID, nodeData)
+        self.miniViewController.updateNode(curID, nodeData)
 
     def graphExport(self, data):
         path = data["path"]

@@ -11,15 +11,16 @@ class ClickAction(Action):
     def info():
         return {
             "name": "Click",
-            "appParams": {
+            "system_params": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
             },
-            "userParams": {},
+            "user_params": {},
         }
 
-    def action(data):
-        tl = data["tl"]
-        br = data["br"]
+    def action(self, data):
+        systemParams = data["system_params"]
+        tl = systemParams["tl"]
+        br = systemParams["br"]
         mid = (np.array(tl) + np.array(br)) / 2
         pyautogui.click(int(mid[0]), int(mid[1]))

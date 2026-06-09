@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import QWidget
 
-from .utils.colors import Colors
+from src.app.frontend.widgets.utils.colors import Colors
 
 
 class SelectionWindow(QWidget):

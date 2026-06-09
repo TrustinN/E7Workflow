@@ -1,9 +1,5 @@
 from src.app.frontend.state import WorkspaceContext
-from src.app.frontend.widgets.workspace.components.utils.colors import (
-    Alpha,
-    Colors,
-    with_alpha,
-)
+from src.app.frontend.widgets.utils.colors import Alpha, Colors, with_alpha
 
 from .view import WorkspaceView
 
@@ -33,10 +29,13 @@ class WorkspaceController:
     def createWorkspace(self, id, parentID, data):
         if parentID is None:
             self._createRootWorkspace(id, data)
+
             data = self.view.getWorkspaceData(id)
             self.context.viewModel.createRoot(id, data)
         else:
             self._createChildWorkspace(id, parentID, data)
+
+            data = self.view.getWorkspaceData(id)
             self.context.viewModel.createNode(id, parentID, data)
 
     def onSelection(self, id):

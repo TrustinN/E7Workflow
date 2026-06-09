@@ -1,11 +1,17 @@
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
-from .frontend.capabilities import Buttons, GraphCapability, WorkspaceCapability
+from src.router.routing import Dispatcher
+
+from .frontend.capabilities import (
+    Buttons,
+    GraphCapability,
+    RunnerCapability,
+    WorkspaceCapability,
+)
 from .frontend.events import PubSubHandler
 from .frontend.state import WorkspaceContext, WorkspaceContextManager
-
-# from .frontend.widgets.runner import RunnerComponent
 from .frontend.widgets.graph import GraphComponent
+from .frontend.widgets.runner import RunnerComponent
 from .frontend.widgets.serialization import SerializationComponent
 from .frontend.widgets.workspace import WorkspaceComponent
 
@@ -19,7 +25,7 @@ class MainWindow(QMainWindow):
 
 
 class App(QApplication):
-    def __init__(self):
+    def __init__(self, dispatcher: Dispatcher):
         super().__init__([])
 
         self.window = MainWindow()
@@ -39,12 +45,16 @@ class App(QApplication):
         self.buttons = Buttons()
         self.wksCapability = WorkspaceCapability()
         self.graphCapability = GraphCapability()
+        self.runnerCapability = RunnerCapability()
 
         self.buttons.createWorkspace_.connect(self.wksCapability.createWorkspace)
         self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.createEdge)
+        self.buttons.entryBtn.clicked.connect(self.runnerCapability.requestEntry)
+        self.buttons.executeBtn.clicked.connect(self.runnerCapability.requestExecute)
 
         self.wkCpt = WorkspaceComponent(self.context)
         self.graphCpt = GraphComponent(self.context)
+        self.runnerCpt = RunnerComponent(self.context, dispatcher)
         self.serialCpt = SerializationComponent()
 
         self.layoutLeft.addWidget(self.buttons)
@@ -56,8 +66,10 @@ class App(QApplication):
 
         self.pubSubHandler.registerNode(self.wksCapability)
         self.pubSubHandler.registerNode(self.graphCapability)
+        self.pubSubHandler.registerNode(self.runnerCapability)
 
         self.pubSubHandler.registerNode(self.wkCpt.node)
         self.pubSubHandler.registerNode(self.graphCpt.node)
+        self.pubSubHandler.registerNode(self.runnerCpt.node)
         self.pubSubHandler.registerNode(self.serialCpt.node)
         self.pubSubHandler.handlePublish("/App/Loaded")

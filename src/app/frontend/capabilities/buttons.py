@@ -12,11 +12,15 @@ class Buttons(QWidget):
 
         self.createBtn = QPushButton("Create Workspace")
         self.createEdgeBtn = QPushButton("Create Edge")
+        self.entryBtn = QPushButton("Set Entry")
+        self.executeBtn = QPushButton("Execute")
 
         self.createBtn.clicked.connect(self.onWorkspaceCreate)
 
         self.layout.addWidget(self.createBtn)
         self.layout.addWidget(self.createEdgeBtn)
+        self.layout.addWidget(self.entryBtn)
+        self.layout.addWidget(self.executeBtn)
 
     def onWorkspaceCreate(self):
         name, ok = QInputDialog.getText(

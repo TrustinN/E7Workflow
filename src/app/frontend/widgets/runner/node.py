@@ -1,71 +1,61 @@
-import os
-
 from src.app.backend.action import ActionRoute, ActionType
 from src.app.frontend.events import Node
-from src.app.frontend.models import GraphModel, Serializer
-from src.app.frontend.state import SelectionModel
+from src.app.frontend.state import WorkspaceContext
 from src.router.routing import Client, Dispatcher, Link
-
-from .widget import RunnerButtons
 
 
 class RunnerNode(Node):
     def __init__(
         self,
-        model: GraphModel,
-        selectionModel: SelectionModel,
-        buttons: RunnerButtons,
+        context: WorkspaceContext,
         dispatcher: Dispatcher,
     ):
         super().__init__()
-        self.model = model
-        self.selectionModel = selectionModel
-        self.serializer = Serializer()
+        self.context = context
 
         self.client = Client("RunnerClient", dispatcher)
 
-        self.modelFile = "runner_data.json"
-
-        self.subscribe("/Workspace/Created", self.createNode)
-        self.subscribe("/Graph/EdgeCreated", self.createEdge)
         self.subscribe("/App/Reset", self.resetState)
-        self.subscribe("/App/Export", self.runnerExport)
-        self.subscribe("/App/Import", self.runnerImport)
+        self.subscribe("/Runner/EntryRequested", self.setDefaultEntry)
+        self.subscribe("/Runner/ExecuteRequested", self.execute)
 
-        self.buttons = buttons
+        self.entryID = None
 
-        self.buttons.executeBtn.clicked.connect(self.executeRunner)
-
-    def createNode(self, data):
-        self.model.createNode(data["id"], {})
-
-    def createEdge(self, data):
-        self.model.createEdge(data["id1"], data["id2"], {})
-
-    def _executeNode(self, nodeID):
-        edges = self.model.edges(nodeID)
-        if edges:
-            for node in edges:
-                self._executeNode(node)
-
+    def setDefaultEntry(self, data):
+        entryID = self.context.selectionModel.getSelected()
+        if self.context.wsTreeModel.isRoot(entryID):
             return
 
-        # Child node
-        link = Link(ActionRoute.NAME, ActionRoute.ACTION, ActionType.CLICK)
-        self.client.post(link, {})
+        prevID = self.entryID
+        self.entryID = entryID
+        self.publish("/Runner/EntrySet", {"prevID": prevID, "curID": entryID})
 
-    def runnerExport(self, data):
-        path = data["path"]
+    def _executeNode(self, nodeID):
+        if self.context.wsTreeModel.isLeaf(nodeID):
+            link = Link(ActionRoute.NAME, ActionRoute.ACTION, ActionType.CLICK)
+            data = self.context.viewModel.nodeData(nodeID)
+            geometry = data["geometry"]
+            self.client.post(
+                link,
+                {
+                    "system_params": {
+                        "tl": geometry[0],
+                        "br": geometry[1],
+                    }
+                },
+            )
+            return
 
-        modelPath = os.path.join(path, self.modelFile)
-        self.serializer.export(self.model, modelPath)
+        edges = self.context.wsGraphModel.getEdges(nodeID)
+        for node in edges:
+            self._executeNode(node)
 
-    def runnerImport(self, data):
-        path = data["path"]
+    def execute(self, data):
+        if self.entryID is None:
+            return
 
-        modelPath = os.path.join(path, self.modelFile)
-        modelState = self.serializer.restore(modelPath)
-        self.model.deserialize(modelState)
+        self._executeNode(self.entryID)
 
     def resetState(self, data):
+        self.entryID = None
         pass
