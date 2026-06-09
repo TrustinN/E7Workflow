@@ -17,22 +17,11 @@ class WorkspaceContextManager(Node):
         self.graphFile = "graph_data.json"
         self.viewFile = "ws_view.json"
 
-        self.subscribe("/Workspace/CreateRootRequested", self.onWSRootRequest)
-        self.subscribe("/Workspace/CreateChildRequested", self.onWSChildRequest)
         self.subscribe("/Graph/CreateEdgeRequested", self.onGraphEdgeRequest)
 
         self.subscribe("/App/Reset", self.contextReset)
         self.subscribe("/App/Export", self.contextExport)
         self.subscribe("/App/Import", self.contextImport)
-
-    def onWSRootRequest(self, data):
-        self.context.wsTreeModel.createRoot(data["id"], data)
-        self.context.wsGraphModel.createNode(data["id"], data)
-        self.context.selectionModel.setSelected(data["id"])
-
-    def onWSChildRequest(self, data):
-        self.context.wsTreeModel.createNode(data["id"], data["parentID"], data)
-        self.context.wsGraphModel.createNode(data["id"], data)
 
     def onGraphEdgeRequest(self, data):
         self.context.wsGraphModel.createEdge(data["id1"], data["id2"], {})

@@ -17,9 +17,9 @@ class WorkspaceComponent(QWidget):
         self.buttons = WorkspaceButtons()
         self.context = context
 
-        self.node = WorkspaceNode(self.context)
         self.view = WorkspaceView()
         self.controller = WorkspaceController(self.context, self.view)
+        self.node = WorkspaceNode(self.context, self.controller)
 
         self.buttons.createWorkspace_.connect(self.node.createWorkspace)
         self.layout.addWidget(self.buttons)
