@@ -13,12 +13,14 @@ class GraphNode(Node):
         fullViewModel: GraphModel,
         miniViewModel: TreeModel,
         fullViewController: GraphFullViewController,
+        miniViewController: GraphMiniViewController,
     ):
         super().__init__()
         self.context = context
         self.fullViewModel = fullViewModel
         self.miniViewModel = miniViewModel
         self.fullViewController = fullViewController
+        self.miniViewController = miniViewController
         self.serializer = Serializer()
 
         self.fullViewFile = "graph_full_view.json"
@@ -38,12 +40,17 @@ class GraphNode(Node):
 
         if self.context.wsTreeModel.isRoot(nodeID):
             self.fullViewController.createGraph(nodeID)
+            self.miniViewController.createRoot(nodeID)
 
         else:
             nodeData = self.context.wsGraphModel.getNodeData(nodeID)
             data = {"displayText": nodeData["grouping"]}
             self.fullViewController.createNode(nodeID)
             self.fullViewController.updateNode(nodeID, data)
+
+            data = {"displayText": nodeData["text"]}
+            self.miniViewController.createNode(nodeID)
+            self.miniViewController.updateNode(nodeID, data)
 
     def setE1(self):
         self.firstEdge = self.context.selectionModel.getSelected()
@@ -57,6 +64,7 @@ class GraphNode(Node):
         cond3 = self.firstEdge != self.secondEdge
         if cond1 and cond2 and cond3:
             self.fullViewController.createEdge(self.firstEdge, self.secondEdge)
+            self.miniViewController.createEdge(self.firstEdge, self.secondEdge)
             self.context.wsGraphModel.createEdge(self.firstEdge, self.secondEdge, {})
             self.firstEdge = None
             self.secondEdge = None
@@ -83,8 +91,10 @@ class GraphNode(Node):
         self.miniViewModel.deserialize(miniViewModelState)
 
         self.fullViewController.recreateView()
+        self.miniViewController.recreateView()
 
     def resetState(self, data):
         self.firstEdge = None
         self.secondEdge = None
         self.fullViewController.clearState()
+        self.miniViewController.clearState()
