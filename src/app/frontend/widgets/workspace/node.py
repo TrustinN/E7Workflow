@@ -41,7 +41,8 @@ class WorkspaceNode(Node):
 
         self.context.selectionModel.setSelected(id)
 
-    def createWorkspace(self, name):
+    def createWorkspace(self, data):
+        name = data["name"]
         id = generate()
         parentID = self.context.selectionModel.getSelected()
         grouping = None

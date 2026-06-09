@@ -44,7 +44,7 @@ class GraphComponent(QWidget):
         self.buttons = GraphButtons()
         self.buttons.setE1Btn.clicked.connect(self.node.setE1)
         self.buttons.setE2Btn.clicked.connect(self.node.setE2)
-        self.buttons.createEdgeBtn.clicked.connect(self.node.createEdge)
 
         self.layout.addWidget(self.miniView)
         self.layout.addWidget(self.fullView)
+        self.layout.addWidget(self.buttons)

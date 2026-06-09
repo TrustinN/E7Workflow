@@ -2,7 +2,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 
-class WorkspaceButtons(QWidget):
+class Buttons(QWidget):
     createWorkspace_ = pyqtSignal(str)
 
     def __init__(self):
@@ -11,10 +11,12 @@ class WorkspaceButtons(QWidget):
         self.setLayout(self.layout)
 
         self.createBtn = QPushButton("Create Workspace")
+        self.createEdgeBtn = QPushButton("Create Edge")
 
         self.createBtn.clicked.connect(self.onWorkspaceCreate)
 
         self.layout.addWidget(self.createBtn)
+        self.layout.addWidget(self.createEdgeBtn)
 
     def onWorkspaceCreate(self):
         name, ok = QInputDialog.getText(

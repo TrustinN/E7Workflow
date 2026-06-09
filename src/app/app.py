@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
+from .frontend.capabilities import Buttons, GraphCapability, WorkspaceCapability
 from .frontend.events import PubSubHandler
 from .frontend.state import WorkspaceContext, WorkspaceContextManager
 
@@ -35,21 +36,28 @@ class App(QApplication):
         self.context = WorkspaceContext()
         self.contextManager = WorkspaceContextManager(self.context)
 
+        self.buttons = Buttons()
+        self.wksCapability = WorkspaceCapability()
+        self.graphCapability = GraphCapability()
+
+        self.buttons.createWorkspace_.connect(self.wksCapability.createWorkspace)
+        self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.createEdge)
+
         self.wkCpt = WorkspaceComponent(self.context)
         self.graphCpt = GraphComponent(self.context)
-        # self.runnerCpt = RunnerComponent(self.selectionModel)
         self.serialCpt = SerializationComponent()
 
-        self.layoutLeft.addWidget(self.wkCpt)
-        self.layoutLeft.addWidget(self.graphCpt.buttons)
-        # self.layoutLeft.addWidget(self.runnerCpt.buttons)
+        self.layoutLeft.addWidget(self.buttons)
         self.layoutLeft.addWidget(self.serialCpt)
         self.layout.addWidget(self.graphCpt)
 
         self.pubSubHandler = PubSubHandler()
         self.pubSubHandler.registerNode(self.contextManager)
+
+        self.pubSubHandler.registerNode(self.wksCapability)
+        self.pubSubHandler.registerNode(self.graphCapability)
+
         self.pubSubHandler.registerNode(self.wkCpt.node)
         self.pubSubHandler.registerNode(self.graphCpt.node)
-        # self.pubSubHandler.registerNode(self.runnerCpt.node)
         self.pubSubHandler.registerNode(self.serialCpt.node)
         self.pubSubHandler.handlePublish("/App/Loaded")

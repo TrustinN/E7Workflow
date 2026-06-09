@@ -11,8 +11,6 @@ class GraphButtons(QWidget):
 
         self.setE1Btn = QPushButton("SetEdgeStart")
         self.setE2Btn = QPushButton("SetEdgeEnd")
-        self.createEdgeBtn = QPushButton("Create Edge")
 
         self.layout.addWidget(self.setE1Btn)
         self.layout.addWidget(self.setE2Btn)
-        self.layout.addWidget(self.createEdgeBtn)

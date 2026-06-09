@@ -58,7 +58,7 @@ class GraphNode(Node):
     def setE2(self):
         self.secondEdge = self.context.selectionModel.getSelected()
 
-    def createEdge(self):
+    def createEdge(self, data):
         cond1 = self.firstEdge is not None
         cond2 = self.secondEdge is not None
         cond3 = self.firstEdge != self.secondEdge
