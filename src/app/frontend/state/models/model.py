@@ -1,9 +1,4 @@
-from PyQt5.QtCore import QObject, pyqtSignal
-
-
-class Model(QObject):
-    modelClear_ = pyqtSignal()
-    modelReset_ = pyqtSignal()
+class Model:
 
     def __init__(self):
         super().__init__()

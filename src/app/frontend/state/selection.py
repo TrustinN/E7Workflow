@@ -1,7 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.frontend.events import Node
-
 
 class SelectionModel(QObject):
     selected_ = pyqtSignal(str)
@@ -34,19 +32,3 @@ class SelectionModel(QObject):
         self.selected = None
         self.prevSelected = None
         self.selected_.emit(None)
-
-
-#
-# class SelectionNode(Node):
-#     def __init__(self, model: SelectionModel):
-#         super().__init__()
-#         self.model = model
-#
-#         self.subscribe("/Selection", self.onSelection)
-#         self.subscribe("/App/Reset", self.resetSelection)
-#
-#     def onSelection(self, data):
-#         self.model.setSelected(data["id"])
-#
-#     def resetSelection(self, data):
-#         self.model.reset()

@@ -13,8 +13,6 @@ class GraphMiniViewController:
         self.view = view
         self.viewModel = viewModel
 
-        self.context.wsGraphModel.modelClear_.connect(self.clearState)
-
         self.context.selectionModel.selected_.connect(self.onExternalSelection)
         self._updatingSelection = False
         self._loading = False

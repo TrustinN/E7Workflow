@@ -1,13 +1,9 @@
 from collections import defaultdict, deque
 
-from PyQt5.QtCore import pyqtSignal
-
 from .model import Model
 
 
 class TreeModel(Model):
-    nodeCreated_ = pyqtSignal(str)
-    nodeUpdated_ = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -20,19 +16,13 @@ class TreeModel(Model):
         self.root = nodeID
         self.data[nodeID] = data
 
-        self.nodeCreated_.emit(nodeID)
-
     def createNode(self, nodeID, parentID, data):
         self.children[parentID].append(nodeID)
         self.parents[nodeID] = parentID
         self.data[nodeID] = data
 
-        self.nodeCreated_.emit(nodeID)
-
     def updateNode(self, nodeID, data):
         self.data[nodeID] = data
-
-        self.nodeUpdated_.emit(nodeID)
 
     def nodes(self):
         return list(self.data.keys())
@@ -50,8 +40,6 @@ class TreeModel(Model):
         return dict(self.data[nodeID])
 
     def clear(self):
-        self.modelClear_.emit()
-
         self.root = None
         self.parents.clear()
         self.children.clear()
@@ -100,5 +88,3 @@ class TreeModel(Model):
                 parents[id],
                 data,
             )
-
-        self.modelReset_.emit()

@@ -1,14 +1,9 @@
 from collections import defaultdict
 
-from PyQt5.QtCore import pyqtSignal
-
 from .model import Model
 
 
 class GraphModel(Model):
-    nodeCreated_ = pyqtSignal(str)
-    edgeCreated_ = pyqtSignal(str, str)
-
     def __init__(self):
         super().__init__()
         # Contains graphID -> node list + edge list
@@ -24,12 +19,10 @@ class GraphModel(Model):
     def createNode(self, nodeID, data):
         self.nodes.append(nodeID)
         self.nodeData[nodeID] = data
-        self.nodeCreated_.emit(nodeID)
 
     def createEdge(self, nid1, nid2, data):
         self.edges[nid1].append(nid2)
         self.edgeData[nid1][nid2] = data
-        self.edgeCreated_.emit(nid1, nid2)
 
     def updateNode(self, nodeID, data):
         self.nodeData[nodeID] = data
@@ -56,8 +49,6 @@ class GraphModel(Model):
                 yield (e1, e2)
 
     def clear(self):
-        self.modelClear_.emit()
-
         self.nodes.clear()
         self.edges.clear()
 
@@ -89,5 +80,3 @@ class GraphModel(Model):
             for e2 in edges[e1]:
                 data = edgeData[e1][e2]
                 self.createEdge(e1, e2, data)
-
-        self.modelReset_.emit()
