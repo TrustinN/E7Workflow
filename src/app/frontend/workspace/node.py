@@ -43,7 +43,7 @@ class WorkspaceNode(Node):
         }
         self.workspaceModel.createRoot(id, data)
         self.publish(
-            "/WS Component/RootWSCreated",
+            "/Workspace/RootCreated",
             data,
         )
         self.selectionModel.setSelected(id)
@@ -66,7 +66,7 @@ class WorkspaceNode(Node):
         }
         self.workspaceModel.createNode(id, parentID, data)
         self.publish(
-            "/WS Component/WSCreated",
+            "/Workspace/Created",
             data,
         )
 

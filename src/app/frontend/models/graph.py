@@ -13,13 +13,13 @@ class GraphModel(Model):
         super().__init__()
         # Contains graphID -> node list + edge list
         self.nodes = []
-        self.edges = []
+        self.edges = defaultdict(list)
 
         # Contains nodeID -> node data
         self.nodeData = {}
 
         # Contains edgeID -> edge data
-        self.edgeData = {}
+        self.edgeData = defaultdict(dict)
 
     def createNode(self, nodeID, data):
         self.nodes.append(nodeID)
@@ -27,32 +27,33 @@ class GraphModel(Model):
         self.nodeCreated_.emit(nodeID)
 
     def createEdge(self, nid1, nid2, data):
-        edgeID = (nid1, nid2)
-        self.edges.append(edgeID)
-        self.edgeData[edgeID] = data
+        self.edges[nid1].append(nid2)
+        self.edgeData[nid1][nid2] = data
         self.edgeCreated_.emit(nid1, nid2)
 
     def updateNode(self, nodeID, data):
         self.nodeData[nodeID] = data
 
     def updateEdge(self, nid1, nid2, data):
-        edgeID = (nid1, nid2)
-        self.edgeData[edgeID] = data
+        self.edgeData[nid1][nid2] = data
 
     def getNodeData(self, nodeID):
         return dict(self.nodeData[nodeID])
 
     def getEdgeData(self, nid1, nid2):
-        edgeID = (nid1, nid2)
-        return dict(self.edgeData[edgeID])
+        return dict(self.edgeData[nid1][nid2])
+
+    def edges(self, nodeID):
+        return self.edges[nodeID]
 
     def nodeIter(self):
         for nodeID in self.nodes:
             yield nodeID
 
     def edgeIter(self):
-        for edgeID in self.edges:
-            yield edgeID
+        for e1 in self.edges:
+            for e2 in self.edges[e1]:
+                yield (e1, e2)
 
     def clear(self):
         self.modelClear_.emit()
@@ -64,21 +65,12 @@ class GraphModel(Model):
         self.edgeData.clear()
 
     def serialize(self):
-        # Reformat so keys are not tuples
-        edgeData = defaultdict(dict[str, object])
-
-        for e1, e2 in self.edgeData:
-            edgeData[e1][e2] = self.getEdgeData(e1, e2)
-
-        edges = []
-        for e1, e2 in self.edges:
-            edges.append([e1, e2])
 
         return {
             "nodes": self.nodes,
             "edges": self.edges,
             "nodeData": self.nodeData,
-            "edgeData": edgeData,
+            "edgeData": self.edgeData,
         }
 
     def deserialize(self, state):
@@ -93,8 +85,9 @@ class GraphModel(Model):
             data = nodeData[nodeID]
             self.createNode(nodeID, data)
 
-        for e1, e2 in edges:
-            data = edgeData[e1][e2]
-            self.createEdge(e1, e2, data)
+        for e1 in edges:
+            for e2 in edges[e1]:
+                data = edgeData[e1][e2]
+                self.createEdge(e1, e2, data)
 
         self.modelReset_.emit()

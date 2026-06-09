@@ -35,20 +35,18 @@ class SerializationComponent(QWidget):
     def handleExport(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Export Config")
-
         dialog.setMinimumSize(350, 180)
 
         layout = QVBoxLayout(dialog)
-
         layout.addWidget(QLabel("Select existing or type new name:"))
 
         combo = QComboBox(dialog)
         combo.setEditable(True)
         combo.addItems(self.getAvailableConfigs())
         combo.setEditText("Untitled")
+        combo.lineEdit().selectAll()
 
         layout.addWidget(combo)
-
         btnRow = QHBoxLayout()
 
         exportBtn = QPushButton("Export", dialog)

@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 from src.app.frontend.models import TreeModel
+from src.app.frontend.state import SelectionModel
 
 from .node import WorkspaceNode
 from .views import WorkspaceView
@@ -8,7 +9,7 @@ from .widgets import WorkspaceButtons
 
 
 class WorkspaceComponent(QWidget):
-    def __init__(self, selectionModel):
+    def __init__(self, selectionModel: SelectionModel):
         super().__init__()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)

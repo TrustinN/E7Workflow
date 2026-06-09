@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout,
 
 from .frontend.events import PubSubHandler
 from .frontend.graph import GraphComponent
-from .frontend.runner import RunnerComponent
+
+# from .frontend.runner import RunnerComponent
 from .frontend.serialization import SerializationComponent
 from .frontend.state import SelectionModel, SelectionNode
 from .frontend.workspace import WorkspaceComponent
@@ -36,19 +37,19 @@ class App(QApplication):
 
         self.wkCpt = WorkspaceComponent(self.selectionModel)
         self.graphCpt = GraphComponent(self.selectionModel)
-        self.runnerCpt = RunnerComponent(self.selectionModel)
+        # self.runnerCpt = RunnerComponent(self.selectionModel)
         self.serialCpt = SerializationComponent()
 
         self.layoutLeft.addWidget(self.wkCpt)
         self.layoutLeft.addWidget(self.graphCpt.buttons)
-        self.layoutLeft.addWidget(self.runnerCpt.buttons)
+        # self.layoutLeft.addWidget(self.runnerCpt.buttons)
         self.layoutLeft.addWidget(self.serialCpt)
         self.layout.addWidget(self.graphCpt)
 
         self.pubSubHandler = PubSubHandler()
         self.pubSubHandler.registerNode(self.wkCpt.node)
         self.pubSubHandler.registerNode(self.graphCpt.node)
-        self.pubSubHandler.registerNode(self.runnerCpt.node)
+        # self.pubSubHandler.registerNode(self.runnerCpt.node)
         self.pubSubHandler.registerNode(self.serialCpt.node)
         self.pubSubHandler.registerNode(self.selectionNode)
         self.pubSubHandler.handlePublish("/App/Loaded")

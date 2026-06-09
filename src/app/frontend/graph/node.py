@@ -26,8 +26,8 @@ class GraphNode(Node):
         self.fullViewFile = "graph_full_view.json"
         self.miniViewFile = "graph_mini_view.json"
 
-        self.subscribe("/WS Component/RootWSCreated", self.createNode)
-        self.subscribe("/WS Component/WSCreated", self.createNode)
+        self.subscribe("/Workspace/RootCreated", self.createNode)
+        self.subscribe("/Workspace/Created", self.createNode)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Export", self.graphExport)
         self.subscribe("/App/Import", self.graphImport)
