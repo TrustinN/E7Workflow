@@ -3,8 +3,9 @@ from PyQt5.QtWidgets import QVBoxLayout, QWidget
 from src.app.frontend.state import GraphModel, TreeModel, WorkspaceContext
 
 from .components import GraphButtons
+from .controllers import GraphFullViewController, GraphMiniViewController
 from .node import GraphNode
-from .views import GraphFullView, GraphMiniView
+from .views import GraphMultiView
 
 
 class GraphComponent(QWidget):
@@ -24,12 +25,17 @@ class GraphComponent(QWidget):
             self.graphMiniViewModel,
         )
 
-        self.miniView = GraphMiniView(
+        self.miniView = GraphMultiView()
+        self.fullView = GraphMultiView()
+
+        self.miniViewController = GraphMiniViewController(
             self.context,
+            self.miniView,
             self.graphMiniViewModel,
         )
-        self.fullView = GraphFullView(
+        self.fullViewController = GraphFullViewController(
             self.context,
+            self.fullView,
             self.graphFullViewModel,
         )
 

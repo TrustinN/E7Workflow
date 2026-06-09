@@ -14,6 +14,9 @@ class GraphScene(QGraphicsScene):
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
 
+    nodeCreated_ = pyqtSignal(str)
+    edgeCreated_ = pyqtSignal(str, str)
+
     def __init__(self):
         super().__init__()
         self.setSceneRect(0, 0, 400, 300)
@@ -63,6 +66,7 @@ class GraphScene(QGraphicsScene):
         # node.emitter.onMousePress_.connect(onNodePressed)
 
         self.addItem(node)
+        self.nodeCreated_.emit(id)
 
     def readNode(self, id):
         node = self.nodes[id]
@@ -85,6 +89,7 @@ class GraphScene(QGraphicsScene):
 
         self.edges[(id1, id2)] = arrow
         self.addItem(arrow)
+        self.edgeCreated_.emit(id1, id2)
 
     def readEdge(self, id1, id2):
         edge = self.edges[(id1, id2)]
