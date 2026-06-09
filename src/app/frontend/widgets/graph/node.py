@@ -2,7 +2,6 @@ import os
 
 from src.app.frontend.events import Node
 from src.app.frontend.state import GraphModel, Serializer, TreeModel, WorkspaceContext
-from src.app.frontend.widgets.graph.widgets import GraphButtons
 
 
 class GraphNode(Node):
@@ -11,7 +10,6 @@ class GraphNode(Node):
         context: WorkspaceContext,
         fullViewModel: GraphModel,
         miniViewModel: TreeModel,
-        buttons: GraphButtons,
     ):
         super().__init__()
         self.context = context
@@ -26,13 +24,8 @@ class GraphNode(Node):
         self.subscribe("/App/Export", self.graphExport)
         self.subscribe("/App/Import", self.graphImport)
 
-        self.buttons = buttons
         self.firstEdge = None
         self.secondEdge = None
-
-        self.buttons.setE1Btn.clicked.connect(self.setE1)
-        self.buttons.setE2Btn.clicked.connect(self.setE2)
-        self.buttons.createEdgeBtn.clicked.connect(self.createEdge)
 
     def setE1(self):
         self.firstEdge = self.context.selectionModel.getSelected()

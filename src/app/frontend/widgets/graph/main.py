@@ -2,9 +2,9 @@ from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 from src.app.frontend.state import GraphModel, TreeModel, WorkspaceContext
 
+from .components import GraphButtons
 from .node import GraphNode
 from .views import GraphFullView, GraphMiniView
-from .widgets import GraphButtons
 
 
 class GraphComponent(QWidget):
@@ -14,8 +14,6 @@ class GraphComponent(QWidget):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.buttons = GraphButtons()
-
         self.context = context
         self.graphFullViewModel = GraphModel()
         self.graphMiniViewModel = TreeModel()
@@ -24,7 +22,6 @@ class GraphComponent(QWidget):
             self.context,
             self.graphFullViewModel,
             self.graphMiniViewModel,
-            self.buttons,
         )
 
         self.miniView = GraphMiniView(
@@ -35,6 +32,11 @@ class GraphComponent(QWidget):
             self.context,
             self.graphFullViewModel,
         )
+
+        self.buttons = GraphButtons()
+        self.buttons.setE1Btn.clicked.connect(self.node.setE1)
+        self.buttons.setE2Btn.clicked.connect(self.node.setE2)
+        self.buttons.createEdgeBtn.clicked.connect(self.node.createEdge)
 
         self.layout.addWidget(self.miniView)
         self.layout.addWidget(self.fullView)
