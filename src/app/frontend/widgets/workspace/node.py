@@ -36,6 +36,9 @@ class WorkspaceNode(Node):
         self.controller.createWorkspace(id, None, data)
         self.context.wsTreeModel.createRoot(id, data)
         self.context.wsGraphModel.createNode(id, data)
+
+        self.publish("/Workspace/Created", data)
+
         self.context.selectionModel.setSelected(id)
 
     def createWorkspace(self, name):
@@ -57,6 +60,8 @@ class WorkspaceNode(Node):
         self.controller.createWorkspace(id, parentID, data)
         self.context.wsTreeModel.createNode(data["id"], data["parentID"], data)
         self.context.wsGraphModel.createNode(data["id"], data)
+
+        self.publish("/Workspace/Created", data)
 
     def resetState(self, data):
         self.controller.clearState()

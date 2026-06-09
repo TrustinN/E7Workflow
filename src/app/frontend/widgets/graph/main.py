@@ -19,24 +19,25 @@ class GraphComponent(QWidget):
         self.graphFullViewModel = GraphModel()
         self.graphMiniViewModel = TreeModel()
 
-        self.node = GraphNode(
-            self.context,
-            self.graphFullViewModel,
-            self.graphMiniViewModel,
-        )
-
-        self.miniView = GraphMultiView()
+        # self.miniView = GraphMultiView()
         self.fullView = GraphMultiView()
 
-        self.miniViewController = GraphMiniViewController(
-            self.context,
-            self.miniView,
-            self.graphMiniViewModel,
-        )
+        # self.miniViewController = GraphMiniViewController(
+        #     self.context,
+        #     self.miniView,
+        #     self.graphMiniViewModel,
+        # )
         self.fullViewController = GraphFullViewController(
             self.context,
             self.fullView,
             self.graphFullViewModel,
+        )
+
+        self.node = GraphNode(
+            self.context,
+            self.graphFullViewModel,
+            self.graphMiniViewModel,
+            self.fullViewController,
         )
 
         self.buttons = GraphButtons()
@@ -44,5 +45,5 @@ class GraphComponent(QWidget):
         self.buttons.setE2Btn.clicked.connect(self.node.setE2)
         self.buttons.createEdgeBtn.clicked.connect(self.node.createEdge)
 
-        self.layout.addWidget(self.miniView)
+        # self.layout.addWidget(self.miniView)
         self.layout.addWidget(self.fullView)

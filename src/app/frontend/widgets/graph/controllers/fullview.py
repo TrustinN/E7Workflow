@@ -14,37 +14,48 @@ class GraphFullViewController:
         self.view = view
         self.viewModel = viewModel
 
-        self.context.wsGraphModel.nodeCreated_.connect(self.onNodeCreate)
-        self.context.wsGraphModel.edgeCreated_.connect(self.onEdgeCreate)
-        self.context.wsGraphModel.modelClear_.connect(self.clearState)
+        self.root = None
+        self._loading = False
+
         self.context.selectionModel.selected_.connect(self.onSelectionChanged)
 
-        self.view.nodeCreated_.connect(self.viewModelNodeCreate)
-        self.view.nodeUpdated_.connect(self.viewModelNodeUpdate)
-        self.view.edgeCreated_.connect(self.viewModelEdgeCreate)
-        self.view.edgeUpdated_.connect(self.viewModelEdgeUpdate)
+        self.view.nodeUpdated_.connect(self.onNodeUpdate)
+        self.view.edgeUpdated_.connect(self.onEdgeUpdate)
 
         self.view.nodeSelected_.connect(self.onNodeSelected)
         self.view.nodeDeselected_.connect(self.onNodeDeselected)
 
-        self.viewModel.modelReset_.connect(self.onViewModelReset)
+    def _createGraph(self, id):
+        self.view.createGraph(id)
+        self.view.switchScene(id)
+        self.root = id
 
-    def onNodeCreate(self, nodeID: str):
-        nodeData = self.context.wsGraphModel.getNodeData(nodeID)
+    def createGraph(self, id):
+        self._createGraph(id)
+        self.viewModel.createNode(id, {})
 
-        if self.context.wsTreeModel.isRoot(nodeID):
-            self.view.createGraph(nodeID)
-            self.view.switchScene(nodeID)
-            self.viewModelGraphCreate(nodeID)
-            return
+    def _createNode(self, id):
+        self.view.createNode(self.root, id, NodeType.CIRCLE)
 
-        rootID = self.context.wsTreeModel.root
-        self.view.createNode(rootID, nodeID, NodeType.CIRCLE)
-        self.view.updateNode(nodeID, rootID, {"displayText": nodeData["grouping"]})
+    def createNode(self, id: str):
+        self._createNode(id)
+        nodeData = self.view.readNode(id, self.root)
+        self.viewModel.createNode(id, nodeData)
 
-    def onEdgeCreate(self, e1, e2):
-        rootID = self.context.wsTreeModel.root
-        self.view.createEdge(rootID, e1, e2)
+    def _updateNode(self, id, data):
+        self.view.updateNode(id, self.root, data)
+
+    def updateNode(self, id: str, data):
+        self._updateNode(id, data)
+        self.onNodeUpdate(id)
+
+    def _createEdge(self, e1, e2):
+        self.view.createEdge(self.root, e1, e2)
+
+    def createEdge(self, e1, e2):
+        self._createEdge(e1, e2)
+        edgeData = self.view.readEdge(e1, e2, self.root)
+        self.viewModel.createEdge(e1, e2, edgeData)
 
     def onNodeSelected(self, id):
         self.context.selectionModel.setSelected(id)
@@ -54,49 +65,56 @@ class GraphFullViewController:
         self.context.selectionModel.setSelected(rootID)
 
     def onSelectionChanged(self, id):
-        id = self.context.wsTreeModel.root if id == "" else id
-        if self.context.wsTreeModel.isRoot(id):
+        id = self.root if id == "" else id
+        if id == self.root:
             self.view.clearSelection(id)
         else:
-            rootID = self.context.wsTreeModel.root
-            self.view.selectNode(id, rootID)
+            self.view.selectNode(id, self.root)
 
-    def viewModelGraphCreate(self, graphID: str):
-        self.viewModel.createNode(graphID, {})
+    def onNodeUpdate(self, id: str):
+        if self._loading:
+            return
 
-    def viewModelNodeCreate(self, nodeID: str):
-        rootID = self.context.wsTreeModel.root
-        nodeData = self.view.readNode(nodeID, rootID)
-        self.viewModel.createNode(nodeID, nodeData)
+        nodeData = self.view.readNode(id, self.root)
+        self.viewModel.updateNode(id, nodeData)
 
-    def viewModelNodeUpdate(self, nodeID: str):
-        rootID = self.context.wsTreeModel.root
-        nodeData = self.view.readNode(nodeID, rootID)
-        self.viewModel.updateNode(nodeID, nodeData)
+    def onEdgeUpdate(self, e1: str, e2: str):
+        if self._loading:
+            return
 
-    def viewModelEdgeCreate(self, edgeID1: str, edgeID2: str):
-        rootID = self.context.wsTreeModel.root
-        edgeData = self.view.readEdge(edgeID1, edgeID2, rootID)
-        self.viewModel.createEdge(edgeID1, edgeID2, edgeData)
+        edgeData = self.view.readEdge(e1, e2, self.root)
+        self.viewModel.updateEdge(e1, e2, edgeData)
 
-    def viewModelEdgeUpdate(self, edgeID1: str, edgeID2: str):
-        rootID = self.context.wsTreeModel.root
-        edgeData = self.view.readEdge(edgeID1, edgeID2, rootID)
-        self.viewModel.updateEdge(edgeID1, edgeID2, edgeData)
-
-    def onViewModelReset(self):
+    def rerenderView(self):
         for nodeID in self.viewModel.nodeIter():
-            if self.context.wsTreeModel.isRoot(nodeID):
+            if nodeID == self.root:
                 continue
 
-            rootID = self.context.wsTreeModel.root
             data = self.viewModel.getNodeData(nodeID)
-            self.view.updateNode(nodeID, rootID, data)
+            self.view.updateNode(nodeID, self.root, data)
 
         for e1, e2 in self.viewModel.edgeIter():
-            rootID = self.context.wsTreeModel.root
             data = self.viewModel.getEdgeData(e1, e2)
-            self.view.updateEdge(e1, e2, rootID, data)
+            self.view.updateEdge(e1, e2, self.root, data)
+
+    def recreateView(self):
+        self._loading = True
+
+        for nodeID in self.context.wsTreeModel.nodeIter():
+            if self.context.wsTreeModel.isRoot(nodeID):
+                self._createGraph(nodeID)
+                continue
+
+            self._createNode(nodeID)
+
+        for e1, e2 in self.context.wsGraphModel.edgeIter():
+            self._createEdge(e1, e2)
+
+        self.rerenderView()
+
+        self._loading = False
 
     def clearState(self):
         self.view.clearState()
+        self.root = None
+        self._loading = False

@@ -17,14 +17,9 @@ class WorkspaceContextManager(Node):
         self.graphFile = "graph_data.json"
         self.viewFile = "ws_view.json"
 
-        self.subscribe("/Graph/CreateEdgeRequested", self.onGraphEdgeRequest)
-
         self.subscribe("/App/Reset", self.contextReset)
         self.subscribe("/App/Export", self.contextExport)
         self.subscribe("/App/Import", self.contextImport)
-
-    def onGraphEdgeRequest(self, data):
-        self.context.wsGraphModel.createEdge(data["id1"], data["id2"], {})
 
     def contextExport(self, data):
         path = data["path"]
