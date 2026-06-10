@@ -38,6 +38,9 @@ class WorkspaceController:
             data = self.view.getWorkspaceData(id)
             self.context.viewModel.createNode(id, parentID, data)
 
+    def updateWorkspace(self, id, data):
+        self.view.updateWorkspace(id, data)
+
     def onSelection(self, id):
         prevID = self.context.selectionModel.getPrevSelected()
         if prevID:

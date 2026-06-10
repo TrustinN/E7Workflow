@@ -1,4 +1,4 @@
-from src.app.backend.action import ActionRoute, ActionType
+from src.app.backend.action import ActionRoute
 from src.app.frontend.events import Node
 from src.app.frontend.state import WorkspaceContext
 from src.router.routing import Client, Dispatcher, Link
@@ -17,6 +17,7 @@ class RunnerNode(Node):
         self.actionBindings = {}
 
         self.subscribe("/App/Reset", self.resetState)
+        self.subscribe("/Workspace/Created", self.unsetAction)
         self.subscribe("/Runner/EntryRequested", self.setDefaultEntry)
         self.subscribe("/Runner/ExecuteRequested", self.execute)
 
@@ -49,7 +50,6 @@ class RunnerNode(Node):
                 link,
                 actionData,
             )
-            return
 
         edges = self.context.wsGraphModel.getEdges(nodeID)
         for node in edges:
@@ -69,7 +69,19 @@ class RunnerNode(Node):
         if self.context.wsTreeModel.isRoot(selection):
             return
 
+        if not self.context.wsTreeModel.isLeaf(selection):
+            return
+
         self.actionBindings[selection] = data
+
+        self.publish("/Runner/ActionBind", {"id": selection, "action": data})
+
+    def unsetAction(self, data):
+        id = data["id"]
+        parentID = self.context.wsTreeModel.parent(id)
+        if parentID in self.actionBindings:
+            self.publish("/Runner/ActionUnbind", {"id": parentID})
+            self.actionBindings.pop(parentID)
 
     def resetState(self, data):
         self.entryID = None

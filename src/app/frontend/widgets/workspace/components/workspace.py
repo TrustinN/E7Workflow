@@ -1,6 +1,7 @@
 import numpy as np
-from PyQt5.QtCore import QPoint, QRect, pyqtSignal
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtCore import QPoint, QRect, QRectF, pyqtSignal
+from PyQt5.QtGui import QMouseEvent, QPainter
+from PyQt5.QtSvg import QSvgRenderer
 
 from .utils import applyPadding, bboxToLayout, layoutToBBox
 from .window import SelectionWindow
@@ -17,33 +18,32 @@ class Workspace(SelectionWindow):
         self.wkspaces = []
         self.childFocused = None
 
+        self.icon = None
+        self.iconPath = None
+
+    def setIcon(self, svgPath):
+        if svgPath == "":
+            self.icon = None
+            self.iconPath = None
+            return
+
+        self.iconPath = svgPath
+        self.icon = QSvgRenderer(svgPath)
+        self.update()
+
     def getData(self):
         return {
             "padding": self.padding,
             "text": self.name,
             "geometry": bboxToLayout(self.getBBox()),
+            "iconPath": self.iconPath,
         }
-
-    def restoreData(self, data):
-        padding = data.get("padding")
-        text = data.get("text")
-        geometry = data.get("geometry")
-
-        if padding is not None:
-            self.padding = padding
-
-        if text is not None:
-            self.name = text
-
-        if geometry is not None:
-            self.restoreGeometry(layoutToBBox(geometry))
-
-        self.update()
 
     def setData(self, data):
         padding = data.get("padding")
         text = data.get("text")
         geometry = data.get("geometry")
+        iconPath = data.get("iconPath")
 
         if padding is not None:
             self.padding = padding
@@ -53,6 +53,9 @@ class Workspace(SelectionWindow):
 
         if geometry is not None:
             self.setGeometry(layoutToBBox(geometry))
+
+        if iconPath is not None:
+            self.setIcon(iconPath)
 
         self.update()
 
@@ -320,3 +323,23 @@ class Workspace(SelectionWindow):
         super().unlock()
         for wkspace in self.wkspaces:
             wkspace.unlock()
+
+    def paintEvent(self, event):
+        if self.icon:
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.Antialiasing)
+
+            rect = self.rect()
+            size = int(min(rect.width(), rect.height()) * 0.35)
+            target = QRectF(
+                rect.center().x() - size / 2,
+                rect.center().y() - size / 2,
+                size,
+                size,
+            )
+
+            painter.save()
+            painter.setOpacity(0.3)
+            self.icon.render(painter, target)
+            painter.restore()
+        super().paintEvent(event)

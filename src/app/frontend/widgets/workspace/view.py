@@ -22,6 +22,14 @@ class WorkspaceView(QObject):
         workspace = self.workspaces[id]
         workspace.setPadding(padding)
 
+    def setWorkspaceIcon(self, id, svgPath):
+        workspace = self.workspaces[id]
+        workspace.setIcon(svgPath)
+
+    def updateWorkspace(self, id, data):
+        workspace = self.workspaces[id]
+        workspace.setData(data)
+
     def _createWorkspace(self, id):
         workspace = Workspace()
         workspace.show()
@@ -52,7 +60,7 @@ class WorkspaceView(QObject):
 
     def restoreWorkspaceData(self, id, data):
         workspace = self.workspaces[id]
-        workspace.restoreData(data)
+        workspace.setData(data)
 
     def getWorkspaceData(self, id):
         workspace = self.workspaces[id]

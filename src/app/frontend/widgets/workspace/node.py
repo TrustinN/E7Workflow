@@ -1,5 +1,8 @@
+import os
+
 from nanoid import generate
 
+from src.app.config import ICON_DIR
 from src.app.frontend.events import Node
 from src.app.frontend.state import WorkspaceContext
 
@@ -13,8 +16,17 @@ class WorkspaceNode(Node):
         self.controller = controller
 
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
+        self.iconPaths = {
+            "Click": os.path.join(ICON_DIR, "mouse-pointer-click.svg"),
+            "Drag.down": os.path.join(ICON_DIR, "move-down.svg"),
+            "Drag.left": os.path.join(ICON_DIR, "move-left.svg"),
+            "Drag.right": os.path.join(ICON_DIR, "move-right.svg"),
+            "Drag.up": os.path.join(ICON_DIR, "move-up.svg"),
+        }
 
         self.subscribe("/Workspace/CreateRequested", self.createWorkspace)
+        self.subscribe("/Runner/ActionBind", self.onActionBind)
+        self.subscribe("/Runner/ActionUnbind", self.onActionUnbind)
         self.subscribe("/App/Loaded", self.createRootWorkspace)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.importState)
@@ -63,6 +75,26 @@ class WorkspaceNode(Node):
         self.context.wsGraphModel.createNode(data["id"], data)
 
         self.publish("/Workspace/Created", data)
+
+    def getIconPath(self, data):
+        action = data["action"]
+        name = action["name"]
+        if name == "Click":
+            return self.iconPaths[name]
+        elif name == "Drag":
+            userParams = action["userParams"]
+            direction = userParams["dir"]["value"]
+            return self.iconPaths[f"{name}.{direction}"]
+
+    def onActionBind(self, data):
+        id = data["id"]
+        data = {"iconPath": self.getIconPath(data)}
+        self.controller.updateWorkspace(id, data)
+
+    def onActionUnbind(self, data):
+        id = data["id"]
+        data = {"iconPath": ""}
+        self.controller.updateWorkspace(id, data)
 
     def resetState(self, data):
         self.controller.clearState()

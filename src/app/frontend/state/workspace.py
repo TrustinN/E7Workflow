@@ -1,4 +1,4 @@
-from .models import GraphModel, TreeModel
+from .models import GraphModel, MappingModel, TreeModel
 from .selection import SelectionModel
 
 
@@ -8,3 +8,5 @@ class WorkspaceContext:
         self.wsTreeModel = TreeModel()
         self.viewModel = TreeModel()
         self.selectionModel = SelectionModel()
+
+        self.actionModel = MappingModel()
