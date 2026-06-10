@@ -11,15 +11,15 @@ class ClickAction(Action):
     def info():
         return {
             "name": "Click",
-            "system_params": {
+            "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
             },
-            "user_params": {},
+            "userParams": {},
         }
 
     def action(self, data):
-        systemParams = data["system_params"]
+        systemParams = data["systemParams"]
         tl = systemParams["tl"]
         br = systemParams["br"]
         mid = (np.array(tl) + np.array(br)) / 2

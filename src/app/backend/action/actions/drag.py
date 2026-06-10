@@ -10,23 +10,24 @@ class DragAction(Action):
     def info():
         return {
             "name": "Drag",
-            "system_params": {
+            "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
             },
-            "user_params": {
+            "userParams": {
                 "dir": {
                     "type": "enum",
                     "values": ["up", "down", "left", "right"],
+                    "value": "up",
                 }
             },
         }
 
     def action(self, data):
-        userParams = data["user_params"]
-        systemParams = data["system_params"]
+        userParams = data["userParams"]
+        systemParams = data["systemParams"]
 
-        direction = userParams["dir"]
+        direction = userParams["dir"]["value"]
         tl = systemParams["tl"]
         br = systemParams["br"]
 

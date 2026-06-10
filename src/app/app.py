@@ -33,7 +33,9 @@ class App(QApplication):
 
         self.layout = QHBoxLayout()
         self.layoutLeft = QVBoxLayout()
+        self.layoutRight = QVBoxLayout()
         self.layout.addLayout(self.layoutLeft)
+        self.layout.addLayout(self.layoutRight)
 
         self.widget.setLayout(self.layout)
         self.window.setCentralWidget(self.widget)
@@ -57,9 +59,12 @@ class App(QApplication):
         self.runnerCpt = RunnerComponent(self.context, dispatcher)
         self.serialCpt = SerializationComponent()
 
-        self.layoutLeft.addWidget(self.buttons)
-        self.layoutLeft.addWidget(self.serialCpt)
-        self.layout.addWidget(self.graphCpt)
+        self.layoutLeft.addWidget(self.graphCpt)
+        self.layoutLeft.addStretch()
+        self.layoutRight.addWidget(self.buttons)
+        self.layoutRight.addWidget(self.serialCpt)
+        self.layoutRight.addWidget(self.runnerCpt)
+        self.layoutRight.addStretch()
 
         self.pubSubHandler = PubSubHandler()
         self.pubSubHandler.registerNode(self.contextManager)

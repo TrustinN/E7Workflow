@@ -14,6 +14,7 @@ class RunnerNode(Node):
         self.context = context
 
         self.client = Client("RunnerClient", dispatcher)
+        self.actionBindings = {}
 
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/Runner/EntryRequested", self.setDefaultEntry)
@@ -32,17 +33,21 @@ class RunnerNode(Node):
 
     def _executeNode(self, nodeID):
         if self.context.wsTreeModel.isLeaf(nodeID):
-            link = Link(ActionRoute.NAME, ActionRoute.ACTION, ActionType.CLICK)
-            data = self.context.viewModel.nodeData(nodeID)
-            geometry = data["geometry"]
+            if nodeID not in self.actionBindings:
+                return  # no action binding
+
+            actionData = self.actionBindings[nodeID]
+            viewData = self.context.viewModel.nodeData(nodeID)
+            geometry = viewData["geometry"]
+            actionData["systemParams"] = {
+                "tl": geometry[0],
+                "br": geometry[1],
+            }
+
+            link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionData["name"])
             self.client.post(
                 link,
-                {
-                    "system_params": {
-                        "tl": geometry[0],
-                        "br": geometry[1],
-                    }
-                },
+                actionData,
             )
             return
 
@@ -55,6 +60,16 @@ class RunnerNode(Node):
             return
 
         self._executeNode(self.entryID)
+
+    def setAction(self, data):
+        if not self.context.selectionModel.hasSelected():
+            return
+
+        selection = self.context.selectionModel.getSelected()
+        if self.context.wsTreeModel.isRoot(selection):
+            return
+
+        self.actionBindings[selection] = data
 
     def resetState(self, data):
         self.entryID = None
