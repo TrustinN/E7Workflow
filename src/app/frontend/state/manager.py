@@ -17,11 +17,13 @@ class WorkspaceContextManager(Node):
         self.graphFile = "graph_data.json"
         self.selectionFile = "selection_data.json"
         self.actionFile = "action_data.json"
+        self.runnerFile = "runner_data.json"
         self.files = [
             self.treeFile,
             self.graphFile,
             self.selectionFile,
             self.actionFile,
+            self.runnerFile,
         ]
 
         self.subscribe("/App/Reset", self.contextReset)
@@ -43,6 +45,7 @@ class WorkspaceContextManager(Node):
         self.serializer.export(self.context.graphModel, paths[self.graphFile])
         self.serializer.export(self.context.selectionModel, paths[self.selectionFile])
         self.serializer.export(self.context.actionModel, paths[self.actionFile])
+        self.serializer.export(self.context.runnerModel, paths[self.runnerFile])
 
     def contextImport(self, data):
         path = data["path"]
@@ -52,6 +55,7 @@ class WorkspaceContextManager(Node):
         self.context.graphModel.deserialize(states[self.graphFile])
         self.context.selectionModel.deserialize(states[self.selectionFile])
         self.context.actionModel.deserialize(states[self.actionFile])
+        self.context.runnerModel.deserialize(states[self.runnerFile])
 
     def contextReset(self, data):
         self.context.clear()

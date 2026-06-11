@@ -33,7 +33,6 @@ class SelectionModel(Model):
     def clear(self):
         self.selected = None
         self.prevSelected = None
-        self.selected_.emit(None)
 
         self.modelClear_.emit()
 
@@ -44,7 +43,7 @@ class SelectionModel(Model):
         }
 
     def deserialize(self, state):
-        self.selected = state["prev"]
-        self.prevSelected = state["curr"]
+        self.prevSelected = state["prev"]
+        self.selected = state["curr"]
 
         self.modelLoaded_.emit()
