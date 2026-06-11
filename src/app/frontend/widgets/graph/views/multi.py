@@ -6,7 +6,7 @@ from .view import GraphView
 
 
 class GraphMultiView(GraphView):
-    nodeCreated_ = pyqtSignal(str, str)
+    nodeCreated_ = pyqtSignal(str)
     edgeCreated_ = pyqtSignal(str, str)
 
     nodeUpdated_ = pyqtSignal(str)
@@ -48,13 +48,13 @@ class GraphMultiView(GraphView):
         scene = self._createScene(graphID)
         self.scenes[graphID] = scene
 
-    def createNode(self, graphID: str, nodeID: str, nodeType=NodeType.RECTANGLE):
+    def createNode(self, nodeID: str, graphID: str, nodeType=NodeType.RECTANGLE):
         parent = self.scenes[graphID]
         parent.createNode(nodeID, nodeType)
 
-        self.nodeCreated_.emit(nodeID, graphID)
+        self.nodeCreated_.emit(nodeID)
 
-    def createEdge(self, graphID: str, e1: str, e2: str):
+    def createEdge(self, e1: str, e2: str, graphID: str):
         parent = self.scenes[graphID]
         parent.createEdge(e1, e2)
 

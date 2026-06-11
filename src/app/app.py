@@ -47,23 +47,23 @@ class App(QApplication):
         self.buttons = Buttons()
         self.wksCapability = WorkspaceCapability()
         self.graphCapability = GraphCapability()
-        self.runnerCapability = RunnerCapability()
+        # self.runnerCapability = RunnerCapability()
 
         self.buttons.createWorkspace_.connect(self.wksCapability.createWorkspace)
         self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.createEdge)
-        self.buttons.entryBtn.clicked.connect(self.runnerCapability.requestEntry)
-        self.buttons.executeBtn.clicked.connect(self.runnerCapability.requestExecute)
+        # self.buttons.entryBtn.clicked.connect(self.runnerCapability.requestEntry)
+        # self.buttons.executeBtn.clicked.connect(self.runnerCapability.requestExecute)
 
         self.wkCpt = WorkspaceComponent(self.context)
         self.graphCpt = GraphComponent(self.context)
-        self.runnerCpt = RunnerComponent(self.context, dispatcher)
+        # self.runnerCpt = RunnerComponent(self.context, dispatcher)
         self.serialCpt = SerializationComponent()
 
         self.layoutLeft.addWidget(self.graphCpt)
         self.layoutLeft.addStretch()
         self.layoutRight.addWidget(self.buttons)
         self.layoutRight.addWidget(self.serialCpt)
-        self.layoutRight.addWidget(self.runnerCpt)
+        # self.layoutRight.addWidget(self.runnerCpt)
         self.layoutRight.addStretch()
 
         self.pubSubHandler = PubSubHandler()
@@ -71,10 +71,10 @@ class App(QApplication):
 
         self.pubSubHandler.registerNode(self.wksCapability)
         self.pubSubHandler.registerNode(self.graphCapability)
-        self.pubSubHandler.registerNode(self.runnerCapability)
+        # self.pubSubHandler.registerNode(self.runnerCapability)
 
         self.pubSubHandler.registerNode(self.wkCpt.node)
         self.pubSubHandler.registerNode(self.graphCpt.node)
-        self.pubSubHandler.registerNode(self.runnerCpt.node)
+        # self.pubSubHandler.registerNode(self.runnerCpt.node)
         self.pubSubHandler.registerNode(self.serialCpt.node)
         self.pubSubHandler.handlePublish("/App/Loaded")

@@ -1,9 +1,13 @@
 from collections import defaultdict, deque
 
+from PyQt5.QtCore import pyqtSignal
+
 from .model import Model
 
 
 class TreeModel(Model):
+    nodeCreated_ = pyqtSignal(str)
+    nodeUpdated_ = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -12,17 +16,29 @@ class TreeModel(Model):
         self.children = defaultdict(list)
         self.data = {}
 
-    def createRoot(self, nodeID, data):
+    def _createRoot(self, nodeID, data):
         self.root = nodeID
         self.data[nodeID] = data
 
-    def createNode(self, nodeID, parentID, data):
+    def createRoot(self, nodeID, data):
+        self._createRoot(nodeID, data)
+        self.nodeCreated_.emit(nodeID)
+
+    def _createNode(self, nodeID, parentID, data):
         self.children[parentID].append(nodeID)
         self.parents[nodeID] = parentID
         self.data[nodeID] = data
 
-    def updateNode(self, nodeID, data):
+    def createNode(self, nodeID, parentID, data):
+        self._createNode(nodeID, parentID, data)
+        self.nodeCreated_.emit(nodeID)
+
+    def _updateNode(self, nodeID, data):
         self.data[nodeID] = data
+
+    def updateNode(self, nodeID, data):
+        self._updateNode(nodeID, data)
+        self.nodeUpdated_.emit(nodeID)
 
     def nodes(self):
         return list(self.data.keys())
@@ -48,6 +64,8 @@ class TreeModel(Model):
         self.children.clear()
         self.data.clear()
 
+        self.modelClear_.emit()
+
     def nodeIter(self, node=None, children=None):
         children = children or self.children
         start = self.root if node is None else node
@@ -69,10 +87,8 @@ class TreeModel(Model):
         }
 
     def deserialize(self, state):
-        self.clear()
-
         rootID = state["root"]
-        self.createRoot(
+        self._createRoot(
             rootID,
             state["data"][rootID],
         )
@@ -86,8 +102,10 @@ class TreeModel(Model):
                 continue
 
             data = state["data"][id]
-            self.createNode(
+            self._createNode(
                 id,
                 parents[id],
                 data,
             )
+
+        self.modelLoaded_.emit()

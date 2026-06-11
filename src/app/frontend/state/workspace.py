@@ -1,12 +1,44 @@
-from .models import GraphModel, MappingModel, TreeModel
+from functools import partial
+
+from .models import GraphModel, MappingModel, Model, TreeModel
 from .selection import SelectionModel
 
 
-class WorkspaceContext:
+class WorkspaceContext(Model):
+
     def __init__(self):
-        self.wsGraphModel = GraphModel()
-        self.wsTreeModel = TreeModel()
-        self.viewModel = TreeModel()
+        super().__init__()
+
+        self.workspaceModel = TreeModel()
+        self.graphModel = GraphModel()
         self.selectionModel = SelectionModel()
 
         self.actionModel = MappingModel()
+
+        self.models = {
+            "tree": self.workspaceModel,
+            "graph": self.graphModel,
+            "selection": self.selectionModel,
+            "action": self.actionModel,
+        }
+
+        self.loadedModels = set()
+
+        for name, model in self.models.items():
+            incrementLoaded = partial(self.incrementLoaded, name)
+            model.modelLoaded_.connect(incrementLoaded)
+
+    def incrementLoaded(self, name):
+        self.loadedModels.add(name)
+
+        if len(self.loadedModels) == len(self.models):
+            self.modelLoaded_.emit()
+            self.loadedModels.clear()
+
+    def clear(self):
+        self.workspaceModel.clear()
+        self.graphModel.clear()
+        self.selectionModel.clear()
+        self.actionModel.clear()
+
+        self.modelClear_.emit()

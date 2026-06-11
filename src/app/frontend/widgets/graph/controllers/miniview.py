@@ -1,4 +1,4 @@
-from src.app.frontend.state import TreeModel, WorkspaceContext
+from src.app.frontend.state import WorkspaceContext
 from src.app.frontend.widgets.graph.views import GraphMultiView
 
 
@@ -7,15 +7,21 @@ class GraphMiniViewController:
         self,
         context: WorkspaceContext,
         view: GraphMultiView,
-        viewModel: TreeModel,
     ):
         self.context = context
         self.view = view
-        self.viewModel = viewModel
 
+        self.context.graphModel.nodeCreated_.connect(self.createNode)
+        self.context.graphModel.edgeCreated_.connect(self.createEdge)
         self.context.selectionModel.selected_.connect(self.onExternalSelection)
+        self.context.modelClear_.connect(self.clearState)
+        self.context.modelLoaded_.connect(self.recreateView)
+
         self._updatingSelection = False
         self._loading = False
+
+        self.view.nodeCreated_.connect(self.onNodeUpdate)
+        self.view.edgeCreated_.connect(self.onEdgeUpdate)
 
         self.view.nodeUpdated_.connect(self.onNodeUpdate)
         self.view.edgeUpdated_.connect(self.onEdgeUpdate)
@@ -27,43 +33,37 @@ class GraphMiniViewController:
         self.view.createGraph(id)
         self.view.switchScene(id)
 
-    def createRoot(self, id):
-        self._createRoot(id)
-        self.viewModel.createRoot(id, {})
-
-    def _createNode(self, id):
-        parentID = self.context.wsTreeModel.parent(id)
-
+    def _createChild(self, id, parentID):
         self.view.createGraph(id)
-        self.view.createNode(parentID, id)
+        self.view.createNode(id, parentID)
+
+        data = self.context.workspaceModel.nodeData(id)
+        self.view.updateNode(id, parentID, {"displayText": data["text"]})
 
     def createNode(self, id):
-        self._createNode(id)
+        parentID = self.context.workspaceModel.parent(id)
 
-        parentID = self.context.wsTreeModel.parent(id)
-        data = self.view.readNode(id, parentID)
-        data["edges"] = {}
-        self.viewModel.createNode(id, parentID, data)
+        if parentID is None:
+            self._createRoot(id)
 
-    def updateNode(self, id, data):
-        parentID = self.context.wsTreeModel.parent(id)
-        self.view.updateNode(id, parentID, data)
+        else:
+            self._createChild(id, parentID)
+
+    def hasEdge(self, e1, e2):
+        pe1 = self.context.workspaceModel.parent(e1)
+        pe2 = self.context.workspaceModel.parent(e2)
+
+        return pe1 == pe2
 
     def _createEdge(self, e1, e2):
-        pe1 = self.viewModel.parent(e1)
-        pe2 = self.viewModel.parent(e2)
-
-        if pe1 != pe2:
-            return False
-
-        self.view.createEdge(pe1, e1, e2)
-        return True
+        parentID = self.context.workspaceModel.parent(e1)
+        self.view.createEdge(e1, e2, parentID)
 
     def createEdge(self, e1, e2):
-        success = self._createEdge(e1, e2)
-        if not success:
+        if not self.hasEdge(e1, e2):
             return
-        self.onEdgeUpdate(e1, e2)
+
+        self._createEdge(e1, e2)
 
     def onExternalSelection(self, id):
         if self._updatingSelection:
@@ -71,11 +71,11 @@ class GraphMiniViewController:
 
         prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
-            parentID = self.viewModel.parent(prevID)
+            parentID = self.context.workspaceModel.parent(prevID)
             if parentID:
                 self.view.unselectNode(prevID, parentID)
 
-        rootID = self.context.wsTreeModel.root
+        rootID = self.context.workspaceModel.root
         id = id or rootID
         self.view.switchScene(id)
 
@@ -86,7 +86,7 @@ class GraphMiniViewController:
         self._updatingSelection = True
         prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
-            parentID = self.viewModel.parent(prevID)
+            parentID = self.context.workspaceModel.parent(prevID)
             if parentID:
                 self.view.unselectNode(prevID, parentID)
         self.context.selectionModel.setSelected(id)
@@ -96,60 +96,65 @@ class GraphMiniViewController:
         if self._updatingSelection:
             return
 
-        prevID = self.context.selectionModel.getPrevSelected()
-        parentID = self.context.wsTreeModel.parent(prevID)
+        id = self.context.selectionModel.getSelected()
+        parentID = self.context.workspaceModel.parent(id)
         self.context.selectionModel.setSelected(parentID)
 
-    def onNodeUpdate(self, nodeID):
+    def onNodeUpdate(self, id):
         if self._loading:
             return
 
-        parentID = self.viewModel.parent(nodeID)
+        data = self.context.graphModel.getNodeData(id)
 
-        data = self.view.readNode(nodeID, parentID)
-        nodeData = self.viewModel.nodeData(nodeID)
-        nodeData.update(data)
+        if "miniView" not in data:
+            data["miniView"] = {}
 
-        self.viewModel.updateNode(nodeID, nodeData)
+        parentID = self.context.workspaceModel.parent(id)
+        data["miniView"] = self.view.readNode(id, parentID)
+
+        self.context.graphModel.updateNode(id, data)
 
     def onEdgeUpdate(self, e1, e2):
         if self._loading:
             return
 
-        parentID = self.context.wsTreeModel.parent(e1)
-        data = self.view.readEdge(e1, e2, parentID)
-        nodeData = self.viewModel.nodeData(e1)
-        nodeData["edges"][e2] = data
-        self.viewModel.updateNode(e1, nodeData)
+        data = self.context.graphModel.getEdgeData(e1, e2)
+
+        if "miniView" not in data:
+            data["miniView"] = {}
+
+        parentID = self.context.workspaceModel.parent(e1)
+        data["miniView"] = self.view.readEdge(e1, e2, parentID)
+
+        self.context.graphModel.updateEdge(e1, e2, data)
 
     def rerenderView(self):
-        for nodeID in self.viewModel.nodeIter():
-            if self.viewModel.isRoot(nodeID):
+        for nodeID in self.context.workspaceModel.nodeIter():
+            if self.context.workspaceModel.isRoot(nodeID):
                 continue
 
-            data = self.viewModel.nodeData(nodeID)
-            parentID = self.context.wsTreeModel.parent(nodeID)
+            parentID = self.context.workspaceModel.parent(nodeID)
+            data = self.context.graphModel.getNodeData(nodeID)["miniView"]
             self.view.updateNode(nodeID, parentID, data)
 
-        for e1 in self.viewModel.nodeIter():
-            nodeData = self.viewModel.nodeData(e1)
+        for e1, e2 in self.context.graphModel.edgeIter():
+            if not self.hasEdge(e1, e2):
+                continue
 
-            parentID = self.context.wsTreeModel.parent(e1)
-            edges = nodeData.get("edges", {})
-            for e2, data in edges.items():
-                self.view.updateEdge(e1, e2, parentID, data)
+            parentID = self.context.workspaceModel.parent(e1)
+            data = self.context.graphModel.getEdgeData(e1, e2)["miniView"]
+            self.view.updateEdge(e1, e2, parentID, data)
 
     def recreateView(self):
         self._loading = True
 
-        for nodeID in self.viewModel.nodeIter():
-            if self.viewModel.isRoot(nodeID):
-                self._createRoot(nodeID)
+        for nodeID in self.context.workspaceModel.nodeIter():
+            self.createNode(nodeID)
+
+        for e1, e2 in self.context.graphModel.edgeIter():
+            if not self.hasEdge(e1, e2):
                 continue
 
-            self._createNode(nodeID)
-
-        for e1, e2 in self.context.wsGraphModel.edgeIter():
             self._createEdge(e1, e2)
 
         self.rerenderView()
@@ -157,6 +162,6 @@ class GraphMiniViewController:
         self._loading = False
 
     def clearState(self):
-        self._loading = False
         self._updatingSelection = False
+        self._loading = False
         self.view.clearState()

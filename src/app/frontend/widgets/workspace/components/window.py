@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QWidget
 
 from src.app.frontend.widgets.utils.colors import Colors
 
+from .utils import bboxToLayout
+
 
 class SelectionWindow(QWidget):
     resizeSignal = pyqtSignal()
@@ -125,6 +127,9 @@ class SelectionWindow(QWidget):
             self.frameGeometry().topLeft(),
             self.frameGeometry().bottomRight(),
         ]
+
+    def getGeometry(self):
+        return bboxToLayout(self.getBBox())
 
     def setName(self, name):
         self.name = name

@@ -9,49 +9,45 @@ class WorkspaceController:
         self.context = context
         self.view = view
 
-        self._loading = False
+        self.context.workspaceModel.nodeCreated_.connect(self.createWorkspace)
+        self.context.modelClear_.connect(self.clearState)
+        self.context.modelLoaded_.connect(self.recreateView)
+
         self.view.workspacePressed_.connect(self.onWorkspacePressed)
-        self.view.workspaceUpdate_.connect(self.onWorkspaceUpdate)
+        self.view.workspaceChanged_.connect(self.updateModelGeometry)
 
         self.context.selectionModel.selected_.connect(self.onSelection)
 
-    def _createRootWorkspace(self, id, data):
+    def _createRootWorkspace(self, id):
         self.view.createRootWorkspace(id)
-        self.view.setWorkspacePadding(id, 15)
-        self.view.setWorkspaceName(id, data["text"])
+        self.view.setPadding(id, 15)
+        self.view.setName(id, "Root")
 
-    def _createChildWorkspace(self, id, parentID, data):
+    def _createChildWorkspace(self, id, parentID):
+        data = self.context.workspaceModel.nodeData(id)
         name = f"{data["grouping"]} - {data["text"]}"
 
         self.view.createChildWorkspace(id, parentID)
-        self.view.setWorkspaceName(id, name)
+        self.view.setName(id, name)
 
-    def createWorkspace(self, id, parentID, data):
+    def createWorkspace(self, id):
+        parentID = self.context.workspaceModel.parent(id)
         if parentID is None:
-            self._createRootWorkspace(id, data)
-
-            data = self.view.getWorkspaceData(id)
-            self.context.viewModel.createRoot(id, data)
+            self._createRootWorkspace(id)
         else:
-            self._createChildWorkspace(id, parentID, data)
-
-            data = self.view.getWorkspaceData(id)
-            self.context.viewModel.createNode(id, parentID, data)
-
-    def updateWorkspace(self, id, data):
-        self.view.updateWorkspace(id, data)
+            self._createChildWorkspace(id, parentID)
 
     def onSelection(self, id):
         prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
-            self.view.setWorkspaceColor(
+            self.view.setColor(
                 prevID,
                 Colors.DEFAULT_COLOR,
                 Colors.DEFAULT_BORDER,
             )
 
         if id:
-            self.view.setWorkspaceColor(
+            self.view.setColor(
                 id,
                 with_alpha(Colors.SKY_BLUE, Alpha.LIGHT),
                 with_alpha(Colors.SKY_BLUE, Alpha.MEDIUM),
@@ -60,37 +56,30 @@ class WorkspaceController:
     def onWorkspacePressed(self, id):
         self.context.selectionModel.setSelected(id)
 
-    def onWorkspaceUpdate(self, id: str):
-        data = self.view.getWorkspaceData(id)
-
-        if self._loading:
-            return
-
-        self.context.viewModel.updateNode(id, data)
+    def updateModelGeometry(self, id):
+        data = self.context.workspaceModel.nodeData(id)
+        geometry = self.view.getGeometry(id)
+        data.update({"geometry": geometry})
+        self.context.workspaceModel.updateNode(id, data)
 
     def rerenderView(self):
-        for nodeID in self.context.viewModel.nodeIter():
-            data = self.context.viewModel.nodeData(nodeID)
-            self.view.restoreWorkspaceData(nodeID, data)
+        for nodeID in self.context.workspaceModel.nodeIter():
+            data = self.context.workspaceModel.nodeData(nodeID)
+            geometry = data["geometry"]
+            self.view.setGeometry(nodeID, geometry)
 
     def recreateView(self):
-        self._loading = True
+        self.view.workspaceChanged_.disconnect(self.updateModelGeometry)
 
-        for nodeID in self.context.wsTreeModel.nodeIter():
-            data = self.context.wsTreeModel.nodeData(nodeID)
-
-            if self.context.wsTreeModel.isRoot(nodeID):
-                self._createRootWorkspace(nodeID, data)
+        for nodeID in self.context.workspaceModel.nodeIter():
+            if self.context.workspaceModel.isRoot(nodeID):
+                self._createRootWorkspace(nodeID)
             else:
-                parentID = self.context.wsTreeModel.parent(nodeID)
-                self._createChildWorkspace(nodeID, parentID, data)
+                parentID = self.context.workspaceModel.parent(nodeID)
+                self._createChildWorkspace(nodeID, parentID)
 
         self.rerenderView()
-        self._loading = False
+        self.view.workspaceChanged_.connect(self.updateModelGeometry)
 
     def clearState(self):
-        rootID = self.context.wsTreeModel.root
-        self.view.clear(rootID)
-
-        self.context.viewModel.clear()
-        self._loading = False
+        self.view.clearState()

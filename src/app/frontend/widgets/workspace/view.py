@@ -4,31 +4,18 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.app.frontend.widgets.workspace.components import Workspace
 
+from .components.utils import layoutToBBox
+
 
 class WorkspaceView(QObject):
     workspaceCreated_ = pyqtSignal(str)
     workspacePressed_ = pyqtSignal(str)
-    workspaceUpdate_ = pyqtSignal(str)
+    workspaceChanged_ = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
         self.workspaces: dict[str, Workspace] = {}
-
-    def setWorkspaceName(self, id, name):
-        workspace = self.workspaces[id]
-        workspace.setName(name)
-
-    def setWorkspacePadding(self, id, padding):
-        workspace = self.workspaces[id]
-        workspace.setPadding(padding)
-
-    def setWorkspaceIcon(self, id, svgPath):
-        workspace = self.workspaces[id]
-        workspace.setIcon(svgPath)
-
-    def updateWorkspace(self, id, data):
-        workspace = self.workspaces[id]
-        workspace.setData(data)
+        self.rootID = None
 
     def _createWorkspace(self, id):
         workspace = Workspace()
@@ -36,11 +23,11 @@ class WorkspaceView(QObject):
         workspace.unlock()
 
         onWorkspacePressed = partial(self.workspacePressed_.emit, id)
-        workspace.mousePress.connect(onWorkspacePressed)
+        onWorkspaceChanged = partial(self.workspaceChanged_.emit, id)
 
-        onWorkspaceUpdate = partial(self.workspaceUpdate_.emit, id)
-        workspace.resizeSignal.connect(onWorkspaceUpdate)
-        workspace.moveSignal.connect(onWorkspaceUpdate)
+        workspace.mousePress.connect(onWorkspacePressed)
+        workspace.moveSignal.connect(onWorkspaceChanged)
+        workspace.resizeSignal.connect(onWorkspaceChanged)
 
         self.workspaces[id] = workspace
 
@@ -48,6 +35,7 @@ class WorkspaceView(QObject):
 
     def createRootWorkspace(self, id):
         self._createWorkspace(id)
+        self.rootID = id
         self.workspaceCreated_.emit(id)
 
     def createChildWorkspace(self, id, parentID):
@@ -55,19 +43,42 @@ class WorkspaceView(QObject):
         self.workspaces[parentID].addChild(workspace)
         self.workspaceCreated_.emit(id)
 
-    def setWorkspaceColor(self, id, fill, border):
-        self.workspaces[id].setColor(fill, border)
+    def setName(self, id, name):
+        workspace = self.workspaces[id]
+        workspace.setName(name)
 
-    def restoreWorkspaceData(self, id, data):
+    def setPadding(self, id, padding):
+        workspace = self.workspaces[id]
+        workspace.setPadding(padding)
+
+    def setIcon(self, id, svgPath):
+        workspace = self.workspaces[id]
+        workspace.setIcon(svgPath)
+
+    def setData(self, id, data):
         workspace = self.workspaces[id]
         workspace.setData(data)
 
-    def getWorkspaceData(self, id):
+    def setColor(self, id, fill, border):
+        self.workspaces[id].setColor(fill, border)
+
+    def setGeometry(self, id, geometry):
+        self.workspaces[id].restoreGeometry(layoutToBBox(geometry))
+
+    def getGeometry(self, id):
+        return self.workspaces[id].getGeometry()
+
+    def restoreData(self, id, data):
+        workspace = self.workspaces[id]
+        workspace.setData(data)
+
+    def getData(self, id):
         workspace = self.workspaces[id]
         return workspace.getData()
 
-    def clear(self, rootID):
-        rootWorkspace = self.workspaces[rootID]
+    def clearState(self):
+        rootWorkspace = self.workspaces[self.rootID]
         rootWorkspace.deleteLater()
 
         self.workspaces.clear()
+        self.rootID = None

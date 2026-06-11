@@ -14,7 +14,6 @@ class RunnerNode(Node):
         self.context = context
 
         self.client = Client("RunnerClient", dispatcher)
-        self.actionBindings = {}
 
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/Workspace/Created", self.unsetAction)
@@ -25,7 +24,7 @@ class RunnerNode(Node):
 
     def setDefaultEntry(self, data):
         entryID = self.context.selectionModel.getSelected()
-        if self.context.wsTreeModel.isRoot(entryID):
+        if self.context.workspaceModel.isRoot(entryID):
             return
 
         prevID = self.entryID
@@ -34,12 +33,12 @@ class RunnerNode(Node):
 
     def _executeNode(self, nodeID):
         if self.context.wsTreeModel.isLeaf(nodeID):
-            if nodeID not in self.actionBindings:
+            if not self.context.actionModel.hasKey(nodeID):
                 return  # no action binding
 
-            actionData = self.actionBindings[nodeID]
-            viewData = self.context.viewModel.nodeData(nodeID)
-            geometry = viewData["geometry"]
+            actionData = self.context.actionModel.getData(nodeID)
+            data = self.context.workspaceModel.nodeData(nodeID)
+            geometry = data["geometry"]
             actionData["systemParams"] = {
                 "tl": geometry[0],
                 "br": geometry[1],
@@ -51,7 +50,7 @@ class RunnerNode(Node):
                 actionData,
             )
 
-        edges = self.context.wsGraphModel.getEdges(nodeID)
+        edges = self.context.graphModel.getEdges(nodeID)
         for node in edges:
             self._executeNode(node)
 
@@ -66,22 +65,22 @@ class RunnerNode(Node):
             return
 
         selection = self.context.selectionModel.getSelected()
-        if self.context.wsTreeModel.isRoot(selection):
+        if self.context.workspaceModel.isRoot(selection):
             return
 
-        if not self.context.wsTreeModel.isLeaf(selection):
+        if not self.context.workspaceModel.isLeaf(selection):
             return
 
-        self.actionBindings[selection] = data
+        self.context.actionModel.setData(selection, data)
 
         self.publish("/Runner/ActionBind", {"id": selection, "action": data})
 
     def unsetAction(self, data):
         id = data["id"]
-        parentID = self.context.wsTreeModel.parent(id)
-        if parentID in self.actionBindings:
+        parentID = self.context.workspaceModel.parent(id)
+        if self.context.actionModel.hasKey(parentID):
             self.publish("/Runner/ActionUnbind", {"id": parentID})
-            self.actionBindings.pop(parentID)
+            self.context.actionModel.delete(parentID)
 
     def resetState(self, data):
         self.entryID = None

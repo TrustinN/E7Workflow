@@ -13,39 +13,45 @@ class WorkspaceContextManager(Node):
 
         self.serializer = Serializer()
 
-        self.treeFile = "ws_data.json"
+        self.treeFile = "workspace_data.json"
         self.graphFile = "graph_data.json"
-        self.viewFile = "ws_view.json"
+        self.selectionFile = "selection_data.json"
+        self.actionFile = "action_data.json"
+        self.files = [
+            self.treeFile,
+            self.graphFile,
+            self.selectionFile,
+            self.actionFile,
+        ]
 
         self.subscribe("/App/Reset", self.contextReset)
         self.subscribe("/App/Export", self.contextExport)
         self.subscribe("/App/Import", self.contextImport)
 
+    def getPaths(self, path):
+        return {file: os.path.join(path, file) for file in self.files}
+
+    def getStates(self, path):
+        paths = self.getPaths(path)
+        return {file: self.serializer.restore(path) for file, path in paths.items()}
+
     def contextExport(self, data):
         path = data["path"]
+        paths = self.getPaths(path)
 
-        treePath = os.path.join(path, self.treeFile)
-        graphPath = os.path.join(path, self.graphFile)
-        viewPath = os.path.join(path, self.viewFile)
-
-        self.serializer.export(self.context.wsTreeModel, treePath)
-        self.serializer.export(self.context.wsGraphModel, graphPath)
-        self.serializer.export(self.context.viewModel, viewPath)
+        self.serializer.export(self.context.workspaceModel, paths[self.treeFile])
+        self.serializer.export(self.context.graphModel, paths[self.graphFile])
+        self.serializer.export(self.context.selectionModel, paths[self.selectionFile])
+        self.serializer.export(self.context.actionModel, paths[self.actionFile])
 
     def contextImport(self, data):
         path = data["path"]
+        states = self.getStates(path)
 
-        treePath = os.path.join(path, self.treeFile)
-        graphPath = os.path.join(path, self.graphFile)
-        viewPath = os.path.join(path, self.viewFile)
-
-        treeState = self.serializer.restore(treePath)
-        graphState = self.serializer.restore(graphPath)
-        viewState = self.serializer.restore(viewPath)
-
-        self.context.wsTreeModel.deserialize(treeState)
-        self.context.wsGraphModel.deserialize(graphState)
-        self.context.viewModel.deserialize(viewState)
+        self.context.workspaceModel.deserialize(states[self.treeFile])
+        self.context.graphModel.deserialize(states[self.graphFile])
+        self.context.selectionModel.deserialize(states[self.selectionFile])
+        self.context.actionModel.deserialize(states[self.actionFile])
 
     def contextReset(self, data):
-        self.context.selectionModel.reset()
+        self.context.clear()

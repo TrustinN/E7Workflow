@@ -299,7 +299,6 @@ class Workspace(SelectionWindow):
     def setGeometry(self, rect):
         newTl, newBr = rect.topLeft(), rect.bottomRight()
         self.resize([newTl, newBr])
-        self.resizeSignal.emit()
 
     def restoreGeometry(self, rect):
         super().setGeometry(rect)

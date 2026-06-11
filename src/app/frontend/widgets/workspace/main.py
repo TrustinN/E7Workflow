@@ -13,4 +13,4 @@ class WorkspaceComponent:
 
         self.view = WorkspaceView()
         self.controller = WorkspaceController(self.context, self.view)
-        self.node = WorkspaceNode(self.context, self.controller)
+        self.node = WorkspaceNode(self.context)

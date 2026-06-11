@@ -1,23 +1,27 @@
-from src.app.frontend.state import GraphModel, WorkspaceContext
+from src.app.frontend.state import WorkspaceContext
 from src.app.frontend.widgets.graph.components import NodeType
-from src.app.frontend.widgets.graph.views import GraphMultiView
+from src.app.frontend.widgets.graph.views import GraphSingleView
 
 
 class GraphFullViewController:
     def __init__(
         self,
         context: WorkspaceContext,
-        view: GraphMultiView,
-        viewModel: GraphModel,
+        view: GraphSingleView,
     ):
         self.context = context
         self.view = view
-        self.viewModel = viewModel
 
-        self.root = None
+        self.context.graphModel.nodeCreated_.connect(self.createNodeOrGraph)
+        self.context.graphModel.edgeCreated_.connect(self.createEdge)
+        self.context.selectionModel.selected_.connect(self.onSelectionChanged)
+        self.context.modelClear_.connect(self.clearState)
+        self.context.modelLoaded_.connect(self.recreateView)
+
         self._loading = False
 
-        self.context.selectionModel.selected_.connect(self.onSelectionChanged)
+        self.view.nodeCreated_.connect(self.onNodeUpdate)
+        self.view.edgeCreated_.connect(self.onEdgeUpdate)
 
         self.view.nodeUpdated_.connect(self.onNodeUpdate)
         self.view.edgeUpdated_.connect(self.onEdgeUpdate)
@@ -25,90 +29,90 @@ class GraphFullViewController:
         self.view.nodeSelected_.connect(self.onNodeSelected)
         self.view.nodeDeselected_.connect(self.onNodeDeselected)
 
-    def _createGraph(self, id):
+    def createGraph(self, id):
         self.view.createGraph(id)
         self.view.switchScene(id)
-        self.root = id
 
-    def createGraph(self, id):
-        self._createGraph(id)
-        self.viewModel.createNode(id, {})
+    def createNode(self, id):
+        self.view.createNode(id, NodeType.CIRCLE)
 
-    def _createNode(self, id):
-        self.view.createNode(self.root, id, NodeType.CIRCLE)
+        data = self.context.workspaceModel.nodeData(id)
+        self.view.updateNode(id, {"displayText": data["grouping"]})
 
-    def createNode(self, id: str):
-        self._createNode(id)
-        nodeData = self.view.readNode(id, self.root)
-        self.viewModel.createNode(id, nodeData)
+    def createNodeOrGraph(self, id):
+        if self.context.workspaceModel.isRoot(id):
+            self.createGraph(id)
 
-    def _updateNode(self, id, data):
-        self.view.updateNode(id, self.root, data)
-
-    def updateNode(self, id: str, data):
-        self._updateNode(id, data)
-        self.onNodeUpdate(id)
-
-    def _createEdge(self, e1, e2):
-        self.view.createEdge(self.root, e1, e2)
+        else:
+            self.createNode(id)
 
     def createEdge(self, e1, e2):
-        self._createEdge(e1, e2)
-        edgeData = self.view.readEdge(e1, e2, self.root)
-        self.viewModel.createEdge(e1, e2, edgeData)
+        self.view.createEdge(e1, e2)
+
+    def updateNode(self, id, data):
+        self.view.updateNode(id, data)
 
     def onNodeSelected(self, id):
         self.context.selectionModel.setSelected(id)
 
     def onNodeDeselected(self):
-        rootID = self.context.wsTreeModel.root
+        rootID = self.context.workspaceModel.root
         self.context.selectionModel.setSelected(rootID)
 
     def onSelectionChanged(self, id):
-        id = self.root if id == "" else id
-        if id == self.root:
-            self.view.clearSelection(id)
+        rootID = self.context.workspaceModel.root
+        id = rootID if id == "" else id
+        if id == rootID:
+            self.view.clearSelection()
         else:
-            self.view.selectNode(id, self.root)
+            self.view.selectNode(id)
 
     def onNodeUpdate(self, id: str):
         if self._loading:
             return
 
-        nodeData = self.view.readNode(id, self.root)
-        self.viewModel.updateNode(id, nodeData)
+        data = self.context.graphModel.getNodeData(id)
+        if "fullView" not in data:
+            data["fullView"] = {}
+
+        data["fullView"] = self.view.readNode(id)
+        self.context.graphModel.updateNode(id, data)
 
     def onEdgeUpdate(self, e1: str, e2: str):
         if self._loading:
             return
 
-        edgeData = self.view.readEdge(e1, e2, self.root)
-        self.viewModel.updateEdge(e1, e2, edgeData)
+        data = self.context.graphModel.getEdgeData(e1, e2)
+        if "fullView" not in data:
+            data["fullView"] = {}
+
+        data["fullView"] = self.view.readEdge(e1, e2)
+        self.context.graphModel.updateEdge(e1, e2, data)
 
     def rerenderView(self):
-        for nodeID in self.viewModel.nodeIter():
-            if nodeID == self.root:
+        for nodeID in self.context.workspaceModel.nodeIter():
+            if self.context.workspaceModel.isRoot(nodeID):
                 continue
 
-            data = self.viewModel.getNodeData(nodeID)
-            self.view.updateNode(nodeID, self.root, data)
+            data = self.context.graphModel.getNodeData(nodeID)["fullView"]
+            self.view.updateNode(nodeID, data)
 
-        for e1, e2 in self.viewModel.edgeIter():
-            data = self.viewModel.getEdgeData(e1, e2)
-            self.view.updateEdge(e1, e2, self.root, data)
+        for e1, e2 in self.context.graphModel.edgeIter():
+            data = self.context.graphModel.getEdgeData(e1, e2)["fullView"]
+            self.view.updateEdge(e1, e2, data)
 
     def recreateView(self):
         self._loading = True
 
-        for nodeID in self.context.wsTreeModel.nodeIter():
-            if self.context.wsTreeModel.isRoot(nodeID):
-                self._createGraph(nodeID)
+        for nodeID in self.context.workspaceModel.nodeIter():
+            if self.context.workspaceModel.isRoot(nodeID):
+                self.createGraph(nodeID)
                 continue
 
-            self._createNode(nodeID)
+            self.createNode(nodeID)
 
-        for e1, e2 in self.context.wsGraphModel.edgeIter():
-            self._createEdge(e1, e2)
+        for e1, e2 in self.context.graphModel.edgeIter():
+            self.createEdge(e1, e2)
 
         self.rerenderView()
 
@@ -116,5 +120,4 @@ class GraphFullViewController:
 
     def clearState(self):
         self.view.clearState()
-        self.root = None
         self._loading = False

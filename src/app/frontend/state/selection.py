@@ -1,7 +1,9 @@
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
+
+from .models import Model
 
 
-class SelectionModel(QObject):
+class SelectionModel(Model):
     selected_ = pyqtSignal(str)
 
     def __init__(self):
@@ -28,7 +30,21 @@ class SelectionModel(QObject):
         self.selected = None
         self.selected_.emit(None)
 
-    def reset(self):
+    def clear(self):
         self.selected = None
         self.prevSelected = None
         self.selected_.emit(None)
+
+        self.modelClear_.emit()
+
+    def serialize(self):
+        return {
+            "prev": self.prevSelected,
+            "curr": self.selected,
+        }
+
+    def deserialize(self, state):
+        self.selected = state["prev"]
+        self.prevSelected = state["curr"]
+
+        self.modelLoaded_.emit()
