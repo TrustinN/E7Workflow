@@ -15,24 +15,19 @@ class RunnerNode(Node):
 
         self.client = Client("RunnerClient", dispatcher)
 
-        self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/Workspace/Created", self.unsetAction)
         self.subscribe("/Runner/EntryRequested", self.setDefaultEntry)
         self.subscribe("/Runner/ExecuteRequested", self.execute)
-
-        self.entryID = None
 
     def setDefaultEntry(self, data):
         entryID = self.context.selectionModel.getSelected()
         if self.context.workspaceModel.isRoot(entryID):
             return
 
-        prevID = self.entryID
-        self.entryID = entryID
-        self.publish("/Runner/EntrySet", {"prevID": prevID, "curID": entryID})
+        self.context.runnerModel.setSelected(entryID)
 
     def _executeNode(self, nodeID):
-        if self.context.wsTreeModel.isLeaf(nodeID):
+        if self.context.workspaceModel.isLeaf(nodeID):
             if not self.context.actionModel.hasKey(nodeID):
                 return  # no action binding
 
@@ -55,10 +50,11 @@ class RunnerNode(Node):
             self._executeNode(node)
 
     def execute(self, data):
-        if self.entryID is None:
+        entryID = self.context.runnerModel.getSelected()
+        if entryID is None:
             return
 
-        self._executeNode(self.entryID)
+        self._executeNode(entryID)
 
     def setAction(self, data):
         if not self.context.selectionModel.hasSelected():
@@ -73,15 +69,8 @@ class RunnerNode(Node):
 
         self.context.actionModel.setData(selection, data)
 
-        self.publish("/Runner/ActionBind", {"id": selection, "action": data})
-
     def unsetAction(self, data):
         id = data["id"]
         parentID = self.context.workspaceModel.parent(id)
         if self.context.actionModel.hasKey(parentID):
-            self.publish("/Runner/ActionUnbind", {"id": parentID})
             self.context.actionModel.delete(parentID)
-
-    def resetState(self, data):
-        self.entryID = None
-        pass

@@ -14,12 +14,14 @@ class WorkspaceContext(Model):
         self.selectionModel = SelectionModel()
 
         self.actionModel = MappingModel()
+        self.runnerModel = SelectionModel()
 
         self.models = {
             "tree": self.workspaceModel,
             "graph": self.graphModel,
             "selection": self.selectionModel,
             "action": self.actionModel,
+            "runner": self.runnerModel,
         }
 
         self.loadedModels = set()
@@ -39,6 +41,8 @@ class WorkspaceContext(Model):
         self.workspaceModel.clear()
         self.graphModel.clear()
         self.selectionModel.clear()
+
         self.actionModel.clear()
+        self.runnerModel.clear()
 
         self.modelClear_.emit()

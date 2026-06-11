@@ -1,6 +1,7 @@
 from src.app.frontend.state import WorkspaceContext
 from src.app.frontend.widgets.graph.components import NodeType
 from src.app.frontend.widgets.graph.views import GraphSingleView
+from src.app.frontend.widgets.utils.colors import Colors
 
 
 class GraphFullViewController:
@@ -15,6 +16,7 @@ class GraphFullViewController:
         self.context.graphModel.nodeCreated_.connect(self.createNodeOrGraph)
         self.context.graphModel.edgeCreated_.connect(self.createEdge)
         self.context.selectionModel.selected_.connect(self.onSelectionChanged)
+        self.context.runnerModel.selected_.connect(self.runnerSelectionChanged)
         self.context.modelClear_.connect(self.clearState)
         self.context.modelLoaded_.connect(self.recreateView)
 
@@ -66,6 +68,15 @@ class GraphFullViewController:
             self.view.clearSelection()
         else:
             self.view.selectNode(id)
+
+    def runnerSelectionChanged(self, id):
+        prevID = self.context.runnerModel.getPrevSelected()
+        if prevID:
+            nodeData = {"borderColor": list(Colors.WHITE.getRgb())}
+            self.view.updateNode(prevID, nodeData)
+
+        nodeData = {"borderColor": list(Colors.MINT.getRgb())}
+        self.view.updateNode(id, nodeData)
 
     def onNodeUpdate(self, id: str):
         if self._loading:

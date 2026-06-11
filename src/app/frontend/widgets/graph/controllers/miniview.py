@@ -1,5 +1,6 @@
 from src.app.frontend.state import WorkspaceContext
 from src.app.frontend.widgets.graph.views import GraphMultiView
+from src.app.frontend.widgets.utils.colors import Colors
 
 
 class GraphMiniViewController:
@@ -14,6 +15,7 @@ class GraphMiniViewController:
         self.context.graphModel.nodeCreated_.connect(self.createNode)
         self.context.graphModel.edgeCreated_.connect(self.createEdge)
         self.context.selectionModel.selected_.connect(self.onExternalSelection)
+        self.context.runnerModel.selected_.connect(self.runnerSelectionChanged)
         self.context.modelClear_.connect(self.clearState)
         self.context.modelLoaded_.connect(self.recreateView)
 
@@ -99,6 +101,17 @@ class GraphMiniViewController:
         id = self.context.selectionModel.getSelected()
         parentID = self.context.workspaceModel.parent(id)
         self.context.selectionModel.setSelected(parentID)
+
+    def runnerSelectionChanged(self, id):
+        prevID = self.context.runnerModel.getPrevSelected()
+        if prevID:
+            nodeData = {"borderColor": list(Colors.WHITE.getRgb())}
+            parentID = self.context.workspaceModel.parent(prevID)
+            self.view.updateNode(prevID, parentID, nodeData)
+
+        nodeData = {"borderColor": list(Colors.MINT.getRgb())}
+        parentID = self.context.workspaceModel.parent(id)
+        self.view.updateNode(id, parentID, nodeData)
 
     def onNodeUpdate(self, id):
         if self._loading:

@@ -1,3 +1,6 @@
+import os
+
+from src.app.config import ICON_DIR
 from src.app.frontend.state import WorkspaceContext
 from src.app.frontend.widgets.utils.colors import Alpha, Colors, with_alpha
 
@@ -9,7 +12,17 @@ class WorkspaceController:
         self.context = context
         self.view = view
 
+        self.iconPaths = {
+            "Click": os.path.join(ICON_DIR, "mouse-pointer-click.svg"),
+            "Drag.down": os.path.join(ICON_DIR, "move-down.svg"),
+            "Drag.left": os.path.join(ICON_DIR, "move-left.svg"),
+            "Drag.right": os.path.join(ICON_DIR, "move-right.svg"),
+            "Drag.up": os.path.join(ICON_DIR, "move-up.svg"),
+        }
+
         self.context.workspaceModel.nodeCreated_.connect(self.createWorkspace)
+        self.context.actionModel.dataSet_.connect(self.onActionBind)
+        self.context.actionModel.dataRemoved_.connect(self.onActionUnbind)
         self.context.modelClear_.connect(self.clearState)
         self.context.modelLoaded_.connect(self.recreateView)
 
@@ -83,3 +96,19 @@ class WorkspaceController:
 
     def clearState(self):
         self.view.clearState()
+
+    def getIconPath(self, data):
+        name = data["name"]
+        if name == "Click":
+            return self.iconPaths[name]
+        elif name == "Drag":
+            userParams = data["userParams"]
+            direction = userParams["dir"]["value"]
+            return self.iconPaths[f"{name}.{direction}"]
+
+    def onActionBind(self, id):
+        data = self.context.actionModel.getData(id)
+        self.view.setIcon(id, self.getIconPath(data))
+
+    def onActionUnbind(self, id):
+        self.view.setIcon(id, "")
