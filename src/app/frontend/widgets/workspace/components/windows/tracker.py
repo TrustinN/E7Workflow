@@ -69,6 +69,6 @@ class GeometryTracker:
         return QRect(
             self.left[0][0],
             self.top[0][0],
-            self.right[-1][0] - self.left[0][0],
-            self.bottom[-1][0] - self.top[0][0],
+            self.right[-1][0] - self.left[0][0] + 1,
+            self.bottom[-1][0] - self.top[0][0] + 1,
         )

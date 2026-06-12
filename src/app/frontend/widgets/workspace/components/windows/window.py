@@ -9,8 +9,13 @@ from .utils import bboxToLayout
 
 
 class Window(QWidget):
+    mousePress = pyqtSignal()
     resizeSignal = pyqtSignal()
     moveSignal = pyqtSignal()
+
+    resizeBegin = pyqtSignal()
+    moveBegin = pyqtSignal()
+
     resizeDone = pyqtSignal()
     moveDone = pyqtSignal()
 
@@ -27,38 +32,50 @@ class Window(QWidget):
 
         super().setGeometry(500, 500, 500, 300)
         self.dragPosition = QPoint()
-        self.resizeMode = False
-        self.resizeIndices = None
+        self.resizing = False
+        self.moving = False
+        self.resizeIndices = []
         self.resizeError = (np.array([0.0, 0.0]), np.array([0.0, 0.0]))
         self.fixed = False
 
     def grabMouse(self) -> bool:
         if not self.canMove():
-            self.releaseMouse()
-            return False
+            return
 
         self.setFocus()
         self.raise_()
         self.activateWindow()
         super().grabMouse()
-        return True
+        self.mousePress.emit()
 
-    def mouseMoveEvent(self, event):
-        if not self.canMove():
-            return
-
-        if not self.resizeMode:
-            self.move(event.globalPos() - self.dragPosition)
-            self.moveSignal.emit()
-            return
-
+    def getResizeCorners(self, event):
         corners = self.getBBox()
         for i in self.resizeIndices:
             if i % 2 == 0:
                 corners[i // 2].setX(event.globalPos().x())
             else:
                 corners[i // 2].setY(event.globalPos().y())
+        return corners
 
+    def mouseMoveEvent(self, event):
+        if not self.canMove():
+            return
+
+        if not self.resizeIndices:
+            if not self.moving:
+                self.moveBegin.emit()
+
+            self.move(event.globalPos() - self.dragPosition)
+            self.moving = True
+
+            self.moveSignal.emit()
+            return
+
+        if not self.resizing:
+            self.resizeBegin.emit()
+
+        self.resizing = True
+        corners = self.getResizeCorners(event)
         self.setGeometry(QRect(corners[0], corners[1]))
         self.resizeSignal.emit()
 
@@ -80,13 +97,11 @@ class Window(QWidget):
         inY = 0 <= dragy and dragy <= self.height()
         inside = inX and inY
 
-        if not sum(activeCnt) or not inside or not self.canMove():
-            if not inside:
-                self.releaseMouse()
-            self.resizeMode = False
-        else:
-            self.resizeMode = True
+        if sum(activeCnt) and inside and self.canMove():
             self.resizeIndices = [i for i, x in enumerate(activeCnt) if x == 1]
+
+        else:
+            self.resizeIndices = []
 
     def mousePressEvent(self, event):
         self.mousePressUpdate(event)
@@ -96,40 +111,16 @@ class Window(QWidget):
 
     def mouseReleaseEvent(self, event):
         self.releaseMouse()
-        if self.resizeMode:
+        self.onMovementFinish()
+
+    def onMovementFinish(self):
+        if self.resizing:
+            self.resizing = False
             self.resizeDone.emit()
-        else:
+
+        elif self.moving:
+            self.moving = False
             self.moveDone.emit()
-
-    def resizeEvent(self, event):
-        maskedRegion = QRegion(
-            self.rect(),
-            QRegion.RegionType.Rectangle,
-        )
-        self.setMask(maskedRegion)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        brush = QBrush(self.color)
-        painter.setBrush(brush)
-
-        pen = QPen(self.borderColor)
-        painter.setPen(pen)
-
-        rect = self.rect()
-        painter.drawRect(rect.adjusted(1, 1, -1, -1))
-
-        if self.name is not None:
-            painter.setPen(QPen(QColor(255, 255, 255), 1))
-            font = painter.font()
-            font.setPointSize(12)
-            font.setBold(False)
-            painter.setFont(font)
-
-            paddingTop = 10
-            textRect = rect.adjusted(0, paddingTop, 0, 0)
-            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)
 
     def getBBox(self):
         return [
@@ -171,3 +162,33 @@ class Window(QWidget):
 
     def canMove(self):
         return not self.fixed
+
+    def resizeEvent(self, event):
+        maskedRegion = QRegion(
+            self.rect(),
+            QRegion.RegionType.Rectangle,
+        )
+        self.setMask(maskedRegion)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        brush = QBrush(self.color)
+        painter.setBrush(brush)
+
+        pen = QPen(self.borderColor)
+        painter.setPen(pen)
+
+        rect = self.rect()
+        painter.drawRect(rect.adjusted(1, 1, -1, -1))
+
+        if self.name is not None:
+            painter.setPen(QPen(QColor(255, 255, 255), 1))
+            font = painter.font()
+            font.setPointSize(12)
+            font.setBold(False)
+            painter.setFont(font)
+
+            paddingTop = 10
+            textRect = rect.adjusted(0, paddingTop, 0, 0)
+            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)

@@ -63,7 +63,7 @@ class WorkspaceView(QObject):
         self.workspaces[id].setColor(fill, border)
 
     def setGeometry(self, id, geometry):
-        self.workspaces[id].restoreGeometry(layoutToBBox(geometry))
+        self.workspaces[id].setGeometry(layoutToBBox(geometry))
 
     def getGeometry(self, id):
         return self.workspaces[id].getGeometry()

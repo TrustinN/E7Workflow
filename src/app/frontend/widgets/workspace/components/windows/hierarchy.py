@@ -11,16 +11,12 @@ from .window import Window
 
 class WindowHierarchy(Window):
     focusParent = pyqtSignal(QMouseEvent)
-    mousePress = pyqtSignal()
     onDelete = pyqtSignal()
 
     def __init__(self, name=None):
         super().__init__(name)
         self.windows = []
         self.geometryTracker = GeometryTracker()
-
-    def isChild(self):
-        return len(self.windows) == 0
 
     def deleteLater(self):
         while len(self.windows) > 0:
@@ -34,17 +30,24 @@ class WindowHierarchy(Window):
 
     def addChild(self, window):
         self.fitChildToCenter(window)
-        id = len(self.windows)
+
         self.windows.append(window)
         self.geometryTracker.addGeometry(window.geometry())
+
+        id = len(self.windows) - 1
         updateGeometry = partial(self.updateGeometryFromChild, id)
-        window.connectSignals(updateGeometry)
+
+        window.resizeSignal.connect(updateGeometry)
+        window.moveSignal.connect(updateGeometry)
+
+        window.resizeDone.connect(self.onMovementFinish)
+        window.moveDone.connect(self.onMovementFinish)
+
         window.onDelete.connect(lambda: self.deleteChild(window))
         window.focusParent.connect(self.mousePressEvent)
 
     def fitChildToCenter(self, window, scale=0.7):
         tl, br = self.getBBox()
-        tl, br = applyPadding((tl, br), self.padding)
 
         parentW = br.x() - tl.x()
         parentH = br.y() - tl.y()
@@ -63,31 +66,6 @@ class WindowHierarchy(Window):
         newBr = QPoint(int(cx + childW / 2), int(cy + childH / 2))
 
         window.setGeometry(QRect(newTl, newBr))
-
-    # def setChild(self, idx, window):
-    #     self.fitChildToCenter(window)
-    #     self.windows[idx] = window
-    #     window.connectSignals(self.updateGeometry)
-    #     window.onDelete.connect(lambda: self.deleteChild(window))
-    #     window.focusParent.connect(self.mousePressEvent)
-
-    def childAt(self, idx):
-        return self.windows[idx]
-
-    # def removeChild(self, idx):
-    #     window = self.windows[idx]
-    #     self.windows[idx] = None
-    #     window.disableSignals(self.updateGeometry)
-    #     window.focusParent.disconnect(self.mousePressEvent)
-    #     self.updateGeometry()
-
-    def disableSignals(self, slot):
-        self.resizeSignal.disconnect(slot)
-        self.moveSignal.disconnect(slot)
-
-    def connectSignals(self, slot):
-        self.resizeSignal.connect(slot)
-        self.moveSignal.connect(slot)
 
     def resize(self, newCorners):
         oldCorners = self.getBBox()
@@ -132,23 +110,19 @@ class WindowHierarchy(Window):
         for window in self.windows:
             childResize(window)
 
+        if not self.resizing:
+            self.resizeBegin.emit()
+
         super().setGeometry(QRect(newCorners[0], newCorners[1]))
+        self.resizing = True
         self.resizeSignal.emit()
 
     def mouseMoveEvent(self, event):
         if not self.canMove():
             return
 
-        if self.resizeMode:
-            newCorners = self.getBBox()
-
-            # Compute displacement
-            for i in self.resizeIndices:
-                if i % 2 == 0:
-                    newCorners[i // 2].setX(event.globalPos().x())
-                else:
-                    newCorners[i // 2].setY(event.globalPos().y())
-
+        if self.resizeIndices:
+            newCorners = self.getResizeCorners(event)
             self.resize(newCorners)
 
         else:
@@ -169,15 +143,15 @@ class WindowHierarchy(Window):
                 if not unlockState[i]:
                     w.lock()
 
-    def grabMouse(self) -> bool:
-        super().grabMouse()
-        self.mousePress.emit()
-        return True
-
     def releaseMouse(self):
         super().releaseMouse()
         for w in self.windows:
             w.releaseMouse()
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        for w in self.windows:
+            w.mouseReleaseEvent(event)
 
     def mousePressUpdate(self, event):
         super().mousePressUpdate(event)
@@ -211,17 +185,14 @@ class WindowHierarchy(Window):
 
         self.grabMouse()
 
-    def mouseReleaseEvent(self, event):
-        super().mouseReleaseEvent(event)
-
     def updateGeometryFromChild(self, idx):
         child = self.childAt(idx)
         self.geometryTracker.updateGeometry(idx, child.geometry())
 
-        if self.hasFocus():
+        if self.moving:
             return
 
-        oldRect = self.rect()
+        oldRect = self.geometry()
         newRect = self.geometryTracker.boundingBox()
         newRect = newRect.adjusted(
             -self.padding,
@@ -230,15 +201,16 @@ class WindowHierarchy(Window):
             self.padding,
         )
         if oldRect != newRect:
+            if self.resizing:
+                self.resizeBegin.emit()
+
+            self.resizing = True
             super().setGeometry(newRect)
             self.resizeSignal.emit()
 
     def setGeometry(self, rect):
-        newTl, newBr = rect.topLeft(), rect.bottomRight()
-        self.resize([newTl, newBr])
-
-    def restoreGeometry(self, rect):
         super().setGeometry(rect)
+        self.resizeSignal.emit()
 
     def hide(self):
         super().hide()
@@ -259,3 +231,9 @@ class WindowHierarchy(Window):
         super().unlock()
         for window in self.windows:
             window.unlock()
+
+    def isChild(self):
+        return len(self.windows) == 0
+
+    def childAt(self, idx):
+        return self.windows[idx]
