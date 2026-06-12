@@ -51,7 +51,6 @@ class RunnerNode(Node):
 
     def execute(self, data):
         entryID = self.context.runnerModel.getSelected()
-        print(entryID)
         if entryID is None:
             return
 

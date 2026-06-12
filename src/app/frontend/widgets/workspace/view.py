@@ -26,8 +26,8 @@ class WorkspaceView(QObject):
         onWorkspaceChanged = partial(self.workspaceChanged_.emit, id)
 
         workspace.mousePress.connect(onWorkspacePressed)
-        workspace.moveSignal.connect(onWorkspaceChanged)
-        workspace.resizeSignal.connect(onWorkspaceChanged)
+        workspace.moveDone.connect(onWorkspaceChanged)
+        workspace.resizeDone.connect(onWorkspaceChanged)
 
         self.workspaces[id] = workspace
 
