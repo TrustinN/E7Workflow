@@ -10,6 +10,7 @@ from .window import Window
 
 
 class WindowHierarchy(Window):
+    updateGeometry = pyqtSignal()
     focusParent = pyqtSignal(QMouseEvent)
     onDelete = pyqtSignal()
 
@@ -36,9 +37,15 @@ class WindowHierarchy(Window):
 
         id = len(self.windows) - 1
         updateGeometry = partial(self.updateGeometryFromChild, id)
+        resizeGeometry = partial(self.resizeFromChild, id)
 
         window.resizeSignal.connect(updateGeometry)
+        window.resizeSignal.connect(resizeGeometry)
+
         window.moveSignal.connect(updateGeometry)
+        window.moveSignal.connect(resizeGeometry)
+
+        window.updateGeometry.connect(updateGeometry)
 
         window.resizeDone.connect(self.onMovementFinish)
         window.moveDone.connect(self.onMovementFinish)
@@ -189,6 +196,7 @@ class WindowHierarchy(Window):
         child = self.childAt(idx)
         self.geometryTracker.updateGeometry(idx, child.geometry())
 
+    def resizeFromChild(self, idx):
         if self.moving:
             return
 
@@ -210,7 +218,7 @@ class WindowHierarchy(Window):
 
     def setGeometry(self, rect):
         super().setGeometry(rect)
-        self.resizeSignal.emit()
+        self.updateGeometry.emit()
 
     def hide(self):
         super().hide()
