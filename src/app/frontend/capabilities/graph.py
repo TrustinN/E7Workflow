@@ -1,3 +1,5 @@
+from nanoid import generate
+
 from src.app.frontend.events import Node
 
 
@@ -6,4 +8,5 @@ class GraphCapability(Node):
         super().__init__()
 
     def createEdge(self):
-        self.publish("/Graph/EdgeRequested")
+        data = {"id": generate()}
+        self.publish("/Graph/EdgeRequested", data)

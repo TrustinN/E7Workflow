@@ -48,8 +48,9 @@ class GraphFullViewController:
         else:
             self.createNode(id)
 
-    def createEdge(self, e1, e2):
-        self.view.createEdge(e1, e2)
+    def createEdge(self, id):
+        e1, e2 = self.context.graphModel.getEdge(id)
+        self.view.createEdge(id, e1, e2)
 
     def updateNode(self, id, data):
         self.view.updateNode(id, data)
@@ -89,16 +90,16 @@ class GraphFullViewController:
         data["fullView"] = self.view.readNode(id)
         self.context.graphModel.updateNode(id, data)
 
-    def onEdgeUpdate(self, e1: str, e2: str):
+    def onEdgeUpdate(self, id: str):
         if self._loading:
             return
 
-        data = self.context.graphModel.getEdgeData(e1, e2)
+        data = self.context.graphModel.getEdgeData(id)
         if "fullView" not in data:
             data["fullView"] = {}
 
-        data["fullView"] = self.view.readEdge(e1, e2)
-        self.context.graphModel.updateEdge(e1, e2, data)
+        data["fullView"] = self.view.readEdge(id)
+        self.context.graphModel.updateEdge(id, data)
 
     def rerenderView(self):
         for nodeID in self.context.workspaceModel.nodeIter():
@@ -108,9 +109,9 @@ class GraphFullViewController:
             data = self.context.graphModel.getNodeData(nodeID)["fullView"]
             self.view.updateNode(nodeID, data)
 
-        for e1, e2 in self.context.graphModel.edgeIter():
-            data = self.context.graphModel.getEdgeData(e1, e2)["fullView"]
-            self.view.updateEdge(e1, e2, data)
+        for edgeID in self.context.graphModel.edgeIter():
+            data = self.context.graphModel.getEdgeData(edgeID)["fullView"]
+            self.view.updateEdge(edgeID, data)
 
     def recreateView(self):
         self._loading = True
@@ -122,8 +123,8 @@ class GraphFullViewController:
 
             self.createNode(nodeID)
 
-        for e1, e2 in self.context.graphModel.edgeIter():
-            self.createEdge(e1, e2)
+        for edgeID in self.context.graphModel.edgeIter():
+            self.createEdge(edgeID)
 
         self.rerenderView()
 

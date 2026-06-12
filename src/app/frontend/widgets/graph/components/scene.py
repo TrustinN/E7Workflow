@@ -9,13 +9,13 @@ from .node import GraphicsCircleNode, GraphicsNode, GraphicsRectNode, NodeType
 
 class GraphScene(QGraphicsScene):
     nodeMoved_ = pyqtSignal(str)
-    edgeMoved_ = pyqtSignal(str, str)
+    edgeMoved_ = pyqtSignal(str)
     nodePressed_ = pyqtSignal(str)
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
 
     nodeCreated_ = pyqtSignal(str)
-    edgeCreated_ = pyqtSignal(str, str)
+    edgeCreated_ = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -76,29 +76,28 @@ class GraphScene(QGraphicsScene):
         node = self.nodes[id]
         node.setData(data)
 
-    def createEdge(self, id1, id2):
+    def createEdge(self, id, id1, id2):
         n1 = self.nodes[id1]
         n2 = self.nodes[id2]
         arrow = GraphicsArrowItem(n1.center(), n2.center())
         n1.emitter.onMove_.connect(arrow.setStart)
         n2.emitter.onMove_.connect(arrow.setEnd)
 
-        edgeMoved = partial(self.edgeMoved_.emit, id1, id2)
+        edgeMoved = partial(self.edgeMoved_.emit, id)
         n1.emitter.onMove_.connect(edgeMoved)
         n2.emitter.onMove_.connect(edgeMoved)
 
-        self.edges[(id1, id2)] = arrow
+        self.edges[id] = arrow
         self.addItem(arrow)
-        self.edgeCreated_.emit(id1, id2)
+        self.edgeCreated_.emit(id)
 
-    def readEdge(self, id1, id2):
-        edge = self.edges[(id1, id2)]
+    def readEdge(self, id):
+        edge = self.edges[id]
         return edge.getData()
 
-    def updateEdge(self, id1, id2, data):
-        edgeID = (id1, id2)
-        if edgeID in self.edges:
-            edge = self.edges[edgeID]
+    def updateEdge(self, id, data):
+        if id in self.edges:
+            edge = self.edges[id]
             edge.setData(data)
 
     def getData(self):

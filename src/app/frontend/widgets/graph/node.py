@@ -1,10 +1,5 @@
-import os
-
 from src.app.frontend.events import Node
-from src.app.frontend.state import GraphModel, Serializer, TreeModel, WorkspaceContext
-from src.app.frontend.widgets.utils.colors import Colors
-
-from .controllers import GraphFullViewController, GraphMiniViewController
+from src.app.frontend.state import WorkspaceContext
 
 
 class GraphNode(Node):
@@ -30,11 +25,12 @@ class GraphNode(Node):
         self.secondEdge = self.context.selectionModel.getSelected()
 
     def createEdge(self, data):
+        id = data["id"]
         cond1 = self.firstEdge is not None
         cond2 = self.secondEdge is not None
         cond3 = self.firstEdge != self.secondEdge
         if cond1 and cond2 and cond3:
-            self.context.graphModel.createEdge(self.firstEdge, self.secondEdge, {})
+            self.context.graphModel.createEdge(id, self.firstEdge, self.secondEdge, {})
             self.firstEdge = None
             self.secondEdge = None
 

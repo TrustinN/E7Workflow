@@ -73,7 +73,7 @@ class App(QApplication):
         self.pubSubHandler.registerNode(self.graphCapability)
         self.pubSubHandler.registerNode(self.runnerCapability)
 
-        self.pubSubHandler.registerNode(self.wkCpt.node)
+        self.pubSubHandler.registerNode(self.wkCpt)
         self.pubSubHandler.registerNode(self.graphCpt.node)
         self.pubSubHandler.registerNode(self.runnerCpt.node)
         self.pubSubHandler.registerNode(self.serialCpt.node)

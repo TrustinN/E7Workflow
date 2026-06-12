@@ -7,10 +7,10 @@ from .view import GraphView
 
 class GraphMultiView(GraphView):
     nodeCreated_ = pyqtSignal(str)
-    edgeCreated_ = pyqtSignal(str, str)
+    edgeCreated_ = pyqtSignal(str)
 
     nodeUpdated_ = pyqtSignal(str)
-    edgeUpdated_ = pyqtSignal(str, str)
+    edgeUpdated_ = pyqtSignal(str)
 
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
@@ -54,11 +54,11 @@ class GraphMultiView(GraphView):
 
         self.nodeCreated_.emit(nodeID)
 
-    def createEdge(self, e1: str, e2: str, graphID: str):
+    def createEdge(self, edgeID: str, e1: str, e2: str, graphID: str):
         parent = self.scenes[graphID]
-        parent.createEdge(e1, e2)
+        parent.createEdge(edgeID, e1, e2)
 
-        self.edgeCreated_.emit(e1, e2)
+        self.edgeCreated_.emit(edgeID)
 
     def updateNode(self, nodeID: str, parentID: str, data):
         scene = self.scenes[parentID]
@@ -66,20 +66,20 @@ class GraphMultiView(GraphView):
 
         self.nodeUpdated_.emit(nodeID)
 
-    def updateEdge(self, e1: str, e2: str, parentID: str, data):
+    def updateEdge(self, edgeID: str, parentID: str, data):
         scene = self.scenes[parentID]
-        scene.updateEdge(e1, e2, data)
+        scene.updateEdge(edgeID, data)
 
-        self.edgeUpdated_.emit(e1, e2)
+        self.edgeUpdated_.emit(edgeID)
 
     def readNode(self, nodeID: str, parentID: str):
         scene = self.scenes[parentID]
         data = scene.readNode(nodeID)
         return data
 
-    def readEdge(self, e1: str, e2: str, parentID: str):
+    def readEdge(self, edgeID: str, parentID: str):
         scene = self.scenes[parentID]
-        data = scene.readEdge(e1, e2)
+        data = scene.readEdge(edgeID)
         return data
 
     def clearState(self):

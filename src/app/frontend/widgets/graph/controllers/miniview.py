@@ -57,15 +57,16 @@ class GraphMiniViewController:
 
         return pe1 == pe2
 
-    def _createEdge(self, e1, e2):
+    def _createEdge(self, id, e1, e2):
         parentID = self.context.workspaceModel.parent(e1)
-        self.view.createEdge(e1, e2, parentID)
+        self.view.createEdge(id, e1, e2, parentID)
 
-    def createEdge(self, e1, e2):
+    def createEdge(self, id):
+        e1, e2 = self.context.graphModel.getEdge(id)
         if not self.hasEdge(e1, e2):
             return
 
-        self._createEdge(e1, e2)
+        self._createEdge(id, e1, e2)
 
     def onExternalSelection(self, id):
         if self._updatingSelection:
@@ -127,19 +128,20 @@ class GraphMiniViewController:
 
         self.context.graphModel.updateNode(id, data)
 
-    def onEdgeUpdate(self, e1, e2):
+    def onEdgeUpdate(self, id):
         if self._loading:
             return
 
-        data = self.context.graphModel.getEdgeData(e1, e2)
+        data = self.context.graphModel.getEdgeData(id)
+        e1, e2 = self.context.graphModel.getEdge(id)
 
         if "miniView" not in data:
             data["miniView"] = {}
 
         parentID = self.context.workspaceModel.parent(e1)
-        data["miniView"] = self.view.readEdge(e1, e2, parentID)
+        data["miniView"] = self.view.readEdge(id, parentID)
 
-        self.context.graphModel.updateEdge(e1, e2, data)
+        self.context.graphModel.updateEdge(id, data)
 
     def rerenderView(self):
         for nodeID in self.context.workspaceModel.nodeIter():
@@ -150,13 +152,14 @@ class GraphMiniViewController:
             data = self.context.graphModel.getNodeData(nodeID)["miniView"]
             self.view.updateNode(nodeID, parentID, data)
 
-        for e1, e2 in self.context.graphModel.edgeIter():
+        for id in self.context.graphModel.edgeIter():
+            e1, e2 = self.context.graphModel.getEdge(id)
             if not self.hasEdge(e1, e2):
                 continue
 
             parentID = self.context.workspaceModel.parent(e1)
-            data = self.context.graphModel.getEdgeData(e1, e2)["miniView"]
-            self.view.updateEdge(e1, e2, parentID, data)
+            data = self.context.graphModel.getEdgeData(id)["miniView"]
+            self.view.updateEdge(id, parentID, data)
 
     def recreateView(self):
         self._loading = True
@@ -164,11 +167,12 @@ class GraphMiniViewController:
         for nodeID in self.context.workspaceModel.nodeIter():
             self.createNode(nodeID)
 
-        for e1, e2 in self.context.graphModel.edgeIter():
+        for edgeID in self.context.graphModel.edgeIter():
+            e1, e2 = self.context.graphModel.getEdge(edgeID)
             if not self.hasEdge(e1, e2):
                 continue
 
-            self._createEdge(e1, e2)
+            self._createEdge(edgeID, e1, e2)
 
         self.rerenderView()
 

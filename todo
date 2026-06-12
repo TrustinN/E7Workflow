@@ -5,3 +5,5 @@ controller should not wire model updates
 
 
 move actionModel update signals outside of workspace controller (for cross component communication, use pub sub)
+
+** Move the model updates to data publishing from workspace node to the capability classes. Keep model updates in the workspace component
