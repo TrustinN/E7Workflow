@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.app.frontend.widgets.workspace.components import Workspace
 
-from .components.utils import layoutToBBox
+from .components.windows.utils import layoutToBBox
 
 
 class WorkspaceView(QObject):

@@ -8,9 +8,11 @@ from src.app.frontend.widgets.utils.colors import Colors
 from .utils import bboxToLayout
 
 
-class SelectionWindow(QWidget):
+class Window(QWidget):
     resizeSignal = pyqtSignal()
     moveSignal = pyqtSignal()
+    resizeDone = pyqtSignal()
+    moveDone = pyqtSignal()
 
     def __init__(self, name=None):
         super().__init__()
@@ -21,6 +23,7 @@ class SelectionWindow(QWidget):
 
         self.color = Colors.DEFAULT_COLOR
         self.borderColor = Colors.DEFAULT_BORDER
+        self.padding = 0
 
         super().setGeometry(500, 500, 500, 300)
         self.dragPosition = QPoint()
@@ -31,7 +34,9 @@ class SelectionWindow(QWidget):
 
     def grabMouse(self) -> bool:
         if not self.canMove():
+            self.releaseMouse()
             return False
+
         self.setFocus()
         self.raise_()
         self.activateWindow()
@@ -77,7 +82,7 @@ class SelectionWindow(QWidget):
 
         if not sum(activeCnt) or not inside or not self.canMove():
             if not inside:
-                self.mouseReleaseEvent(event)
+                self.releaseMouse()
             self.resizeMode = False
         else:
             self.resizeMode = True
@@ -91,6 +96,10 @@ class SelectionWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         self.releaseMouse()
+        if self.resizeMode:
+            self.resizeDone.emit()
+        else:
+            self.moveDone.emit()
 
     def resizeEvent(self, event):
         maskedRegion = QRegion(
@@ -139,6 +148,17 @@ class SelectionWindow(QWidget):
         self.color = color
         self.borderColor = borderColor
         self.repaint()
+
+    def setPadding(self, padding):
+        prevPadding = self.padding
+        self.padding = padding
+
+        paddingChange = self.padding - prevPadding
+        newRect = self.geometry().adjusted(
+            -paddingChange, -paddingChange, paddingChange, paddingChange
+        )
+        super().setGeometry(newRect)
+        self.resizeSignal.emit()
 
     def getColor(self):
         return self.color

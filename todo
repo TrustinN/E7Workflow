@@ -1,3 +1,7 @@
-Deserialization order in workspace context should not matter
+Nodes should belong outside of the component
 
-Invert model, ui relation, ui updates model.
+
+controller should not wire model updates
+
+
+move actionModel update signals outside of workspace controller (for cross component communication, use pub sub)

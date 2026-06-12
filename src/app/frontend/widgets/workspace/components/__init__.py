@@ -1,1 +1,1 @@
-from .workspace import Workspace
+from .windows import Workspace
