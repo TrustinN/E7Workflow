@@ -12,7 +12,7 @@ class WorkspaceCapability(Node):
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
         self.groupAssignments = {}
 
-        self.subscribe("/App/Loaded", self.createRootWorkspace)
+        self.subscribe("/App/Loaded", self.requestRootWorkspace)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
@@ -33,7 +33,7 @@ class WorkspaceCapability(Node):
 
         return group
 
-    def createRootWorkspace(self, data):
+    def requestRootWorkspace(self, data):
         id = generate()
         name = "Root"
         data = {
@@ -43,7 +43,7 @@ class WorkspaceCapability(Node):
         self.context.workspaceModel.createRoot(id, data)
         self.publish("/Workspace/Root/Requested", data)
 
-    def createWorkspace(self, name):
+    def requestWorkspace(self, name):
         id = generate()
         parentID = self.context.selectionModel.getSelected()
         group = self.assignGroup(id, parentID)

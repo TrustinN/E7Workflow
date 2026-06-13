@@ -50,10 +50,10 @@ class App(QApplication):
         self.graphCapability = GraphCapability(self.context)
         self.runnerCapability = RunnerCapability()
 
-        self.buttons.createWorkspace_.connect(self.wksCapability.createWorkspace)
+        self.buttons.createWorkspace_.connect(self.wksCapability.requestWorkspace)
         self.buttons.setE1Btn.clicked.connect(self.graphCapability.setE1)
         self.buttons.setE2Btn.clicked.connect(self.graphCapability.setE2)
-        self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.createEdge)
+        self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.requestEdge)
         self.buttons.entryBtn.clicked.connect(self.runnerCapability.requestEntry)
         self.buttons.executeBtn.clicked.connect(self.runnerCapability.requestExecute)
 

@@ -12,8 +12,8 @@ class GraphCapability(Node):
         self.firstEdge = None
         self.secondEdge = None
 
-        self.subscribe("/Workspace/Root/Created", self.createRoot)
-        self.subscribe("/Workspace/Created", self.createNode)
+        self.subscribe("/Workspace/Root/Created", self.requestRoot)
+        self.subscribe("/Workspace/Created", self.requestNode)
         self.subscribe("/Graph/Root/Created", self.onRootCreated)
         self.subscribe("/App/Reset", self.resetState)
 
@@ -23,17 +23,17 @@ class GraphCapability(Node):
     def setE2(self):
         self.secondEdge = self.context.selectionModel.getSelected()
 
-    def createRoot(self, data):
+    def requestRoot(self, data):
         id = data["id"]
         self.context.graphModel.createNode(id, data)
         self.publish("/Graph/Root/Requested", data)
 
-    def createNode(self, data):
+    def requestNode(self, data):
         id = data["id"]
         self.context.graphModel.createNode(id, data)
         self.publish("/Graph/Node/Requested", data)
 
-    def createEdge(self):
+    def requestEdge(self):
         id = generate()
         cond1 = self.firstEdge is not None
         cond2 = self.secondEdge is not None
