@@ -108,7 +108,6 @@ class Workspace(WindowHierarchy):
             painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)
 
         if self.icon:
-            painter = QPainter(self)
             painter.setRenderHint(QPainter.Antialiasing)
 
             rect = self.rect()

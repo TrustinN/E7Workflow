@@ -1,6 +1,9 @@
+from PyQt5.QtGui import QColor
+
 from src.app.frontend.state import Context
+from src.app.frontend.state.layouts.graph import Color
+from src.app.frontend.widgets.graph.components import NodeSchema
 from src.app.frontend.widgets.graph.views import GraphMultiView
-from src.app.frontend.widgets.utils.colors import Colors
 
 
 class GraphMiniViewController:
@@ -13,7 +16,6 @@ class GraphMiniViewController:
         self.view = view
 
         self.context.selectionModel.selected_.connect(self.onExternalSelection)
-        self.context.runnerModel.selected_.connect(self.runnerSelectionChanged)
 
         self._updatingSelection = False
 
@@ -55,16 +57,9 @@ class GraphMiniViewController:
         parentID = self.context.workspaceModel.parent(id)
         self.context.selectionModel.setSelected(parentID)
 
-    def runnerSelectionChanged(self, id):
-        prevID = self.context.runnerModel.getPrevSelected()
-        if prevID:
-            nodeData = {"borderColor": list(Colors.WHITE.getRgb())}
-            parentID = self.context.workspaceModel.parent(prevID)
-            self.view.updateNode(prevID, parentID, nodeData)
-
-        nodeData = {"borderColor": list(Colors.MINT.getRgb())}
-        parentID = self.context.workspaceModel.parent(id)
-        self.view.updateNode(id, parentID, nodeData)
+    def setBorder(self, id, color: QColor):
+        schema = NodeSchema(borderColor=Color(*color.getRgb()))
+        self.view.updateNode(id, schema)
 
     def resetState(self):
         self._updatingSelection = False

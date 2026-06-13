@@ -22,6 +22,10 @@ class WorkspaceComponent(Node):
 
         self.subscribe("/Workspace/Root/Requested", self.createRootWorkspace)
         self.subscribe("/Workspace/Requested", self.createWorkspace)
+
+        self.subscribe("/Runner/Action/Set", self.setAction)
+        self.subscribe("/Runner/Action/Unset", self.unsetAction)
+
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
@@ -34,6 +38,14 @@ class WorkspaceComponent(Node):
         id = data["id"]
         self.builder.createWorkspace(id)
         self.publish("/Workspace/Created", data)
+
+    def setAction(self, data):
+        id = data["id"]
+        self.controller.onActionBind(id)
+
+    def unsetAction(self, data):
+        id = data["id"]
+        self.controller.onActionUnbind(id)
 
     def resetState(self, data):
         self.layout.resetState()

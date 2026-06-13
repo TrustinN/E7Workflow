@@ -1,5 +1,7 @@
 import os
 
+from PyQt5.QtGui import QColor
+
 from src.app.config import ICON_DIR
 from src.app.frontend.state import Context
 from src.app.frontend.state.layouts.graph import Color
@@ -22,32 +24,28 @@ class WorkspaceController:
             "Drag.up": os.path.join(ICON_DIR, "move-up.svg"),
         }
 
-        self.context.actionModel.dataSet_.connect(self.onActionBind)
-        self.context.actionModel.dataRemoved_.connect(self.onActionUnbind)
-
         self.context.selectionModel.selected_.connect(self.onSelection)
 
         self.view.workspacePressed_.connect(self.onWorkspacePressed)
+
+    def setColor(self, id, color: QColor, borderColor: QColor):
+        schema = WorkspaceSchema(
+            color=Color(*color.getRgb()),
+            borderColor=Color(*borderColor.getRgb()),
+        )
+        self.view.setData(id, schema)
 
     def onSelection(self, id):
         prevID = self.context.selectionModel.getPrevSelected()
         if prevID:
             color = Colors.DEFAULT_COLOR
             borderColor = Colors.DEFAULT_BORDER
-            schema = WorkspaceSchema(
-                color=Color(*color.getRgb()),
-                borderColor=Color(*borderColor.getRgb()),
-            )
-            self.view.setData(prevID, schema)
+            self.setColor(prevID, color, borderColor)
 
         if id:
             color = with_alpha(Colors.SKY_BLUE, Alpha.LIGHT)
             borderColor = with_alpha(Colors.SKY_BLUE, Alpha.MEDIUM)
-            schema = WorkspaceSchema(
-                color=Color(*color.getRgb()),
-                borderColor=Color(*borderColor.getRgb()),
-            )
-            self.view.setData(id, schema)
+            self.setColor(id, color, borderColor)
 
     def onWorkspacePressed(self, id):
         self.context.selectionModel.setSelected(id)
@@ -63,10 +61,13 @@ class WorkspaceController:
 
     def onActionBind(self, id):
         data = self.context.actionModel.getData(id)
-        self.view.setIcon(id, self.getIconPath(data))
+        iconPath = self.getIconPath(data)
+        schema = WorkspaceSchema(iconPath=iconPath)
+        self.view.setData(id, schema)
 
     def onActionUnbind(self, id):
-        self.view.setIcon(id, "")
+        schema = WorkspaceSchema(iconPath="")
+        self.view.setData(id, schema)
 
     def resetState(self):
         self.view.clearState()

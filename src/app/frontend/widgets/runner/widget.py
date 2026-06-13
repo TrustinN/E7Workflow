@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -16,12 +17,15 @@ class RunnerWidget(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
+        self.actionBtn = QPushButton("Set Action")
         self.combo = QComboBox()
         self.combo.currentTextChanged.connect(self.actionChanged)
+        self.layout.addWidget(self.actionBtn)
         self.layout.addWidget(self.combo)
 
         self.stack = QStackedWidget()
         self.layout.addWidget(self.stack)
+        self.layout.addStretch()
 
         self.widgets = {}
         self.editors = {}

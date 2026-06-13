@@ -1,6 +1,9 @@
+from PyQt5.QtGui import QColor
+
 from src.app.frontend.state import Context
+from src.app.frontend.state.layouts.graph import Color
+from src.app.frontend.widgets.graph.components import NodeSchema
 from src.app.frontend.widgets.graph.views import GraphSingleView
-from src.app.frontend.widgets.utils.colors import Colors
 
 
 class GraphFullViewController:
@@ -13,7 +16,6 @@ class GraphFullViewController:
         self.view = view
 
         self.context.selectionModel.selected_.connect(self.onSelectionChanged)
-        self.context.runnerModel.selected_.connect(self.runnerSelectionChanged)
 
         self.view.nodeSelected_.connect(self.onNodeSelected)
         self.view.nodeDeselected_.connect(self.onNodeDeselected)
@@ -36,14 +38,9 @@ class GraphFullViewController:
         else:
             self.view.selectNode(id)
 
-    def runnerSelectionChanged(self, id):
-        prevID = self.context.runnerModel.getPrevSelected()
-        if prevID:
-            nodeData = {"borderColor": list(Colors.WHITE.getRgb())}
-            self.view.updateNode(prevID, nodeData)
-
-        nodeData = {"borderColor": list(Colors.MINT.getRgb())}
-        self.view.updateNode(id, nodeData)
+    def setBorder(self, id, color: QColor):
+        schema = NodeSchema(borderColor=Color(*color.getRgb()))
+        self.view.updateNode(id, schema)
 
     def resetState(self):
         self.view.clearState()

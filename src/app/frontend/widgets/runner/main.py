@@ -1,34 +1,30 @@
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
-
 from src.app.backend.action import ActionRoute, ActionType
-from src.app.frontend.state import Context
+from src.app.frontend.events import Node
+from src.app.frontend.state import Context, Document
 from src.router.routing import Client, Dispatcher, Link
 
-from .node import RunnerNode
+from .runner import Runner
 from .widget import RunnerWidget
 
 
-class RunnerComponent(QWidget):
-    def __init__(self, context: Context, dispatcher: Dispatcher):
+class RunnerComponent(Node):
+    def __init__(self, context: Context, document: Document, dispatcher: Dispatcher):
         super().__init__()
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-
-        self.setActionBtn = QPushButton("Set Action")
-        self.widget = RunnerWidget()
-
-        self.layout.addWidget(self.setActionBtn)
-        self.layout.addWidget(self.widget)
-        self.layout.addStretch()
-
-        self.client = Client("Runner Component", dispatcher)
-        self.addAction(ActionType.CLICK)
-        self.addAction(ActionType.DRAG)
 
         self.context = context
-        self.node = RunnerNode(self.context, dispatcher)
+        self.document = document
+        self.client = Client("RunnerClient", dispatcher)
 
-        self.setActionBtn.clicked.connect(self.setAction)
+        self.widget = RunnerWidget()
+        self.widget.actionBtn.clicked.connect(self.requestActionSet)
+
+        self.runner = Runner(self.context, self.document, self.client)
+
+        self.subscribe("/Workspace/Created", self.requestActionUnset)
+        self.subscribe("/Runner/Execute/Requested", self.runner.execute)
+
+        self.addAction(ActionType.CLICK)
+        self.addAction(ActionType.DRAG)
 
     def addAction(self, name):
         infoLink = Link(ActionRoute.NAME, ActionRoute.ACTION, name)
@@ -36,6 +32,11 @@ class RunnerComponent(QWidget):
 
         self.widget.addAction(info)
 
-    def setAction(self):
+    def requestActionSet(self):
         data = self.widget.getActionData()
-        self.node.setAction(data)
+        self.publish("/Runner/Action/Set/Requested", data)
+
+    def requestActionUnset(self, data):
+        id = data["id"]
+        parentID = self.context.workspaceModel.parent(id)
+        self.publish("/Runner/Action/Unset/Requested", {"id": parentID})
