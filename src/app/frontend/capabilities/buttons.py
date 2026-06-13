@@ -17,6 +17,9 @@ class Buttons(QWidget):
         self.entryBtn = QPushButton("Set Entry")
         self.executeBtn = QPushButton("Execute")
 
+        self.exportBtn = QPushButton("Export")
+        self.importBtn = QPushButton("Import")
+
         self.createBtn.clicked.connect(self.onWorkspaceCreate)
 
         self.layout.addWidget(self.createBtn)
@@ -25,6 +28,9 @@ class Buttons(QWidget):
         self.layout.addWidget(self.createEdgeBtn)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)
+
+        self.layout.addWidget(self.exportBtn)
+        self.layout.addWidget(self.importBtn)
 
     def onWorkspaceCreate(self):
         name, ok = QInputDialog.getText(

@@ -6,13 +6,13 @@ from .frontend.capabilities import (
     Buttons,
     GraphCapability,
     RunnerCapability,
+    SerializationCapability,
     WorkspaceCapability,
 )
 from .frontend.events import PubSubHandler
 from .frontend.state import Context, Document, StateManager
 from .frontend.widgets.graph import GraphComponent
 from .frontend.widgets.runner import RunnerComponent
-from .frontend.widgets.serialization import SerializationComponent
 from .frontend.widgets.workspace import WorkspaceComponent
 
 
@@ -49,6 +49,7 @@ class App(QApplication):
         self.wksCapability = WorkspaceCapability(self.context)
         self.graphCapability = GraphCapability(self.context)
         self.runnerCapability = RunnerCapability(self.context)
+        self.serialCapability = SerializationCapability()
 
         self.buttons.createWorkspace_.connect(self.wksCapability.requestWorkspace)
         self.buttons.setE1Btn.clicked.connect(self.graphCapability.setE1)
@@ -56,16 +57,16 @@ class App(QApplication):
         self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.requestEdge)
         self.buttons.entryBtn.clicked.connect(self.runnerCapability.requestEntry)
         self.buttons.executeBtn.clicked.connect(self.runnerCapability.requestExecute)
+        self.buttons.exportBtn.clicked.connect(self.serialCapability.handleExport)
+        self.buttons.importBtn.clicked.connect(self.serialCapability.handleImport)
 
         self.wkCpt = WorkspaceComponent(self.context, self.document)
         self.graphCpt = GraphComponent(self.context, self.document)
         self.runnerCpt = RunnerComponent(self.context, self.document, dispatcher)
-        self.serialCpt = SerializationComponent()
 
         self.layoutLeft.addWidget(self.graphCpt.widget)
         self.layoutLeft.addStretch()
         self.layoutRight.addWidget(self.buttons)
-        self.layoutRight.addWidget(self.serialCpt)
         self.layoutRight.addWidget(self.runnerCpt.widget)
         self.layoutRight.addStretch()
 
@@ -75,9 +76,9 @@ class App(QApplication):
         self.pubSubHandler.registerNode(self.wksCapability)
         self.pubSubHandler.registerNode(self.graphCapability)
         self.pubSubHandler.registerNode(self.runnerCapability)
+        self.pubSubHandler.registerNode(self.serialCapability)
 
         self.pubSubHandler.registerNode(self.wkCpt)
         self.pubSubHandler.registerNode(self.graphCpt)
         self.pubSubHandler.registerNode(self.runnerCpt)
-        self.pubSubHandler.registerNode(self.serialCpt.node)
         self.pubSubHandler.handlePublish("/App/Loaded")

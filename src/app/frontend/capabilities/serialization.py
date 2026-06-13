@@ -7,32 +7,31 @@ from PyQt5.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
-    QWidget,
 )
 
 from src.app.config import SAVE_DIR
 from src.app.frontend.events import Node
 
 
-class SerializationComponent(QWidget):
+class SerializationCapability(Node):
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        os.makedirs(SAVE_DIR, exist_ok=True)
 
-        self.exportBtn = QPushButton("Export")
-        self.importBtn = QPushButton("Import")
+    def requestReset(self):
+        self.publish("/App/Reset")
 
-        self.layout.addWidget(self.exportBtn)
-        self.layout.addWidget(self.importBtn)
+    def requestExport(self, id):
+        path = os.path.join(SAVE_DIR, id)
+        os.makedirs(path, exist_ok=True)
+        self.publish("/App/Export", {"path": path})
 
-        self.node = SerializationNode()
-
-        self.exportBtn.clicked.connect(self.handleExport)
-        self.importBtn.clicked.connect(self.handleImport)
+    def requestImport(self, id):
+        path = os.path.join(SAVE_DIR, id)
+        self.publish("/App/Import", {"path": path})
 
     def handleExport(self):
-        dialog = QDialog(self)
+        dialog = QDialog()
         dialog.setWindowTitle("Export Config")
         dialog.setMinimumSize(350, 180)
 
@@ -68,10 +67,10 @@ class SerializationComponent(QWidget):
         if dialog.exec_():
             name = combo.currentText().strip()
             if name:
-                self.node.requestExport(name)
+                self.requestExport(name)
 
     def handleImport(self):
-        dialog = QDialog(self)
+        dialog = QDialog()
         dialog.setWindowTitle("Select Config")
         dialog.resize(300, 150)
         dialog.setMinimumSize(300, 150)
@@ -93,8 +92,8 @@ class SerializationComponent(QWidget):
 
         if dialog.exec_():
             name = combo.currentText()
-            self.node.requestReset()
-            self.node.requestImport(name)
+            self.requestReset()
+            self.requestImport(name)
 
     def getAvailableConfigs(self):
         if not os.path.exists(SAVE_DIR):
@@ -105,21 +104,3 @@ class SerializationComponent(QWidget):
             for name in os.listdir(SAVE_DIR)
             if os.path.isdir(os.path.join(SAVE_DIR, name))
         ]
-
-
-class SerializationNode(Node):
-    def __init__(self):
-        super().__init__()
-        os.makedirs(SAVE_DIR, exist_ok=True)
-
-    def requestReset(self):
-        self.publish("/App/Reset")
-
-    def requestExport(self, id):
-        path = os.path.join(SAVE_DIR, id)
-        os.makedirs(path, exist_ok=True)
-        self.publish("/App/Export", {"path": path})
-
-    def requestImport(self, id):
-        path = os.path.join(SAVE_DIR, id)
-        self.publish("/App/Import", {"path": path})
