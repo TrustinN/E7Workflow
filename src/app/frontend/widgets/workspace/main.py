@@ -1,24 +1,28 @@
 from src.app.frontend.events import Node
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context, Document
 
 from .controller import WorkspaceController
+from .layout import LayoutController
 from .view import WorkspaceView
 
 
 class WorkspaceComponent(Node):
-    def __init__(self, context: WorkspaceContext):
+    def __init__(self, context: Context, document: Document):
         super().__init__()
 
         self.context = context
+        self.document = document
 
         self.view = WorkspaceView()
-        self.controller = WorkspaceController(self.context, self.view)
+        self.controller = WorkspaceController(self.context, self.document, self.view)
+        self.layout = LayoutController(self.context, self.document, self.view)
 
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
 
         self.subscribe("/Workspace/CreateRootRequested", self.createRootWorkspace)
         self.subscribe("/Workspace/CreateRequested", self.createWorkspace)
         self.subscribe("/App/Reset", self.resetState)
+        self.subscribe("/App/Import", self.loadState)
 
     def popGroup(self):
         group = min(self.availableGroups)
@@ -49,3 +53,9 @@ class WorkspaceComponent(Node):
 
     def resetState(self, data):
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
+        self.controller.clearState()
+
+    def loadState(self, data):
+        self.layout.freezeLayout()
+        self.controller.recreateView()
+        self.layout.unfreezeLayout()

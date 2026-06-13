@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context
 
 from .components import GraphButtons
 from .controllers import GraphFullViewController, GraphMiniViewController
@@ -10,7 +10,7 @@ from .views import GraphMultiView, GraphSingleView
 
 class GraphComponent(QWidget):
 
-    def __init__(self, context: WorkspaceContext):
+    def __init__(self, context: Context):
         super().__init__()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)

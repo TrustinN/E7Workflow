@@ -19,10 +19,8 @@ class Window(QWidget):
     resizeDone = pyqtSignal()
     moveDone = pyqtSignal()
 
-    def __init__(self, name=None):
+    def __init__(self):
         super().__init__()
-        self.name = name
-
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
@@ -131,10 +129,6 @@ class Window(QWidget):
     def getGeometry(self):
         return bboxToLayout(self.getBBox())
 
-    def setName(self, name):
-        self.name = name
-        self.repaint()
-
     def setColor(self, color, borderColor):
         self.color = color
         self.borderColor = borderColor
@@ -181,14 +175,3 @@ class Window(QWidget):
 
         rect = self.rect()
         painter.drawRect(rect.adjusted(1, 1, -1, -1))
-
-        if self.name is not None:
-            painter.setPen(QPen(QColor(255, 255, 255), 1))
-            font = painter.font()
-            font.setPointSize(12)
-            font.setBold(False)
-            painter.setFont(font)
-
-            paddingTop = 10
-            textRect = rect.adjusted(0, paddingTop, 0, 0)
-            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)

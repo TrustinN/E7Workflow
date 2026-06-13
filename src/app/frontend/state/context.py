@@ -1,10 +1,8 @@
-from functools import partial
-
 from .models import GraphModel, MappingModel, Model, TreeModel
 from .selection import SelectionModel
 
 
-class WorkspaceContext(Model):
+class Context(Model):
 
     def __init__(self):
         super().__init__()
@@ -24,19 +22,6 @@ class WorkspaceContext(Model):
             "runner": self.runnerModel,
         }
 
-        self.loadedModels = set()
-
-        for name, model in self.models.items():
-            incrementLoaded = partial(self.incrementLoaded, name)
-            model.modelLoaded_.connect(incrementLoaded)
-
-    def incrementLoaded(self, name):
-        self.loadedModels.add(name)
-
-        if len(self.loadedModels) == len(self.models):
-            self.modelLoaded_.emit()
-            self.loadedModels.clear()
-
     def clear(self):
         self.workspaceModel.clear()
         self.graphModel.clear()
@@ -46,3 +31,12 @@ class WorkspaceContext(Model):
         self.runnerModel.clear()
 
         self.modelClear_.emit()
+
+    def serialize(self):
+        return {name: model.serialize() for name, model in self.models.items()}
+
+    def deserialize(self, state):
+        for name, data in state.items():
+            self.models[name].deserialize(data)
+
+        self.modelLoaded_.emit()

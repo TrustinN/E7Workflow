@@ -1,4 +1,4 @@
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context
 from src.app.frontend.widgets.graph.components import NodeType
 from src.app.frontend.widgets.graph.views import GraphSingleView
 from src.app.frontend.widgets.utils.colors import Colors
@@ -7,7 +7,7 @@ from src.app.frontend.widgets.utils.colors import Colors
 class GraphFullViewController:
     def __init__(
         self,
-        context: WorkspaceContext,
+        context: Context,
         view: GraphSingleView,
     ):
         self.context = context

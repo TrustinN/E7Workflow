@@ -1,4 +1,4 @@
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context
 from src.app.frontend.widgets.graph.views import GraphMultiView
 from src.app.frontend.widgets.utils.colors import Colors
 
@@ -6,7 +6,7 @@ from src.app.frontend.widgets.utils.colors import Colors
 class GraphMiniViewController:
     def __init__(
         self,
-        context: WorkspaceContext,
+        context: Context,
         view: GraphMultiView,
     ):
         self.context = context

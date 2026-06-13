@@ -2,28 +2,24 @@ import os
 
 from src.app.frontend.events import Node
 
+from .context import Context
+from .document import Document
 from .models import Serializer
-from .workspace import WorkspaceContext
 
 
-class WorkspaceContextManager(Node):
-    def __init__(self, context: WorkspaceContext):
+class StateManager(Node):
+    def __init__(self, context: Context, document: Document):
         super().__init__()
         self.context = context
+        self.document = document
 
         self.serializer = Serializer()
 
-        self.treeFile = "workspace_data.json"
-        self.graphFile = "graph_data.json"
-        self.selectionFile = "selection_data.json"
-        self.actionFile = "action_data.json"
-        self.runnerFile = "runner_data.json"
+        self.contextFile = "context.json"
+        self.documentFile = "document.json"
         self.files = [
-            self.treeFile,
-            self.graphFile,
-            self.selectionFile,
-            self.actionFile,
-            self.runnerFile,
+            self.contextFile,
+            self.documentFile,
         ]
 
         self.subscribe("/App/Reset", self.contextReset)
@@ -41,21 +37,15 @@ class WorkspaceContextManager(Node):
         path = data["path"]
         paths = self.getPaths(path)
 
-        self.serializer.export(self.context.workspaceModel, paths[self.treeFile])
-        self.serializer.export(self.context.graphModel, paths[self.graphFile])
-        self.serializer.export(self.context.selectionModel, paths[self.selectionFile])
-        self.serializer.export(self.context.actionModel, paths[self.actionFile])
-        self.serializer.export(self.context.runnerModel, paths[self.runnerFile])
+        self.serializer.export(self.context, paths[self.contextFile])
+        self.serializer.export(self.document, paths[self.documentFile])
 
     def contextImport(self, data):
         path = data["path"]
         states = self.getStates(path)
 
-        self.context.workspaceModel.deserialize(states[self.treeFile])
-        self.context.graphModel.deserialize(states[self.graphFile])
-        self.context.selectionModel.deserialize(states[self.selectionFile])
-        self.context.actionModel.deserialize(states[self.actionFile])
-        self.context.runnerModel.deserialize(states[self.runnerFile])
+        self.context.deserialize(states[self.contextFile])
+        self.document.deserialize(states[self.documentFile])
 
     def contextReset(self, data):
         self.context.clear()

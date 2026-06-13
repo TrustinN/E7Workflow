@@ -1,16 +1,36 @@
-from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QPainter
+from dataclasses import dataclass
+from typing import Optional
+
+from PyQt5.QtCore import QRect, QRectF, Qt
+from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtSvg import QSvgRenderer
 
+from src.app.frontend.state.layouts.graph import Color, Geometry
+
 from .hierarchy import WindowHierarchy
-from .utils import bboxToLayout, layoutToBBox
+
+
+@dataclass
+class WorkspaceSchema:
+    displayText: Optional[str] = None
+    geometry: Optional[Geometry] = None
+    iconPath: Optional[str] = None
+    padding: Optional[int] = None
+    color: Optional[Color] = None
+    borderColor: Optional[Color] = None
 
 
 class Workspace(WindowHierarchy):
     def __init__(self, name=None):
-        super().__init__(name)
+        super().__init__()
+        self.name = name
+
         self.icon = None
         self.iconPath = None
+
+    def setName(self, name: str):
+        self.name = name
+        self.repaint()
 
     def setIcon(self, svgPath):
         if svgPath == "":
@@ -22,35 +42,71 @@ class Workspace(WindowHierarchy):
         self.icon = QSvgRenderer(svgPath)
         self.update()
 
-    def getData(self):
-        return {
-            "padding": self.padding,
-            "text": self.name,
-            "geometry": bboxToLayout(self.getBBox()),
-            "iconPath": self.iconPath,
-        }
+    def getData(self) -> WorkspaceSchema:
+        rect = self.geometry()
+        return WorkspaceSchema(
+            displayText=self.name,
+            geometry=Geometry(
+                x=rect.x(),
+                y=rect.y(),
+                width=rect.width(),
+                height=rect.height(),
+            ),
+            iconPath=self.iconPath,
+            padding=self.padding,
+            color=self.color,
+            borderColor=self.borderColor,
+        )
 
-    def setData(self, data):
-        padding = data.get("padding")
-        text = data.get("text")
-        geometry = data.get("geometry")
-        iconPath = data.get("iconPath")
+    def setData(self, data: WorkspaceSchema):
+        displayText = data.displayText
+        rect = data.geometry
+        iconPath = data.iconPath
+        padding = data.padding
+        color = data.color
+        borderColor = data.borderColor
+
+        if displayText is not None:
+            self.setName(displayText)
 
         if padding is not None:
-            self.padding = padding
+            self.setPadding(padding)
 
-        if text is not None:
-            self.name = text
-
-        if geometry is not None:
-            self.setGeometry(layoutToBBox(geometry))
+        if rect is not None:
+            geometry = QRect(rect.x, rect.y, rect.width, rect.height)
+            self.setGeometry(geometry)
 
         if iconPath is not None:
             self.setIcon(iconPath)
 
+        if color:
+            color = QColor(color.r, color.g, color.b, color.a)
+
+        if borderColor:
+            borderColor = QColor(
+                borderColor.r, borderColor.g, borderColor.b, borderColor.a
+            )
+
+        if color and borderColor:
+            self.setColor(color, borderColor)
+
         self.update()
 
     def paintEvent(self, event):
+        painter = QPainter(self)
+
+        rect = self.rect()
+        if self.name is not None:
+            painter.setPen(QPen(QColor(255, 255, 255), 1))
+            font = painter.font()
+            font.setPointSize(12)
+            font.setBold(False)
+            painter.setFont(font)
+
+            paddingTop = 10
+            textRect = rect.adjusted(0, paddingTop, 0, 0)
+            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)
+
         if self.icon:
             painter = QPainter(self)
             painter.setRenderHint(QPainter.Antialiasing)

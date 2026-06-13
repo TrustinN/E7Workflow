@@ -2,9 +2,7 @@ from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.frontend.widgets.workspace.components import Workspace
-
-from .components.windows.utils import layoutToBBox
+from src.app.frontend.widgets.workspace.components import Workspace, WorkspaceSchema
 
 
 class WorkspaceView(QObject):
@@ -43,36 +41,12 @@ class WorkspaceView(QObject):
         self.workspaces[parentID].addChild(workspace)
         self.workspaceCreated_.emit(id)
 
-    def setName(self, id, name):
-        workspace = self.workspaces[id]
-        workspace.setName(name)
-
-    def setPadding(self, id, padding):
-        workspace = self.workspaces[id]
-        workspace.setPadding(padding)
-
-    def setIcon(self, id, svgPath):
-        workspace = self.workspaces[id]
-        workspace.setIcon(svgPath)
-
-    def setData(self, id, data):
+    def setData(self, id, data: WorkspaceSchema):
         workspace = self.workspaces[id]
         workspace.setData(data)
+        self.workspaceChanged_.emit(id)
 
-    def setColor(self, id, fill, border):
-        self.workspaces[id].setColor(fill, border)
-
-    def setGeometry(self, id, geometry):
-        self.workspaces[id].setGeometry(layoutToBBox(geometry))
-
-    def getGeometry(self, id):
-        return self.workspaces[id].getGeometry()
-
-    def restoreData(self, id, data):
-        workspace = self.workspaces[id]
-        workspace.setData(data)
-
-    def getData(self, id):
+    def getData(self, id) -> WorkspaceSchema:
         workspace = self.workspaces[id]
         return workspace.getData()
 

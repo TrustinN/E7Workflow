@@ -10,12 +10,12 @@ from .window import Window
 
 
 class WindowHierarchy(Window):
-    updateGeometry = pyqtSignal()
+    geometryUpdated = pyqtSignal()
     focusParent = pyqtSignal(QMouseEvent)
     onDelete = pyqtSignal()
 
-    def __init__(self, name=None):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__()
         self.windows = []
         self.geometryTracker = GeometryTracker()
 
@@ -36,7 +36,7 @@ class WindowHierarchy(Window):
         self.geometryTracker.addGeometry(window.geometry())
 
         id = len(self.windows) - 1
-        updateGeometry = partial(self.updateGeometryFromChild, id)
+        updateGeometry = partial(self.updateChildTracker, id)
         resizeGeometry = partial(self.resizeFromChild, id)
 
         window.resizeSignal.connect(updateGeometry)
@@ -45,7 +45,8 @@ class WindowHierarchy(Window):
         window.moveSignal.connect(updateGeometry)
         window.moveSignal.connect(resizeGeometry)
 
-        window.updateGeometry.connect(updateGeometry)
+        window.geometryUpdated.connect(updateGeometry)
+        window.geometryUpdated.connect(self.updateGeometry)
 
         window.resizeDone.connect(self.onMovementFinish)
         window.moveDone.connect(self.onMovementFinish)
@@ -192,9 +193,22 @@ class WindowHierarchy(Window):
 
         self.grabMouse()
 
-    def updateGeometryFromChild(self, idx):
+    def updateChildTracker(self, idx):
         child = self.childAt(idx)
         self.geometryTracker.updateGeometry(idx, child.geometry())
+
+    def updateGeometry(self):
+        oldRect = self.geometry()
+        newRect = self.geometryTracker.boundingBox()
+        newRect = newRect.adjusted(
+            -self.padding,
+            -self.padding,
+            self.padding,
+            self.padding,
+        )
+        if oldRect != newRect:
+            super().setGeometry(newRect)
+            self.resizeSignal.emit()
 
     def resizeFromChild(self, idx):
         if self.moving:
@@ -218,7 +232,7 @@ class WindowHierarchy(Window):
 
     def setGeometry(self, rect):
         super().setGeometry(rect)
-        self.updateGeometry.emit()
+        self.geometryUpdated.emit()
 
     def hide(self):
         super().hide()

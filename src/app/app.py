@@ -9,7 +9,7 @@ from .frontend.capabilities import (
     WorkspaceCapability,
 )
 from .frontend.events import PubSubHandler
-from .frontend.state import WorkspaceContext, WorkspaceContextManager
+from .frontend.state import Context, Document, StateManager
 from .frontend.widgets.graph import GraphComponent
 from .frontend.widgets.runner import RunnerComponent
 from .frontend.widgets.serialization import SerializationComponent
@@ -41,8 +41,9 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.context = WorkspaceContext()
-        self.contextManager = WorkspaceContextManager(self.context)
+        self.context = Context()
+        self.document = Document()
+        self.contextManager = StateManager(self.context, self.document)
 
         self.buttons = Buttons()
         self.wksCapability = WorkspaceCapability()
@@ -54,7 +55,7 @@ class App(QApplication):
         self.buttons.entryBtn.clicked.connect(self.runnerCapability.requestEntry)
         self.buttons.executeBtn.clicked.connect(self.runnerCapability.requestExecute)
 
-        self.wkCpt = WorkspaceComponent(self.context)
+        self.wkCpt = WorkspaceComponent(self.context, self.document)
         self.graphCpt = GraphComponent(self.context)
         self.runnerCpt = RunnerComponent(self.context, dispatcher)
         self.serialCpt = SerializationComponent()

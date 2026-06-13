@@ -1,13 +1,13 @@
 from src.app.backend.action import ActionRoute
 from src.app.frontend.events import Node
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context
 from src.router.routing import Client, Dispatcher, Link
 
 
 class RunnerNode(Node):
     def __init__(
         self,
-        context: WorkspaceContext,
+        context: Context,
         dispatcher: Dispatcher,
     ):
         super().__init__()

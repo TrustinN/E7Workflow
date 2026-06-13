@@ -1,9 +1,9 @@
 from src.app.frontend.events import Node
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context
 
 
 class GraphNode(Node):
-    def __init__(self, context: WorkspaceContext):
+    def __init__(self, context: Context):
         super().__init__()
         self.context = context
 

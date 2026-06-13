@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from src.app.backend.action import ActionRoute, ActionType
-from src.app.frontend.state import WorkspaceContext
+from src.app.frontend.state import Context
 from src.router.routing import Client, Dispatcher, Link
 
 from .node import RunnerNode
@@ -9,7 +9,7 @@ from .widget import RunnerWidget
 
 
 class RunnerComponent(QWidget):
-    def __init__(self, context: WorkspaceContext, dispatcher: Dispatcher):
+    def __init__(self, context: Context, dispatcher: Dispatcher):
         super().__init__()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
