@@ -27,18 +27,6 @@ class GraphSingleView(GraphMultiView):
     def createEdge(self, edgeID: str, e1: str, e2: str):
         super().createEdge(edgeID, e1, e2, self.graphID)
 
-    def updateNode(self, nodeID: str, data):
-        super().updateNode(nodeID, self.graphID, data)
-
-    def updateEdge(self, edgeID: str, data):
-        super().updateEdge(edgeID, self.graphID, data)
-
-    def readNode(self, nodeID: str):
-        return super().readNode(nodeID, self.graphID)
-
-    def readEdge(self, edgeID: str):
-        return super().readEdge(edgeID, self.graphID)
-
     def clearState(self):
         super().clearState()
         self.graphID = None

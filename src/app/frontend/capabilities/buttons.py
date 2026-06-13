@@ -11,6 +11,8 @@ class Buttons(QWidget):
         self.setLayout(self.layout)
 
         self.createBtn = QPushButton("Create Workspace")
+        self.setE1Btn = QPushButton("SetEdgeStart")
+        self.setE2Btn = QPushButton("SetEdgeEnd")
         self.createEdgeBtn = QPushButton("Create Edge")
         self.entryBtn = QPushButton("Set Entry")
         self.executeBtn = QPushButton("Execute")
@@ -18,6 +20,8 @@ class Buttons(QWidget):
         self.createBtn.clicked.connect(self.onWorkspaceCreate)
 
         self.layout.addWidget(self.createBtn)
+        self.layout.addWidget(self.setE1Btn)
+        self.layout.addWidget(self.setE2Btn)
         self.layout.addWidget(self.createEdgeBtn)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)

@@ -1,30 +1,27 @@
-from PyQt5.QtCore import QObject, QPointF, QRectF, Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QFont, QFontMetrics, QPen
-from PyQt5.QtWidgets import (
-    QAbstractGraphicsShapeItem,
-    QGraphicsEllipseItem,
-    QGraphicsItem,
-    QGraphicsRectItem,
-)
+from dataclasses import dataclass
+from typing import Optional
 
-NODE_DEFAULT_COLOR = QColor(20, 20, 20, 255)
-NODE_DEFAULT_BORDER = QColor(255, 255, 255, 255)
-NODE_HIGHLIGHT_COLOR = QColor(0, 163, 255, 255)
+from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtGui import QBrush, QColor, QFont, QFontMetrics, QPen
+from PyQt5.QtWidgets import QAbstractGraphicsShapeItem, QGraphicsItem
+
+from src.app.frontend.state.layouts.graph import Color, Geometry
+
+from .emitter import GraphicsEmitter
+
+
+@dataclass
+class NodeSchema:
+    position: Optional[tuple[float, float]] = None
+    color: Optional[Color] = None
+    borderColor: Optional[Color] = None
+    geometry: Optional[Geometry] = None
+    displayText: Optional[str] = None
 
 
 class NodeType:
     RECTANGLE = "Rectangle"
     CIRCLE = "Circle"
-
-
-NODE_DEFAULT_COLOR = QColor(20, 20, 20)
-NODE_DEFAULT_BORDER = QColor(255, 255, 255)
-NODE_HIGHLIGHT_COLOR = QColor(0, 163, 255)
-
-
-class GraphicsEmitter(QObject):
-    onMove_ = pyqtSignal(QPointF)
-    onMousePress_ = pyqtSignal()
 
 
 class GraphicsNode(QAbstractGraphicsShapeItem):
@@ -34,10 +31,10 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
         self._rect = QRectF(rect)
 
         self.displayText = None
-        self.highlightColor = NODE_HIGHLIGHT_COLOR
+        self.highlightColor = QColor(0, 163, 255)
 
-        self.setBrush(QBrush(NODE_DEFAULT_COLOR))
-        self.setPen(QPen(NODE_DEFAULT_BORDER, 1))
+        self.setBrush(QBrush(QColor(20, 20, 20)))
+        self.setPen(QPen(QColor(255, 255, 255), 1))
 
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -56,70 +53,51 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
     def boundingRect(self):
         return self._rect.adjusted(-2, -2, 2, 2)
 
-    def setGeometry(self, rect):
-        self.setRect(QRectF(*rect))
-
-    def getGeometry(self):
-        r = self._rect
-        return [r.x(), r.y(), r.width(), r.height()]
-
-    def setPosition(self, position):
-        self.setPos(QPointF(*position))
-
-    def getPosition(self):
-        pos = self.pos()
-        return [pos.x(), pos.y()]
-
-    def getColor(self):
+    def getData(self) -> NodeSchema:
         color = self.brush().color()
-        return [
-            color.red(),
-            color.green(),
-            color.blue(),
-        ]
-
-    def setColor(self, color):
-        self.setBrush(QBrush(QColor(*color)))
-
-    def getData(self):
         bc = self.pen().color()
+        rect = self.rect()
 
-        return {
-            "position": self.getPosition(),
-            "color": self.getColor(),
-            "borderColor": [
-                bc.red(),
-                bc.green(),
-                bc.blue(),
-            ],
-            "rect": self.getGeometry(),
-            "displayText": self.displayText,
-        }
+        return NodeSchema(
+            position=(self.pos().x(), self.pos().y()),
+            color=Color(*color.getRgb()),
+            borderColor=Color(*bc.getRgb()),
+            geometry=Geometry(
+                x=rect.x(),
+                y=rect.y(),
+                width=rect.width(),
+                height=rect.height(),
+            ),
+            displayText=self.displayText,
+        )
 
-    def setData(self, data):
-        position = data.get("position")
-        color = data.get("color")
-        borderColor = data.get("borderColor")
-        rect = data.get("rect")
-        displayText = data.get("displayText")
-
-        if position is not None:
-            self.setPosition(position)
-
-        if color is not None:
-            self.setColor(color)
-
-        if borderColor is not None:
-            pen = self.pen()
-            pen.setColor(QColor(*borderColor))
-            self.setPen(pen)
-
-        if rect is not None:
-            self.setGeometry(rect)
+    def setData(self, data: NodeSchema):
+        position = data.position
+        color = data.color
+        borderColor = data.borderColor
+        rect = data.geometry
+        displayText = data.displayText
 
         if displayText is not None:
             self.displayText = displayText
             self.resizeToText()
+
+        if color is not None:
+            color = QColor(color.r, color.g, color.b, color.a)
+            self.setBrush(QBrush(color))
+
+        if borderColor is not None:
+            color = QColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
+            pen = self.pen()
+            pen.setColor(color)
+            self.setPen(pen)
+
+        if rect is not None:
+            geometry = QRectF(rect.x, rect.y, rect.width, rect.height)
+            self.setRect(geometry)
+
+        if position:
+            self.setPos(position[0], position[1])
 
         self.update()
 

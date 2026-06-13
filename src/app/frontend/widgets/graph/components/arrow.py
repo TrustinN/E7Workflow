@@ -1,8 +1,18 @@
 import math
+from dataclasses import dataclass
+from typing import Optional
 
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPolygonF
 from PyQt5.QtWidgets import QGraphicsItem
+
+from .emitter import GraphicsEmitter
+
+
+@dataclass
+class EdgeSchema:
+    start: Optional[str] = None
+    end: Optional[str] = None
 
 
 class GraphicsArrowItem(QGraphicsItem):
@@ -14,25 +24,14 @@ class GraphicsArrowItem(QGraphicsItem):
         super().__init__()
         self.color = QColor(20, 20, 20, 255)
         self.end = QPointF(0, 0)
+        self.emitter = GraphicsEmitter()
+
         self.setZValue(-1)
         self.setStart(start)
         self.setEnd(end)
 
-    def getData(self):
-        return {
-            "startPosition": [self.start.x(), self.start.y()],
-            "endPosition": [self.end.x(), self.end.y()],
-        }
-
-    def setData(self, data):
-        startPosition = data.get("startPosition")
-        endPosition = data.get("endPosition")
-
-        if startPosition is not None:
-            self.setStart(QPointF(*startPosition))
-
-        if endPosition is not None:
-            self.setEnd(QPointF(*endPosition))
+    def getData(self) -> EdgeSchema:
+        return EdgeSchema()
 
     def setStart(self, start: QPointF):
         self.start = start
@@ -45,6 +44,8 @@ class GraphicsArrowItem(QGraphicsItem):
         self.setRotation(self.rotation() + a2 - a1)
         self.update()
 
+        self.emitter.onMove_.emit(self.start)
+
     def setEnd(self, end: QPointF):
         self.end = end
 
@@ -56,6 +57,8 @@ class GraphicsArrowItem(QGraphicsItem):
 
         self.setRotation(self.rotation() + a2 - a1)
         self.update()
+
+        self.emitter.onMove_.emit(self.end)
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)

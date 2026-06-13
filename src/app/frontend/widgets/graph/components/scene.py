@@ -3,8 +3,14 @@ from functools import partial
 from PyQt5.QtCore import QSignalBlocker, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene
 
-from .arrow import GraphicsArrowItem
-from .node import GraphicsCircleNode, GraphicsNode, GraphicsRectNode, NodeType
+from .arrow import EdgeSchema, GraphicsArrowItem
+from .node import (
+    GraphicsCircleNode,
+    GraphicsNode,
+    GraphicsRectNode,
+    NodeSchema,
+    NodeType,
+)
 
 
 class GraphScene(QGraphicsScene):
@@ -22,6 +28,7 @@ class GraphScene(QGraphicsScene):
         self.setSceneRect(0, 0, 400, 300)
         self.nodes: dict[str, GraphicsNode] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
+        self.edgeBindings: dict[str, tuple[str, str]] = {}
         self.selectionChanged.connect(self.onSelectionChanged)
 
     def selectNode(self, id):
@@ -60,19 +67,25 @@ class GraphScene(QGraphicsScene):
         self.nodes[id] = node
 
         onNodeMoved = partial(self.nodeMoved_.emit, id)
-        # onNodePressed = partial(self.onNodePressed, id)
-
         node.emitter.onMove_.connect(lambda pos: onNodeMoved())
-        # node.emitter.onMousePress_.connect(onNodePressed)
 
         self.addItem(node)
         self.nodeCreated_.emit(id)
 
-    def readNode(self, id):
+    def readNode(self, id) -> NodeSchema:
         node = self.nodes[id]
         return node.getData()
 
-    def updateNode(self, id, data):
+    def readEdge(self, id) -> EdgeSchema:
+        id1, id2 = self.edgeBindings[id]
+
+        schema = self.edges[id].getData()
+        schema.start = id1
+        schema.end = id2
+
+        return schema
+
+    def updateNode(self, id, data: NodeSchema):
         node = self.nodes[id]
         node.setData(data)
 
@@ -84,33 +97,9 @@ class GraphScene(QGraphicsScene):
         n2.emitter.onMove_.connect(arrow.setEnd)
 
         edgeMoved = partial(self.edgeMoved_.emit, id)
-        n1.emitter.onMove_.connect(edgeMoved)
-        n2.emitter.onMove_.connect(edgeMoved)
+        arrow.emitter.onMove_.connect(edgeMoved)
 
         self.edges[id] = arrow
+        self.edgeBindings[id] = (id1, id2)
         self.addItem(arrow)
         self.edgeCreated_.emit(id)
-
-    def readEdge(self, id):
-        edge = self.edges[id]
-        return edge.getData()
-
-    def updateEdge(self, id, data):
-        if id in self.edges:
-            edge = self.edges[id]
-            edge.setData(data)
-
-    def getData(self):
-        nodeData = {}
-        edgeData = {}
-        for id in self.nodes:
-            nodeData[id] = self.readNode(id)
-
-        for nid1, nid2 in self.edges:
-            data = self.readEdge(nid1, nid2)
-            edgeData[id] = data
-
-        return {
-            "nodes": nodeData,
-            "edges": edgeData,
-        }

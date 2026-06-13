@@ -1,24 +1,21 @@
-from PyQt5.QtCore import pyqtSignal
-
-from src.app.frontend.widgets.graph.components import GraphScene, NodeType
+from src.app.frontend.widgets.graph.components import (
+    EdgeSchema,
+    GraphScene,
+    NodeSchema,
+    NodeType,
+)
 
 from .view import GraphView
 
 
 class GraphMultiView(GraphView):
-    nodeCreated_ = pyqtSignal(str)
-    edgeCreated_ = pyqtSignal(str)
-
-    nodeUpdated_ = pyqtSignal(str)
-    edgeUpdated_ = pyqtSignal(str)
-
-    nodeSelected_ = pyqtSignal(str)
-    nodeDeselected_ = pyqtSignal()
 
     def __init__(self):
         super().__init__()
 
         self.scenes: dict[str, GraphScene] = {}
+        self.nodeParents: dict[str, str] = {}
+        self.edgeParents: dict[str, str] = {}
 
     def selectNode(self, nodeID: str, parentID: str):
         scene = self.scenes[parentID]
@@ -52,32 +49,31 @@ class GraphMultiView(GraphView):
         parent = self.scenes[graphID]
         parent.createNode(nodeID, nodeType)
 
+        self.nodeParents[nodeID] = graphID
         self.nodeCreated_.emit(nodeID)
 
     def createEdge(self, edgeID: str, e1: str, e2: str, graphID: str):
         parent = self.scenes[graphID]
         parent.createEdge(edgeID, e1, e2)
 
+        self.edgeParents[edgeID] = graphID
         self.edgeCreated_.emit(edgeID)
 
-    def updateNode(self, nodeID: str, parentID: str, data):
+    def updateNode(self, nodeID: str, data: NodeSchema):
+        parentID = self.nodeParents[nodeID]
         scene = self.scenes[parentID]
         scene.updateNode(nodeID, data)
 
         self.nodeUpdated_.emit(nodeID)
 
-    def updateEdge(self, edgeID: str, parentID: str, data):
-        scene = self.scenes[parentID]
-        scene.updateEdge(edgeID, data)
-
-        self.edgeUpdated_.emit(edgeID)
-
-    def readNode(self, nodeID: str, parentID: str):
+    def readNode(self, nodeID: str) -> NodeSchema:
+        parentID = self.nodeParents[nodeID]
         scene = self.scenes[parentID]
         data = scene.readNode(nodeID)
         return data
 
-    def readEdge(self, edgeID: str, parentID: str):
+    def readEdge(self, edgeID: str) -> EdgeSchema:
+        parentID = self.edgeParents[edgeID]
         scene = self.scenes[parentID]
         data = scene.readEdge(edgeID)
         return data
@@ -87,4 +83,6 @@ class GraphMultiView(GraphView):
             scene.deleteLater()
 
         self.scenes.clear()
+        self.nodeParents.clear()
+        self.edgeParents.clear()
         self.setScene(None)

@@ -20,15 +20,15 @@ class WorkspaceComponent(Node):
         self.layout = WorkspaceLayoutSync(self.document, self.view)
         self.controller = WorkspaceController(self.context, self.view)
 
-        self.subscribe("/Workspace/CreateRootRequested", self.createRootWorkspace)
-        self.subscribe("/Workspace/CreateRequested", self.createWorkspace)
+        self.subscribe("/Workspace/Root/Requested", self.createRootWorkspace)
+        self.subscribe("/Workspace/Requested", self.createWorkspace)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
     def createRootWorkspace(self, data):
         id = data["id"]
         self.builder.createWorkspace(id)
-        self.publish("/Workspace/RootCreated", data)
+        self.publish("/Workspace/Root/Created", data)
 
     def createWorkspace(self, data):
         id = data["id"]

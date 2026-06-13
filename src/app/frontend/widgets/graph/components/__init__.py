@@ -1,3 +1,3 @@
-from .buttons import GraphButtons
-from .node import NodeType
+from .arrow import EdgeSchema
+from .node import NodeSchema, NodeType
 from .scene import GraphScene

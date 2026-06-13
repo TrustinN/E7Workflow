@@ -41,7 +41,7 @@ class WorkspaceCapability(Node):
             "id": id,
         }
         self.context.workspaceModel.createRoot(id, data)
-        self.publish("/Workspace/CreateRootRequested", data)
+        self.publish("/Workspace/Root/Requested", data)
 
     def createWorkspace(self, name):
         id = generate()
@@ -53,7 +53,7 @@ class WorkspaceCapability(Node):
             "grouping": group,
         }
         self.context.workspaceModel.createNode(id, parentID, data)
-        self.publish("/Workspace/CreateRequested", data)
+        self.publish("/Workspace/Requested", data)
 
     def loadState(self, data):
         for nodeID in self.context.workspaceModel.nodeIter():
