@@ -1,8 +1,9 @@
 from src.app.frontend.events import Node
 from src.app.frontend.state import Context, Document
 
+from .builder import WorkspaceBuilder
 from .controller import WorkspaceController
-from .layout import LayoutController
+from .layout import WorkspaceLayoutSync
 from .view import WorkspaceView
 
 
@@ -14,8 +15,10 @@ class WorkspaceComponent(Node):
         self.document = document
 
         self.view = WorkspaceView()
-        self.controller = WorkspaceController(self.context, self.document, self.view)
-        self.layout = LayoutController(self.context, self.document, self.view)
+
+        self.builder = WorkspaceBuilder(self.context, self.view)
+        self.layout = WorkspaceLayoutSync(self.document, self.view)
+        self.controller = WorkspaceController(self.context, self.view)
 
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
 
@@ -57,5 +60,6 @@ class WorkspaceComponent(Node):
 
     def loadState(self, data):
         self.layout.freezeLayout()
-        self.controller.recreateView()
+        self.builder.recreateView()
+        self.layout.rerenderView()
         self.layout.unfreezeLayout()

@@ -1,18 +1,17 @@
-from src.app.frontend.state import Context, Document
+from src.app.frontend.state import Document
 from src.app.frontend.state.layouts import NodeItem
 
+from .components import WorkspaceSchema
 from .view import WorkspaceView
 
 
-class LayoutController:
-    def __init__(self, context: Context, document: Document, view: WorkspaceView):
-        self.context = context
+class WorkspaceLayoutSync:
+    def __init__(self, document: Document, view: WorkspaceView):
         self.document = document
         self.view = view
 
         self.view.workspaceCreated_.connect(self.updateLayout)
         self.view.workspaceChanged_.connect(self.updateLayout)
-        self.view.workspacePressed_.connect(self.onWorkspacePressed)
 
         self.freeze = False
 
@@ -29,13 +28,22 @@ class LayoutController:
         )
         self.document.workspace.nodes[id] = node
 
-    def onWorkspacePressed(self, id):
-        if self.freeze:
-            return
-        self.context.selectionModel.setSelected(id)
-
     def freezeLayout(self):
         self.freeze = True
 
     def unfreezeLayout(self):
         self.freeze = False
+
+    def rerenderView(self):
+        for nodeID in list(self.document.workspace.nodes)[::-1]:
+            data = self.document.workspace.nodes[nodeID]
+            schema = WorkspaceSchema(
+                displayText=data.displayText,
+                geometry=data.geometry,
+                iconPath=data.iconPath,
+                padding=data.padding,
+                color=data.color,
+                borderColor=data.borderColor,
+            )
+            print(schema)
+            self.view.setData(nodeID, schema)

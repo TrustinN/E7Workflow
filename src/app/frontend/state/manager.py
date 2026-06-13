@@ -49,3 +49,4 @@ class StateManager(Node):
 
     def contextReset(self, data):
         self.context.clear()
+        self.document.clear()
