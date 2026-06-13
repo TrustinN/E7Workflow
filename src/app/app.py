@@ -46,8 +46,8 @@ class App(QApplication):
         self.contextManager = StateManager(self.context, self.document)
 
         self.buttons = Buttons()
-        self.wksCapability = WorkspaceCapability()
-        self.graphCapability = GraphCapability()
+        self.wksCapability = WorkspaceCapability(self.context)
+        self.graphCapability = GraphCapability(self.context)
         self.runnerCapability = RunnerCapability()
 
         self.buttons.createWorkspace_.connect(self.wksCapability.createWorkspace)

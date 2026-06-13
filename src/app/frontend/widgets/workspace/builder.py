@@ -9,8 +9,6 @@ class WorkspaceBuilder:
         self.context = context
         self.view = view
 
-        self.context.workspaceModel.nodeCreated_.connect(self.createWorkspace)
-
     def _createRootWorkspace(self, id):
         self.view.createRootWorkspace(id)
 
@@ -20,7 +18,7 @@ class WorkspaceBuilder:
     def _createChildWorkspace(self, id, parentID):
         data = self.context.workspaceModel.nodeData(id)
 
-        text = f"{data["grouping"]} - {data["text"]}"
+        text = f"{data['grouping']} - {data['text']}"
         schema = WorkspaceSchema(displayText=text)
 
         self.view.createChildWorkspace(id, parentID)
@@ -33,7 +31,7 @@ class WorkspaceBuilder:
         else:
             self._createChildWorkspace(id, parentID)
 
-    def recreateView(self):
+    def buildAll(self):
         for nodeID in self.context.workspaceModel.nodeIter():
             if self.context.workspaceModel.isRoot(nodeID):
                 self._createRootWorkspace(nodeID)

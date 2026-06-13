@@ -1,7 +1,7 @@
 import os
 
 from src.app.config import ICON_DIR
-from src.app.frontend.state import Context, Document
+from src.app.frontend.state import Context
 from src.app.frontend.state.layouts.graph import Color
 from src.app.frontend.widgets.utils.colors import Alpha, Colors, with_alpha
 
@@ -52,9 +52,6 @@ class WorkspaceController:
     def onWorkspacePressed(self, id):
         self.context.selectionModel.setSelected(id)
 
-    def clearState(self):
-        self.view.clearState()
-
     def getIconPath(self, data):
         name = data["name"]
         if name == "Click":
@@ -70,3 +67,6 @@ class WorkspaceController:
 
     def onActionUnbind(self, id):
         self.view.setIcon(id, "")
+
+    def resetState(self):
+        self.view.clearState()

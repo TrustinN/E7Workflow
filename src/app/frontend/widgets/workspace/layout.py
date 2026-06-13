@@ -45,5 +45,7 @@ class WorkspaceLayoutSync:
                 color=data.color,
                 borderColor=data.borderColor,
             )
-            print(schema)
             self.view.setData(nodeID, schema)
+
+    def resetState(self):
+        self.freeze = False

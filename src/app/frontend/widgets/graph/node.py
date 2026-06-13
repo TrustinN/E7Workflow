@@ -7,6 +7,7 @@ class GraphNode(Node):
         super().__init__()
         self.context = context
 
+        self.subscribe("/Workspace/RootCreated", self.createRoot)
         self.subscribe("/Workspace/Created", self.createNode)
         self.subscribe("/Graph/EdgeRequested", self.createEdge)
         self.subscribe("/App/Reset", self.resetState)
@@ -14,9 +15,15 @@ class GraphNode(Node):
         self.firstEdge = None
         self.secondEdge = None
 
+    def createRoot(self, data):
+        nodeID = data["id"]
+        self.context.graphModel.createNode(nodeID, data)
+        self.publish("/Graph/Root/Created", data)
+
     def createNode(self, data):
         nodeID = data["id"]
         self.context.graphModel.createNode(nodeID, data)
+        self.publish("/Graph/Node/Created")
 
     def setE1(self):
         self.firstEdge = self.context.selectionModel.getSelected()
