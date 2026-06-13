@@ -1,11 +1,9 @@
 import numpy as np
 from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QRegion
+from PyQt5.QtGui import QBrush, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import QWidget
 
 from src.app.frontend.widgets.utils.colors import Colors
-
-from .utils import bboxToLayout
 
 
 class Window(QWidget):
@@ -46,14 +44,16 @@ class Window(QWidget):
         super().grabMouse()
         self.mousePress.emit()
 
-    def getResizeCorners(self, event):
-        corners = self.getBBox()
+    def getResizeRect(self, event):
+        corners = [self.geometry().topLeft(), self.geometry().bottomRight()]
         for i in self.resizeIndices:
             if i % 2 == 0:
                 corners[i // 2].setX(event.globalPos().x())
             else:
                 corners[i // 2].setY(event.globalPos().y())
-        return corners
+
+        rect = QRect(corners[0], corners[1])
+        return rect
 
     def mouseMoveEvent(self, event):
         if not self.canMove():
@@ -78,7 +78,7 @@ class Window(QWidget):
         self.resizeSignal.emit()
 
     def mousePressUpdate(self, event):
-        self.dragPosition = event.globalPos() - self.frameGeometry().topLeft()
+        self.dragPosition = event.globalPos() - self.geometry().topLeft()
 
         threshold = 10
         dragx = self.dragPosition.x()
@@ -91,8 +91,8 @@ class Window(QWidget):
         ]
         activeCnt = [1 if v else 0 for v in sideActive]
 
-        inX = 0 <= dragx and dragx <= self.width()
-        inY = 0 <= dragy and dragy <= self.height()
+        inX = 0 < dragx and dragx < self.width()
+        inY = 0 < dragy and dragy < self.height()
         inside = inX and inY
 
         if sum(activeCnt) and inside and self.canMove():
@@ -119,15 +119,6 @@ class Window(QWidget):
         elif self.moving:
             self.moving = False
             self.moveDone.emit()
-
-    def getBBox(self):
-        return [
-            self.frameGeometry().topLeft(),
-            self.frameGeometry().bottomRight(),
-        ]
-
-    def getGeometry(self):
-        return bboxToLayout(self.getBBox())
 
     def setColor(self, color, borderColor):
         self.color = color

@@ -5,7 +5,6 @@ from PyQt5.QtCore import QPoint, QRect, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
 
 from .tracker import GeometryTracker
-from .utils import applyPadding
 from .window import Window
 
 
@@ -55,7 +54,8 @@ class WindowHierarchy(Window):
         window.focusParent.connect(self.mousePressEvent)
 
     def fitChildToCenter(self, window, scale=0.7):
-        tl, br = self.getBBox()
+        tl = self.geometry().topLeft()
+        br = self.geometry().bottomRight()
 
         parentW = br.x() - tl.x()
         parentH = br.y() - tl.y()
@@ -75,32 +75,37 @@ class WindowHierarchy(Window):
 
         window.setGeometry(QRect(newTl, newBr))
 
-    def resize(self, newCorners):
-        oldCorners = self.getBBox()
+    def resize(self, newRect):
+        oldRect = self.geometry()
 
-        # Account for padding
-        oldCornersPadded = applyPadding(oldCorners, -self.padding)
-        newCornersPadded = applyPadding(newCorners, -self.padding)
+        # Consider inner frame
+        newRect = newRect.adjusted(
+            self.padding, self.padding, -self.padding, -self.padding
+        )
+        oldRect = oldRect.adjusted(
+            self.padding, self.padding, -self.padding, -self.padding
+        )
 
         # Get dimensions of old and new frame
-        dimOld = oldCornersPadded[1] - oldCornersPadded[0]
-        dimNew = newCornersPadded[1] - newCornersPadded[0]
+        dimOld = oldRect.size()
+        dimNew = newRect.size()
 
         # Update child window sizes resize displacement
         def childResize(window):
-            oldTl, oldBr = window.getBBox()
+            oldTl = window.geometry().topLeft()
+            oldBr = window.geometry().bottomRight()
 
             # linear interpolation
-            s0 = (1.0 * oldTl.x() - oldCornersPadded[0].x()) / dimOld.x()
-            t0 = (1.0 * oldTl.y() - oldCornersPadded[0].y()) / dimOld.y()
-            s1 = (1.0 * oldBr.x() - oldCornersPadded[1].x()) / dimOld.x()
-            t1 = (1.0 * oldBr.y() - oldCornersPadded[1].y()) / dimOld.y()
+            s0 = (1.0 * oldTl.x() - oldRect.left()) / dimOld.width()
+            t0 = (1.0 * oldTl.y() - oldRect.top()) / dimOld.height()
+            s1 = (1.0 * oldBr.x() - oldRect.right()) / dimOld.width()
+            t1 = (1.0 * oldBr.y() - oldRect.bottom()) / dimOld.height()
 
             prevTlErr, prevBrErr = window.resizeError
-            newTlx = dimNew.x() * s0 + newCornersPadded[0].x() + prevTlErr[0]
-            newTly = dimNew.y() * t0 + newCornersPadded[0].y() + prevTlErr[1]
-            newBrx = dimNew.x() * s1 + newCornersPadded[1].x() + prevBrErr[0]
-            newBry = dimNew.y() * t1 + newCornersPadded[1].y() + prevBrErr[1]
+            newTlx = dimNew.width() * s0 + newRect.left() + prevTlErr[0]
+            newTly = dimNew.height() * t0 + newRect.top() + prevTlErr[1]
+            newBrx = dimNew.width() * s1 + newRect.right() + prevBrErr[0]
+            newBry = dimNew.height() * t1 + newRect.bottom() + prevBrErr[1]
 
             newTl = np.array([newTlx, newTly])
             newBr = np.array([newBrx, newBry])
@@ -113,7 +118,7 @@ class WindowHierarchy(Window):
             newTl = QPoint(intNewTl[0], intNewTl[1])
             newBr = QPoint(intNewBr[0], intNewBr[1])
 
-            window.resize([newTl, newBr])
+            window.resize(QRect(newTl, newBr))
 
         for window in self.windows:
             childResize(window)
@@ -121,7 +126,11 @@ class WindowHierarchy(Window):
         if not self.resizing:
             self.resizeBegin.emit()
 
-        super().setGeometry(QRect(newCorners[0], newCorners[1]))
+        # Restore padding
+        newRect = newRect.adjusted(
+            -self.padding, -self.padding, self.padding, self.padding
+        )
+        super().setGeometry(newRect)
         self.resizing = True
         self.resizeSignal.emit()
 
@@ -130,8 +139,8 @@ class WindowHierarchy(Window):
             return
 
         if self.resizeIndices:
-            newCorners = self.getResizeCorners(event)
-            self.resize(newCorners)
+            newRect = self.getResizeRect(event)
+            self.resize(newRect)
 
         else:
             # Save prev state
@@ -179,7 +188,8 @@ class WindowHierarchy(Window):
             if not w.canMove():
                 continue
 
-            tl, br = w.getBBox()
+            tl = w.geometry().topLeft()
+            br = w.geometry().bottomRight()
 
             # Find child under mouse press
             if tl.x() < x and x < br.x():
