@@ -25,6 +25,10 @@ class PubSubHandler:
         node.publish_.connect(self.handlePublish)
         self.nodes.append(node)
 
+    def registerNodes(self, nodes: list[Node]):
+        for node in nodes:
+            self.registerNode(node)
+
     def handlePublish(self, route: str, msg=None):
         for node in self.nodes:
             cb = node.subscriptionList_.get(route)
