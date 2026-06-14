@@ -17,3 +17,15 @@ class Icons:
         "left": DRAG_LEFT,
         "right": DRAG_RIGHT,
     }
+
+
+def getIconPath(data):
+    name = data["name"]
+    userParams = data["userParams"]
+    match name:
+        case "Click":
+            return Icons.CLICK
+
+        case "Drag":
+            direction = userParams["dir"]["value"]
+            return Icons.DRAG[direction]

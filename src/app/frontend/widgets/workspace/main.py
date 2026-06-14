@@ -1,4 +1,4 @@
-from src.app.config import Icons
+from src.app.config import getIconPath
 from src.app.frontend.events import Node
 from src.app.frontend.state import Context, Document
 
@@ -6,18 +6,6 @@ from .builder import WorkspaceBuilder
 from .controller import WorkspaceController
 from .layout import WorkspaceLayoutSync
 from .view import WorkspaceView
-
-
-def getIconPath(data):
-    name = data["name"]
-    userParams = data["userParams"]
-    match name:
-        case "Click":
-            return Icons.CLICK
-
-        case "Drag":
-            direction = userParams["dir"]["value"]
-            return Icons.DRAG[direction]
 
 
 class WorkspaceComponent(Node):
