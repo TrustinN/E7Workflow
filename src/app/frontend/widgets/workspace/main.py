@@ -8,6 +8,18 @@ from .layout import WorkspaceLayoutSync
 from .view import WorkspaceView
 
 
+def getIconPath(data):
+    name = data["name"]
+    userParams = data["userParams"]
+    match name:
+        case "Click":
+            return Icons.CLICK
+
+        case "Drag":
+            direction = userParams["dir"]["value"]
+            return Icons.DRAG[direction]
+
+
 class WorkspaceComponent(Node):
     def __init__(self, context: Context, document: Document):
         super().__init__()
@@ -43,7 +55,7 @@ class WorkspaceComponent(Node):
     def setAction(self, data):
         id = data["id"]
         data = self.context.actionModel.getData(id)
-        iconPath = self.getIconPath(data)
+        iconPath = getIconPath(data)
         self.controller.setIcon(id, iconPath)
 
     def unsetAction(self, data):
@@ -59,14 +71,3 @@ class WorkspaceComponent(Node):
         self.builder.buildAll()
         self.layout.rerenderView()
         self.layout.unfreezeLayout()
-
-    def getIconPath(self, data):
-        name = data["name"]
-        userParams = data["userParams"]
-        match name:
-            case "Click":
-                return Icons.CLICK
-
-            case "Drag":
-                direction = userParams["dir"]["value"]
-                return Icons.DRAG[direction]
