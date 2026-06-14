@@ -33,13 +33,13 @@ class Workspace(WindowHierarchy):
         self.repaint()
 
     def setIcon(self, svgPath):
-        if svgPath == "":
-            self.icon = None
-            self.iconPath = None
-            return
-
         self.iconPath = svgPath
         self.icon = QSvgRenderer(svgPath)
+        self.update()
+
+    def unsetIcon(self):
+        self.icon = None
+        self.iconPath = None
         self.update()
 
     def getData(self) -> WorkspaceSchema:
@@ -77,7 +77,10 @@ class Workspace(WindowHierarchy):
             self.setGeometry(geometry)
 
         if iconPath is not None:
-            self.setIcon(iconPath)
+            if iconPath == "":
+                self.unsetIcon()
+            else:
+                self.setIcon(iconPath)
 
         if color:
             color = QColor(color.r, color.g, color.b, color.a)

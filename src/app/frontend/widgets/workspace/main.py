@@ -1,3 +1,4 @@
+from src.app.config import Icons
 from src.app.frontend.events import Node
 from src.app.frontend.state import Context, Document
 
@@ -41,11 +42,13 @@ class WorkspaceComponent(Node):
 
     def setAction(self, data):
         id = data["id"]
-        self.controller.onActionBind(id)
+        data = self.context.actionModel.getData(id)
+        iconPath = self.getIconPath(data)
+        self.controller.setIcon(id, iconPath)
 
     def unsetAction(self, data):
         id = data["id"]
-        self.controller.onActionUnbind(id)
+        self.controller.setIcon(id, "")
 
     def resetState(self, data):
         self.layout.resetState()
@@ -56,3 +59,14 @@ class WorkspaceComponent(Node):
         self.builder.buildAll()
         self.layout.rerenderView()
         self.layout.unfreezeLayout()
+
+    def getIconPath(self, data):
+        name = data["name"]
+        userParams = data["userParams"]
+        match name:
+            case "Click":
+                return Icons.CLICK
+
+            case "Drag":
+                direction = userParams["dir"]["value"]
+                return Icons.DRAG[direction]
