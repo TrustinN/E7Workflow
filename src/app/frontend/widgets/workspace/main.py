@@ -24,8 +24,8 @@ class WorkspaceComponent(Node):
         self.subscribe("/Workspace/Root/Requested", self.createRootWorkspace)
         self.subscribe("/Workspace/Requested", self.createWorkspace)
 
-        self.subscribe("/Runner/Action/Set", self.setAction)
-        self.subscribe("/Runner/Action/Unset", self.unsetAction)
+        self.subscribe("/Runner/Action/Set", self.setIcon)
+        self.subscribe("/Runner/Action/Unset", self.unsetIcon)
 
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
@@ -40,13 +40,13 @@ class WorkspaceComponent(Node):
         self.builder.createWorkspace(id)
         self.publish("/Workspace/Created", data)
 
-    def setAction(self, data):
+    def setIcon(self, data):
         id = data["id"]
         data = self.context.actionModel.getData(id)
         iconPath = getIconPath(data)
         self.controller.setIcon(id, iconPath)
 
-    def unsetAction(self, data):
+    def unsetIcon(self, data):
         id = data["id"]
         self.controller.setIcon(id, "")
 
