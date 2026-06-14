@@ -1,4 +1,5 @@
 from nanoid import generate
+from PyQt5.QtWidgets import QInputDialog, QLineEdit
 
 from src.app.frontend.events import Node
 from src.app.frontend.state import Context
@@ -43,7 +44,17 @@ class WorkspaceCapability(Node):
         self.context.workspaceModel.createRoot(id, data)
         self.publish("/Workspace/Root/Requested", data)
 
-    def requestWorkspace(self, name):
+    def requestWorkspace(self):
+        name, ok = QInputDialog.getText(
+            None,
+            "QInputDialog.getText()",
+            "Workspace Name:",
+            QLineEdit.Normal,
+            "WS Name",
+        )
+        if not (name and ok):
+            return
+
         id = generate()
         parentID = self.context.selectionModel.getSelected()
         group = self.assignGroup(id, parentID)

@@ -23,7 +23,7 @@ class ApplicationCapability:
 
         self.buttons = Buttons()
 
-        self.buttons.createWorkspace_.connect(self.wksCapability.requestWorkspace)
+        self.buttons.workspaceBtn.clicked.connect(self.wksCapability.requestWorkspace)
         self.buttons.setE1Btn.clicked.connect(self.graphCapability.setE1)
         self.buttons.setE2Btn.clicked.connect(self.graphCapability.setE2)
         self.buttons.createEdgeBtn.clicked.connect(self.graphCapability.requestEdge)
