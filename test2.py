@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils import OPTIONS, VALUE
+from utils import FUNC, OPERATORS, VALUE, applyTypeHint, arity
 
 
 @dataclass
@@ -35,6 +35,32 @@ class ExprNode:
     value: str = ""
     children: list["ExprNode"] = field(default_factory=list)
     parent: "ExprNode" = None
+
+    def setOperator(self, op, value=""):
+        self.op = op
+
+        if op in (VALUE, FUNC):
+            self.value = value
+        else:
+            self.value = ""
+
+    def isValue(self):
+        return self.op == VALUE
+
+    def addChild(self):
+        argc = arity(self.op)
+        if argc is not None and len(self.children) >= argc:
+            return False
+
+        self.children.append(ExprNode(parent=self))
+        return True
+
+    def popChild(self):
+        if len(self.children) == 0:
+            return False
+
+        self.children.pop()
+        return True
 
 
 class ExprModel(QAbstractItemModel):
@@ -78,10 +104,14 @@ class ExprModel(QAbstractItemModel):
         item = self.itemFromIndex(index)
 
         if role == Qt.ItemDataRole.DisplayRole:
-            if item.value:
+            if item.op == VALUE:
                 return item.value if item.value else "Set Value"
 
-            return item.op if item.op else "Choose Option"
+            if item.op == FUNC:
+                decl = f" = {item.value}" if item.value else ""
+                return f"{applyTypeHint(item.op)}{decl}"
+
+            return applyTypeHint(item.op) if item.op else "Choose Option"
 
         if role == Qt.ItemDataRole.EditRole:
             return item.value
@@ -93,15 +123,24 @@ class ExprModel(QAbstractItemModel):
 
     def setData(self, index: QModelIndex, value: QVariant, role: Qt.ItemDataRole):
         item = self.itemFromIndex(index)
-        result = False
+        result = True
 
         if role == Qt.ItemDataRole.UserRole:
-            item.op = value
-            result = True
+            item.setOperator(value)
+            n = arity(item.op)
+            if n is not None:
+                while len(item.children) > n:
+                    self.removeChildExpr(item)
+
+                while len(item.children) < n:
+                    self.addChildExpr(item)
 
         elif role == Qt.ItemDataRole.EditRole:
-            item.value = value
-            result = True
+            op = index.data(Qt.ItemDataRole.UserRole)
+            item.setOperator(op, value)
+
+        else:
+            result = False
 
         if result:
             self.dataChanged.emit(
@@ -134,25 +173,29 @@ class ExprModel(QAbstractItemModel):
         row = len(item.children)
 
         self.beginInsertRows(index, row, row)
-        child = ExprNode()
-        item.children.append(child)
-        child.parent = item
+        success = item.addChild()
         self.endInsertRows()
 
-        return True
+        return success
 
     def removeChildExpr(self, item: ExprNode):
-        if len(item.children) == 0:
-            return False
-
         index = self.indexFromItem(item)
         row = len(item.children) - 1
 
         self.beginRemoveRows(index, row, row)
-        item.children.pop()
+        success = item.popChild()
         self.endRemoveRows()
 
-        return True
+        return success
+
+
+class ExprTreeView(QTreeView):
+    def setModel(self, model):
+        super().setModel(model)
+        model.rowsInserted.connect(self.onRowsInserted)
+
+    def onRowsInserted(self, parent, first, last):
+        self.expand(parent)
 
 
 class ExprEditor(QWidget):
@@ -162,7 +205,7 @@ class ExprEditor(QWidget):
         super().__init__(parent)
 
         self.combo = QComboBox(self)
-        self.combo.addItems(OPTIONS)
+        self.combo.addItems(list(OPERATORS.keys()))
         self.line = QLineEdit(self)
         self.line.setVisible(False)
         self.addBtn = QPushButton("+")
@@ -209,10 +252,10 @@ class ExprEditor(QWidget):
             self.line.text(),
         )
 
-    def onOperatorChanged(self, text):
-        self.line.setVisible(text == VALUE)
-        self.addBtn.setVisible(text != VALUE)
-        self.subBtn.setVisible(text != VALUE)
+    def onOperatorChanged(self, operator):
+        self.line.setVisible(operator in (VALUE, FUNC))
+        self.addBtn.setVisible(operator != VALUE)
+        self.subBtn.setVisible(operator != VALUE)
 
 
 class CustomItemDelegate(QStyledItemDelegate):
@@ -293,7 +336,7 @@ class App(QApplication):
         model.setRoot(root)
 
         delegate = CustomItemDelegate()
-        tree = QTreeView()
+        tree = ExprTreeView()
         tree.setItemDelegate(delegate)
         tree.setModel(model)
         self.layout.addWidget(tree)
