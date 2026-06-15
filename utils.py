@@ -25,7 +25,8 @@ from PyQt5.QtWidgets import (
 )
 
 NOOP = ""
-VALUE = "VALUE"
+LITERAL = "LITERAL"
+VARIABLE = "VARIABLE"
 FUNC = "FUNC"
 
 OPERATORS = {
@@ -73,7 +74,11 @@ OPERATORS = {
         "arity": None,
         "hint": "(func, v1, v2, ...)",
     },
-    VALUE: {
+    LITERAL: {
+        "arity": 0,
+        "hint": "",
+    },
+    VARIABLE: {
         "arity": 0,
         "hint": "",
     },
@@ -91,3 +96,31 @@ def typeHint(op: str) -> str:
 def applyTypeHint(op: str) -> str:
     hint = typeHint(op)
     return f"{op} {hint}" if hint else op
+
+
+def parseLiteral(text: str):
+    text = text.strip()
+
+    if text.lower() == "true":
+        return True
+
+    if text.lower() == "false":
+        return False
+
+    if text.lower() == "":
+        return None
+
+    try:
+        return int(text)
+    except ValueError:
+        pass
+
+    try:
+        return float(text)
+    except ValueError:
+        pass
+
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in ("'", '"'):
+        return text[1:-1]
+
+    raise ValueError(f"Not a literal: {text}")

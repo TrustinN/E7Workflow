@@ -26,7 +26,16 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils import FUNC, OPERATORS, VALUE, applyTypeHint, arity
+from utils import (
+    FUNC,
+    LITERAL,
+    NOOP,
+    OPERATORS,
+    VARIABLE,
+    applyTypeHint,
+    arity,
+    parseLiteral,
+)
 
 
 @dataclass
@@ -36,16 +45,13 @@ class ExprNode:
     children: list["ExprNode"] = field(default_factory=list)
     parent: "ExprNode" = None
 
-    def setOperator(self, op, value=""):
+    def setOperator(self, op, value=None):
         self.op = op
 
-        if op in (VALUE, FUNC):
+        if op in (LITERAL, VARIABLE, FUNC) and value:
             self.value = value
         else:
             self.value = ""
-
-    def isValue(self):
-        return self.op == VALUE
 
     def addChild(self):
         argc = arity(self.op)
@@ -61,6 +67,47 @@ class ExprNode:
 
         self.children.pop()
         return True
+
+    def evaluate(self, context):
+        context = context or {}
+        if self.op == NOOP:
+            return True
+        if self.op == VARIABLE:
+            return context[self.value]
+        if self.op == LITERAL:
+            return parseLiteral(self.value)
+        if self.op == "AND":
+            return all(c.evaluate(context) for c in self.children)
+        if self.op == "OR":
+            return any(c.evaluate(context) for c in self.children)
+        if self.op == "NOT":
+            return not self.children[0].evaluate(context)
+        if self.op == "==":
+            return self.children[0].evaluate(context) == self.children[1].evaluate(
+                context
+            )
+        if self.op == "<":
+            return self.children[0].evaluate(context) < self.children[1].evaluate(
+                context
+            )
+        if self.op == ">":
+            return self.children[0].evaluate(context) > self.children[1].evaluate(
+                context
+            )
+        if self.op == "<=":
+            return self.children[0].evaluate(context) <= self.children[1].evaluate(
+                context
+            )
+        if self.op == ">=":
+            return self.children[0].evaluate(context) >= self.children[1].evaluate(
+                context
+            )
+
+        if self.op == "FUNC":
+            func = context[self.value]
+            args = [c.evaluate(context) for c in self.children]
+            return func(*args)
+        raise ValueError(f"Unknown op {self.op}")
 
 
 class ExprModel(QAbstractItemModel):
@@ -104,7 +151,7 @@ class ExprModel(QAbstractItemModel):
         item = self.itemFromIndex(index)
 
         if role == Qt.ItemDataRole.DisplayRole:
-            if item.op == VALUE:
+            if item.op in (LITERAL, VARIABLE):
                 return item.value if item.value else "Set Value"
 
             if item.op == FUNC:
@@ -114,19 +161,17 @@ class ExprModel(QAbstractItemModel):
             return applyTypeHint(item.op) if item.op else "Choose Option"
 
         if role == Qt.ItemDataRole.EditRole:
-            return item.value
-
-        if role == Qt.ItemDataRole.UserRole:
-            return item.op
+            return (item.op, item.value)
 
         return None
 
     def setData(self, index: QModelIndex, value: QVariant, role: Qt.ItemDataRole):
         item = self.itemFromIndex(index)
+        op, val = value
         result = True
 
-        if role == Qt.ItemDataRole.UserRole:
-            item.setOperator(value)
+        if role == Qt.ItemDataRole.EditRole:
+            item.setOperator(op, val)
             n = arity(item.op)
             if n is not None:
                 while len(item.children) > n:
@@ -135,17 +180,11 @@ class ExprModel(QAbstractItemModel):
                 while len(item.children) < n:
                     self.addChildExpr(item)
 
-        elif role == Qt.ItemDataRole.EditRole:
-            op = index.data(Qt.ItemDataRole.UserRole)
-            item.setOperator(op, value)
-
         else:
             result = False
 
         if result:
-            self.dataChanged.emit(
-                index, index, [Qt.ItemDataRole.UserRole, Qt.ItemDataRole.EditRole]
-            )
+            self.dataChanged.emit(index, index, [Qt.ItemDataRole.EditRole])
 
         return result
 
@@ -253,9 +292,9 @@ class ExprEditor(QWidget):
         )
 
     def onOperatorChanged(self, operator):
-        self.line.setVisible(operator in (VALUE, FUNC))
-        self.addBtn.setVisible(operator != VALUE)
-        self.subBtn.setVisible(operator != VALUE)
+        self.line.setVisible(operator in (VARIABLE, LITERAL, FUNC))
+        self.addBtn.setVisible(operator not in (VARIABLE, LITERAL))
+        self.subBtn.setVisible(operator not in (VARIABLE, LITERAL))
 
 
 class CustomItemDelegate(QStyledItemDelegate):
@@ -277,8 +316,7 @@ class CustomItemDelegate(QStyledItemDelegate):
         return editor
 
     def setEditorData(self, editor: QWidget, index: QModelIndex):
-        editType = index.data(Qt.UserRole)
-        data = index.data(Qt.EditRole)
+        editType, data = index.data(Qt.EditRole)
 
         editor = cast(ExprEditor, editor)
         editor.setValue(editType, data)
@@ -288,8 +326,7 @@ class CustomItemDelegate(QStyledItemDelegate):
     ):
         editor = cast(ExprEditor, editor)
         comboSelection, text = editor.value()
-        model.setData(index, comboSelection, Qt.UserRole)
-        model.setData(index, text, Qt.EditRole)
+        model.setData(index, (comboSelection, text), Qt.EditRole)
 
     def updateEditorGeometry(
         self, editor: QWidget, option: QStyleOptionViewItem, index: QModelIndex
@@ -340,35 +377,6 @@ class App(QApplication):
         tree.setItemDelegate(delegate)
         tree.setModel(model)
         self.layout.addWidget(tree)
-
-
-def resolveValue(value: str, context: dict[str, Any]):
-    return 0
-
-
-def evaluate(node: ExprNode, context: dict[str, Any] = None):
-    context = context or {}
-    if node.op == "VALUE":
-        return resolveValue(node.value, context)
-
-    if node.op == "AND":
-        return all(evaluate(c, context) for c in node.children)
-
-    if node.op == "OR":
-        return any(evaluate(c, context) for c in node.children)
-
-    if node.op == "NOT":
-        return not evaluate(node.children[0], context)
-
-    if node.op == "==":
-        return evaluate(node.children[0], context) == evaluate(
-            node.children[1], context
-        )
-
-    if node.op == "<":
-        return evaluate(node.children[0], context) < evaluate(node.children[1], context)
-
-    raise ValueError(f"Unknown op {node.op}")
 
 
 app = App()
