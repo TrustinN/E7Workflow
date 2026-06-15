@@ -45,6 +45,9 @@ class ExprNode:
     children: list["ExprNode"] = field(default_factory=list)
     parent: "ExprNode" = None
 
+    def clearChildren(self):
+        self.children.clear()
+
     def setOperator(self, op, value=None):
         self.op = op
 
@@ -53,12 +56,16 @@ class ExprNode:
         else:
             self.value = ""
 
-    def addChild(self):
+    def addChild(self, node: "ExprNode"):
+        node.parent = self
+        self.children.append(node)
+
+    def createChild(self):
         argc = arity(self.op)
         if argc is not None and len(self.children) >= argc:
             return False
 
-        self.children.append(ExprNode(parent=self))
+        self.addChild(ExprNode())
         return True
 
     def popChild(self):
@@ -113,11 +120,12 @@ class ExprNode:
 class ExprModel(QAbstractItemModel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.root: ExprNode = None
+        self.root: ExprNode = ExprNode()
 
-    def setRoot(self, root: ExprNode):
+    def setRoot(self, node: ExprNode):
         self.beginResetModel()
-        self.root = root
+        self.root.clearChildren()
+        self.root.addChild(node)
         self.endResetModel()
 
     def index(self, row: int, col: int, parent: QModelIndex):
@@ -212,7 +220,7 @@ class ExprModel(QAbstractItemModel):
         row = len(item.children)
 
         self.beginInsertRows(index, row, row)
-        success = item.addChild()
+        success = item.createChild()
         self.endInsertRows()
 
         return success
@@ -365,9 +373,7 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        root = ExprNode("ROOT")
-        andNode = ExprNode("AND", parent=root)
-        root.children.append(andNode)
+        root = ExprNode("AND")
 
         model = ExprModel()
         model.setRoot(root)
