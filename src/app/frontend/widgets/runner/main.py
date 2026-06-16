@@ -3,8 +3,8 @@ from src.app.frontend.events import Node
 from src.app.frontend.state import Context, Document
 from src.router.routing import Client, Dispatcher, Link
 
+from .components import ActionEditor, CodeEditor, EdgeEditor
 from .runner import Runner
-from .widget import RunnerWidget
 
 
 class RunnerComponent(Node):
@@ -15,8 +15,11 @@ class RunnerComponent(Node):
         self.document = document
         self.client = Client("RunnerClient", dispatcher)
 
-        self.widget = RunnerWidget()
-        self.widget.actionBtn.clicked.connect(self.requestActionSet)
+        self.actionEditor = ActionEditor()
+        self.actionEditor.requestSetAction.connect(self.requestActionSet)
+
+        self.codeEditor = CodeEditor()
+        self.edgeEditor = EdgeEditor()
 
         self.runner = Runner(self.context, self.document, self.client)
 
@@ -30,10 +33,10 @@ class RunnerComponent(Node):
         infoLink = Link(ActionRoute.NAME, ActionRoute.ACTION, name)
         info = self.client.get(infoLink)
 
-        self.widget.addAction(info)
+        self.actionEditor.addAction(info)
 
     def requestActionSet(self):
-        data = self.widget.getActionData()
+        data = self.actionEditor.getActionData()
         self.publish("/Runner/Action/Set/Requested", data)
 
     def requestActionUnset(self, data):

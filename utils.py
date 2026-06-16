@@ -28,6 +28,8 @@ NOOP = ""
 LITERAL = "LITERAL"
 VARIABLE = "VARIABLE"
 FUNC = "FUNC"
+ASSIGNMENT = "<-"
+SEQUENCE = "SEQUENCE"
 
 OPERATORS = {
     NOOP: {
@@ -70,6 +72,10 @@ OPERATORS = {
         "arity": 2,
         "hint": "(v1, v2)",
     },
+    ASSIGNMENT: {
+        "arity": 1,
+        "hint": "(var, v1)",
+    },
     FUNC: {
         "arity": None,
         "hint": "(func, v1, v2, ...)",
@@ -81,6 +87,10 @@ OPERATORS = {
     VARIABLE: {
         "arity": 0,
         "hint": "",
+    },
+    SEQUENCE: {
+        "arity": None,
+        "hint": "(e1, e1, e3) -> e3",
     },
 }
 

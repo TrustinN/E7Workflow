@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -9,7 +10,9 @@ from PyQt5.QtWidgets import (
 )
 
 
-class RunnerWidget(QWidget):
+class ActionEditor(QWidget):
+    requestSetAction = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -18,6 +21,8 @@ class RunnerWidget(QWidget):
         self.layout.setSpacing(0)
 
         self.actionBtn = QPushButton("Set Action")
+        self.actionBtn.clicked.connect(self.requestSetAction.emit)
+
         self.combo = QComboBox()
         self.combo.currentTextChanged.connect(self.actionChanged)
         self.layout.addWidget(self.actionBtn)
@@ -25,6 +30,7 @@ class RunnerWidget(QWidget):
 
         self.stack = QStackedWidget()
         self.layout.addWidget(self.stack)
+
         self.layout.addStretch()
 
         self.widgets = {}
