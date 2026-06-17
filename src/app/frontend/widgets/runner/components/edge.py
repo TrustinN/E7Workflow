@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -23,6 +23,15 @@ class EdgeEditor(QWidget):
         super().__init__()
 
         layout = QVBoxLayout(self)
+        note = QLabel(
+            "Note: The script must define a function named "
+            "'condition(context)'. The 'context' argument is a dictionary "
+            "containing the current running state. The function should return "
+            "True or False."
+        )
+        note.setWordWrap(True)
+
+        layout.addWidget(note)
 
         self.codeTabs = QTabWidget()
         self.codeTabs.tabBarDoubleClicked.connect(self.renameTab)
