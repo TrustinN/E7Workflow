@@ -2,88 +2,131 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QPushButton,
-    QStackedWidget,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
-
-class EdgeEditorList(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.layout = QVBoxLayout(self)
-        self.editors: dict[str, EdgeEditorItem] = {}
-
-    def addEdge(self, n1, n2):
-        editor = EdgeEditorItem(n1, n2)
-        self.editors[n2] = editor
-        self.layout.addWidget(editor)
-
-    def addItem(self, cond):
-        for editor in self.editors.values():
-            editor.addItem(cond)
-
-    def getItem(self, index):
-        editor = self.editors[index]
-        return editor.getItem()
-
-
-class EdgeEditorItem(QWidget):
-    def __init__(self, n1, n2):
-        super().__init__()
-
-        self.layout = QHBoxLayout(self)
-        self.layout.addWidget(QLabel(n1))
-        self.layout.addWidget(QLabel("---->"))
-        self.layout.addWidget(QLabel(n2))
-
-        self.combo = QComboBox()
-        self.layout.addWidget(self.combo)
-        self.layout.addStretch()
-
-    def addItem(self, cond):
-        self.combo.addItem(cond)
-
-    def getItem(self):
-        return self.combo.currentText()
+from .code import CodeEditor
 
 
 class EdgeEditor(QWidget):
+    requestScript = pyqtSignal()
+    requestSetScript = pyqtSignal()
+    requestUnsetScript = pyqtSignal()
+    editorUpdated = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
 
-        self.layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self)
 
-        self.stack = QStackedWidget()
-        self.layout.addWidget(self.stack)
-        self.layout.addStretch()
+        self.codeTabs = QTabWidget()
+        self.codeTabs.tabBarDoubleClicked.connect(self.renameTab)
 
-        self.widgets: dict[str, EdgeEditorList] = {}
+        self.combo = QComboBox()
 
-    def addEdge(self, n1, n2):
-        w = self.widgets.get(n1)
-        if w is not None:
-            w.addEdge(n1, n2)
+        addRow = QWidget()
+        addLayout = QHBoxLayout(addRow)
+        addLayout.setContentsMargins(0, 0, 0, 0)
+
+        addButton = QPushButton("+")
+        addButton.clicked.connect(self.requestScript.emit)
+
+        addLayout.addWidget(QLabel("Add Script"))
+        addLayout.addStretch()
+        addLayout.addWidget(addButton)
+
+        setRow = QWidget()
+        setLayout = QHBoxLayout(setRow)
+        setLayout.setContentsMargins(0, 0, 0, 0)
+
+        setButton = QPushButton("Set")
+        setButton.clicked.connect(self.requestSetScript.emit)
+
+        setLayout.addWidget(QLabel("Set Script"))
+        setLayout.addWidget(self.combo)
+        setLayout.addWidget(setButton)
+
+        unsetRow = QWidget()
+        unsetLayout = QHBoxLayout(unsetRow)
+        unsetLayout.setContentsMargins(0, 0, 0, 0)
+
+        unsetButton = QPushButton("Unset")
+        unsetButton.clicked.connect(self.requestUnsetScript.emit)
+
+        unsetLayout.addWidget(QLabel("Unset Script"))
+        unsetLayout.addWidget(unsetButton)
+
+        layout.addWidget(self.codeTabs)
+        layout.addWidget(addRow)
+        layout.addWidget(setRow)
+        layout.addWidget(unsetRow)
+
+        self.editors = {}
+
+    def addCodeTab(self, id, name):
+        editor = CodeEditor()
+        index = self.codeTabs.addTab(editor, name)
+        self.codeTabs.setCurrentIndex(index)
+
+        self.combo.addItem(name, userData=id)
+        self.combo.setCurrentIndex(index)
+
+        self.editors[id] = editor
+        editor.textChanged.connect(lambda: self.editorUpdated.emit(id))
+
+        return editor
+
+    def currentEditor(self):
+        editor = self.codeTabs.currentWidget()
+        for key, val in self.editors.items():
+            if editor == val:
+                return key
+
+    def setTabName(self, index, name):
+        self.codeTabs.setTabText(index, name)
+        self.combo.setItemText(index, name)
+        id = self.combo.itemData(index)
+
+        self.editorUpdated.emit(id)
+
+    def renameTab(self, index):
+        if index < 0:
             return
 
-        lst = EdgeEditorList()
-        lst.addEdge(n1, n2)
-        self.stack.addWidget(lst)
-        self.widgets[n1] = lst
+        oldName = self.codeTabs.tabText(index)
+        newName, ok = QInputDialog.getText(
+            self,
+            "Rename Script",
+            "Script name:",
+            text=oldName,
+        )
 
-    def addItem(self, cond):
-        for w in self.widgets.values():
-            w.addItem(cond)
+        if ok and newName.strip():
+            self.setTabName(index, newName.strip())
 
-    def getItem(self, n1, n2):
-        widget = self.widgets.get(n1)
-        return widget.getItem(n2)
+    def getData(self, id):
+        index = self.combo.findData(id)
+        editor = self.editors[id]
+        return {
+            "id": id,
+            "name": self.combo.itemText(index),
+            "code": editor.text(),
+        }
 
-    def nodeChanged(self, n1):
-        widget = self.widgets.get(n1)
+    def clearState(self):
+        self.combo.clear()
+        self.editors.clear()
+        self.codeTabs.clear()
 
-        if widget is not None:
-            self.stack.setCurrentWidget(widget)
+    def setData(self, id, data):
+        name = data["name"]
+        text = data["code"]
+
+        self.addCodeTab(id, name)
+        editor = self.editors[id]
+        editor.setText(text)

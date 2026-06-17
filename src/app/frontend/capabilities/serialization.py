@@ -41,6 +41,7 @@ class SerializationCapability(Node):
         combo = QComboBox(dialog)
         combo.setEditable(True)
         combo.addItems(self.getAvailableConfigs())
+        combo.setCompleter(None)
         combo.setEditText("Untitled")
         combo.lineEdit().selectAll()
 

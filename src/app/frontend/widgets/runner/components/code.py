@@ -97,3 +97,6 @@ class CodeEditor(QWidget):
 
     def text(self):
         return self.editor.text()
+
+    def setText(self, text):
+        self.editor.setText(text)

@@ -22,6 +22,12 @@ class MappingModel(Model):
     def hasKey(self, key):
         return key in self.data
 
+    def keys(self):
+        return self.data.keys()
+
+    def values(self):
+        return self.data.values()
+
     def delete(self, key):
         self.data.pop(key)
         self.dataRemoved_.emit(key)

@@ -185,6 +185,5 @@ class App(QApplication):
         self.layoutMid.addWidget(self.runnerCpt.actionEditor)
         self.layoutMid.addStretch()
 
-        self.layoutRight.addWidget(self.runnerCpt.codeEditor)
         self.layoutRight.addWidget(self.runnerCpt.edgeEditor)
         self.layoutRight.addStretch()

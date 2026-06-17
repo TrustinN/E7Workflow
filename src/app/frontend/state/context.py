@@ -14,21 +14,22 @@ class Context(Model):
         self.actionModel = MappingModel()
         self.runnerModel = SelectionModel()
 
+        self.conditionalModel = MappingModel()
+        self.codeModel = MappingModel()
+
         self.models = {
             "tree": self.workspaceModel,
             "graph": self.graphModel,
             "selection": self.selectionModel,
             "action": self.actionModel,
             "runner": self.runnerModel,
+            "conditionals": self.conditionalModel,
+            "code": self.codeModel,
         }
 
     def clear(self):
-        self.workspaceModel.clear()
-        self.graphModel.clear()
-        self.selectionModel.clear()
-
-        self.actionModel.clear()
-        self.runnerModel.clear()
+        for model in self.models.values():
+            model.clear()
 
         self.modelClear_.emit()
 
