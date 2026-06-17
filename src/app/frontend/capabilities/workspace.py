@@ -45,6 +45,10 @@ class WorkspaceCapability(Node):
         self.publish("/Workspace/Root/Requested", data)
 
     def requestWorkspace(self):
+        parentID = self.context.selectionModel.getSelected()
+        if parentID not in self.context.workspaceModel.nodes():
+            return
+
         name, ok = QInputDialog.getText(
             None,
             "QInputDialog.getText()",
@@ -56,7 +60,6 @@ class WorkspaceCapability(Node):
             return
 
         id = generate()
-        parentID = self.context.selectionModel.getSelected()
         group = self.assignGroup(id, parentID)
         data = {
             "text": name,

@@ -15,6 +15,9 @@ class RunnerCapability(Node):
             return
 
         selection = self.context.selectionModel.getSelected()
+        if selection not in self.context.workspaceModel.nodes():
+            return
+
         if self.context.workspaceModel.isRoot(selection):
             return
 
@@ -34,6 +37,9 @@ class RunnerCapability(Node):
 
     def requestEntry(self):
         entryID = self.context.selectionModel.getSelected()
+        if entryID not in self.context.workspaceModel.nodes():
+            return
+
         if self.context.workspaceModel.isRoot(entryID):
             return
 

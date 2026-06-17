@@ -17,11 +17,18 @@ class GraphCapability(Node):
         self.subscribe("/Graph/Root/Created", self.onRootCreated)
         self.subscribe("/App/Reset", self.resetState)
 
+    def isNode(self, id):
+        return id in list(self.context.graphModel.nodeIter())
+
     def setE1(self):
-        self.firstEdge = self.context.selectionModel.getSelected()
+        selection = self.context.selectionModel.getSelected()
+        if self.isNode(selection):
+            self.firstEdge = selection
 
     def setE2(self):
-        self.secondEdge = self.context.selectionModel.getSelected()
+        selection = self.context.selectionModel.getSelected()
+        if self.isNode(selection):
+            self.secondEdge = selection
 
     def requestRoot(self, data):
         id = data["id"]
