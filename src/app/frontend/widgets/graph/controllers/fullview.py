@@ -20,6 +20,9 @@ class GraphFullViewController:
         self.view.nodeSelected_.connect(self.onNodeSelected)
         self.view.nodeDeselected_.connect(self.onNodeDeselected)
 
+        self.view.edgeSelected_.connect(self.onEdgeSelected)
+        self.view.edgeDeselected_.connect(self.onEdgeDeselected)
+
     def updateNode(self, id, data):
         self.view.updateNode(id, data)
 
@@ -30,12 +33,33 @@ class GraphFullViewController:
         rootID = self.context.workspaceModel.root
         self.context.selectionModel.setSelected(rootID)
 
+    def onEdgeSelected(self, id):
+        self.context.selectionModel.setSelected(id)
+
+    def onEdgeDeselected(self):
+        rootID = self.context.workspaceModel.root
+        self.context.selectionModel.setSelected(rootID)
+
+    def isEdge(self, id):
+        for edgeID in self.context.graphModel.edgeIter():
+            if edgeID == id:
+                return True
+        return False
+
+    def isNode(self, id):
+        for nodeID in self.context.graphModel.nodeIter():
+            if nodeID == id:
+                return True
+        return False
+
     def onSelectionChanged(self, id):
         rootID = self.context.workspaceModel.root
         id = rootID if id == "" else id
         if id == rootID:
             self.view.clearSelection()
-        else:
+        elif self.isEdge(id):
+            self.view.selectEdge(id)
+        elif self.isNode(id):
             self.view.selectNode(id)
 
     def setBorder(self, id, color: QColor):

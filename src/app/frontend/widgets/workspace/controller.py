@@ -26,12 +26,10 @@ class WorkspaceController:
 
     def onSelection(self, id):
         prevID = self.context.selectionModel.getPrevSelected()
-        if prevID:
-            color = Colors.DEFAULT_COLOR
-            borderColor = Colors.DEFAULT_BORDER
-            self.setColor(prevID, color, borderColor)
+        if prevID and prevID in self.context.workspaceModel.nodes():
+            self.setColor(prevID, Colors.DEFAULT_COLOR, Colors.DEFAULT_BORDER)
 
-        if id:
+        if id and id in self.context.workspaceModel.nodes():
             color = with_alpha(Colors.SKY_BLUE, Alpha.LIGHT)
             borderColor = with_alpha(Colors.SKY_BLUE, Alpha.MEDIUM)
             self.setColor(id, color, borderColor)

@@ -25,6 +25,14 @@ class GraphMultiView(GraphView):
         scene = self.scenes[parentID]
         scene.unselectNode(nodeID)
 
+    def selectEdge(self, edgeID: str, parentID: str):
+        scene = self.scenes[parentID]
+        scene.selectEdge(edgeID)
+
+    def unselectEdge(self, edgeID: str, parentID: str):
+        scene = self.scenes[parentID]
+        scene.unselectEdge(edgeID)
+
     def clearSelection(self, id):
         scene = self.scenes[id]
         scene.clearSelection()
@@ -37,6 +45,8 @@ class GraphMultiView(GraphView):
         scene = GraphScene()
         scene.nodeSelected_.connect(self.nodeSelected_.emit)
         scene.nodeDeselected_.connect(self.nodeDeselected_.emit)
+        scene.edgeSelected_.connect(self.edgeSelected_.emit)
+        scene.edgeDeselected_.connect(self.edgeDeselected_.emit)
         scene.nodeMoved_.connect(self.nodeUpdated_.emit)
         scene.edgeMoved_.connect(self.edgeUpdated_.emit)
         return scene

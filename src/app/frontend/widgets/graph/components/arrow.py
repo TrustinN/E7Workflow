@@ -3,7 +3,15 @@ from dataclasses import dataclass
 from typing import Optional
 
 from PyQt5.QtCore import QPointF, QRectF
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPolygonF
+from PyQt5.QtGui import (
+    QBrush,
+    QColor,
+    QPainter,
+    QPainterPath,
+    QPainterPathStroker,
+    QPen,
+    QPolygonF,
+)
 from PyQt5.QtWidgets import QGraphicsItem
 
 from .emitter import GraphicsEmitter
@@ -22,10 +30,12 @@ class GraphicsArrowItem(QGraphicsItem):
         end: QPointF = QPointF(1, 1),
     ):
         super().__init__()
-        self.color = QColor(20, 20, 20, 255)
+        self.color = QColor(255, 255, 255)
+        self.highlightColor = QColor(0, 163, 255)
         self.end = QPointF(0, 0)
         self.emitter = GraphicsEmitter()
 
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setZValue(-1)
         self.setStart(start)
         self.setEnd(end)
@@ -62,9 +72,16 @@ class GraphicsArrowItem(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)
-        brush = QBrush(self.color)
-        painter.setBrush(brush)
 
+        if self.isSelected():
+            # Highlight underneath
+            painter.setPen(QPen(self.highlightColor, 3))
+            painter.drawLine(self.start, self.end)
+            self.drawArrowHead(painter, self.start, self.end)
+
+        # Normal edge on top
+        painter.setPen(QPen(self.color, 1))
+        painter.setBrush(QBrush(QColor(20, 20, 20)))
         painter.drawLine(self.start, self.end)
         self.drawArrowHead(painter, self.start, self.end)
 
@@ -123,3 +140,16 @@ class GraphicsArrowItem(QGraphicsItem):
         yMax = max(self.start.y(), self.end.y()) + extra
 
         return QRectF(xMin, yMin, xMax - xMin, yMax - yMin)
+
+    def shape(self):
+        path = QPainterPath()
+        path.moveTo(self.start)
+        path.lineTo(self.end)
+        stroker = QPainterPathStroker()
+        stroker.setWidth(16)
+
+        return stroker.createStroke(path)
+
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        self.emitter.onMousePress_.emit()

@@ -14,6 +14,12 @@ class GraphSingleView(GraphMultiView):
     def unselectNode(self, nodeID: str):
         super().unselectNode(nodeID, self.graphID)
 
+    def selectEdge(self, edgeID: str):
+        super().selectEdge(edgeID, self.graphID)
+
+    def unselectEdge(self, edgeID: str):
+        super().unselectEdge(edgeID, self.graphID)
+
     def clearSelection(self):
         super().clearSelection(self.graphID)
 

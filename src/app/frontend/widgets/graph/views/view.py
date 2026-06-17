@@ -14,6 +14,9 @@ class GraphView(QWidget):
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
 
+    edgeSelected_ = pyqtSignal(str)
+    edgeDeselected_ = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()

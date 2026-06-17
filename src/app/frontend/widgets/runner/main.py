@@ -24,6 +24,7 @@ class RunnerComponent(Node):
         self.runner = Runner(self.context, self.document, self.client)
 
         self.subscribe("/Workspace/Created", self.requestActionUnset)
+        self.subscribe("/Graph/Edge/Created", self.onEdgeCreated)
         self.subscribe("/Runner/Execute/Requested", self.runner.execute)
 
         self.addAction(ActionType.CLICK)
@@ -43,3 +44,8 @@ class RunnerComponent(Node):
         id = data["id"]
         parentID = self.context.workspaceModel.parent(id)
         self.publish("/Runner/Action/Unset/Requested", {"id": parentID})
+
+    def onEdgeCreated(self, data):
+        id1 = data["start"]
+        id2 = data["end"]
+        self.edgeEditor.addEdge(id1, id2)

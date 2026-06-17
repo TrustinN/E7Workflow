@@ -11,15 +11,16 @@ from PyQt5.QtWidgets import (
 
 
 class EdgeEditorList(QWidget):
-    def __init__(self, n1, n2s: list[str]):
+    def __init__(self):
         super().__init__()
 
         self.layout = QVBoxLayout(self)
         self.editors: dict[str, EdgeEditorItem] = {}
-        for n2 in n2s:
-            editor = EdgeEditorItem(n1, n2)
-            self.editors[n2] = editor
-            self.layout.addItem(editor)
+
+    def addEdge(self, n1, n2):
+        editor = EdgeEditorItem(n1, n2)
+        self.editors[n2] = editor
+        self.layout.addWidget(editor)
 
     def addItem(self, cond):
         for editor in self.editors.values():
@@ -35,12 +36,12 @@ class EdgeEditorItem(QWidget):
         super().__init__()
 
         self.layout = QHBoxLayout(self)
-        self.layout.addItem(QLabel(n1))
-        self.layout.addItem(QLabel("---->"))
-        self.layout.addItem(QLabel(n2))
+        self.layout.addWidget(QLabel(n1))
+        self.layout.addWidget(QLabel("---->"))
+        self.layout.addWidget(QLabel(n2))
 
         self.combo = QComboBox()
-        self.layout.addItem(self.combo)
+        self.layout.addWidget(self.combo)
         self.layout.addStretch()
 
     def addItem(self, cond):
@@ -62,9 +63,16 @@ class EdgeEditor(QWidget):
 
         self.widgets: dict[str, EdgeEditorList] = {}
 
-    def addEdges(self, n1, n2s: list[str]):
-        lst = EdgeEditorList(n1, n2s)
+    def addEdge(self, n1, n2):
+        w = self.widgets.get(n1)
+        if w is not None:
+            w.addEdge(n1, n2)
+            return
+
+        lst = EdgeEditorList()
+        lst.addEdge(n1, n2)
         self.stack.addWidget(lst)
+        self.widgets[n1] = lst
 
     def addItem(self, cond):
         for w in self.widgets.values():

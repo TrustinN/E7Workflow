@@ -16,9 +16,10 @@ from .node import (
 class GraphScene(QGraphicsScene):
     nodeMoved_ = pyqtSignal(str)
     edgeMoved_ = pyqtSignal(str)
-    nodePressed_ = pyqtSignal(str)
     nodeSelected_ = pyqtSignal(str)
     nodeDeselected_ = pyqtSignal()
+    edgeSelected_ = pyqtSignal(str)
+    edgeDeselected_ = pyqtSignal()
 
     nodeCreated_ = pyqtSignal(str)
     edgeCreated_ = pyqtSignal(str)
@@ -40,6 +41,15 @@ class GraphScene(QGraphicsScene):
         with QSignalBlocker(self):
             self.nodes[id].setSelected(False)
 
+    def selectEdge(self, id):
+        with QSignalBlocker(self):
+            super().clearSelection()
+            self.edges[id].setSelected(True)
+
+    def unselectEdge(self, id):
+        with QSignalBlocker(self):
+            self.edges[id].setSelected(False)
+
     def clearSelection(self):
         with QSignalBlocker(self):
             super().clearSelection()
@@ -54,6 +64,11 @@ class GraphScene(QGraphicsScene):
         for id, graphicsNode in self.nodes.items():
             if graphicsNode is node:
                 self.nodeSelected_.emit(id)
+                break
+
+        for id, graphicsEdge in self.edges.items():
+            if graphicsEdge is node:
+                self.edgeSelected_.emit(id)
                 break
 
     def createNode(self, id, nodeType=NodeType.RECTANGLE):
