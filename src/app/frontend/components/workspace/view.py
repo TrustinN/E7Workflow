@@ -2,7 +2,7 @@ from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.frontend.widgets.workspace.components import Workspace, WorkspaceSchema
+from src.app.frontend.components.workspace.components import Workspace, WorkspaceSchema
 
 
 class WorkspaceView(QObject):

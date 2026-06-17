@@ -1,8 +1,8 @@
 from PyQt5.QtGui import QColor
 
+from src.app.frontend.components.utils.colors import Alpha, Colors, with_alpha
 from src.app.frontend.state import Context
 from src.app.frontend.state.layouts.graph import Color
-from src.app.frontend.widgets.utils.colors import Alpha, Colors, with_alpha
 
 from .components import WorkspaceSchema
 from .view import WorkspaceView

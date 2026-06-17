@@ -13,16 +13,14 @@ from PyQt5.QtWidgets import (
 from src.router.routing import Dispatcher
 
 from .frontend.capabilities import (
-    GraphCapability,
-    RunnerCapability,
-    SerializationCapability,
     WorkspaceCapability,
-)
+)  # GraphCapability,; RunnerCapability,; SerializationCapability,
+
+# from .frontend.components.graph import GraphComponent
+# from .frontend.components.runner import RunnerComponent
+from .frontend.components.workspace import WorkspaceComponent
 from .frontend.events import PubSubHandler
 from .frontend.state import Context, Document, StateManager
-from .frontend.widgets.graph import GraphComponent
-from .frontend.widgets.runner import RunnerComponent
-from .frontend.widgets.workspace import WorkspaceComponent
 
 
 class MainWindow(QMainWindow):
