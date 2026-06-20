@@ -1,5 +1,5 @@
-from src.app.frontend.state import Document
-from src.app.frontend.state.layouts import NodeItem
+from src.app.state import Document
+from src.app.state.layouts import NodeItem
 
 from .components import WorkspaceSchema
 from .view import WorkspaceView

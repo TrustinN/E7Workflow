@@ -12,15 +12,11 @@ from PyQt5.QtWidgets import (
 
 from src.router.routing import Dispatcher
 
-from .frontend.capabilities import (
-    WorkspaceCapability,
-)  # GraphCapability,; RunnerCapability,; SerializationCapability,
-
 # from .frontend.components.graph import GraphComponent
 # from .frontend.components.runner import RunnerComponent
-from .frontend.components.workspace import WorkspaceComponent
-from .frontend.events import PubSubHandler
-from .frontend.state import Context, Document, StateManager
+from .components.workspace import WorkspaceComponent
+from .events import PubSubHandler
+from .state import Context, Document, StateManager
 
 
 class MainWindow(QMainWindow):
@@ -43,9 +39,9 @@ class App(QApplication):
         self._initState()
         self._initComponents(self.context, self.document, dispatcher)
         self._initLayout()
-        self._initShortcuts()
+        # self._initShortcuts()
         self._initCapabilities(self.context)
-        self._initSignals()
+        # self._initSignals()
 
         self.pubSubHandler = PubSubHandler()
         self.pubSubHandler.registerNode(self.contextManager)
@@ -59,19 +55,17 @@ class App(QApplication):
         self.contextManager = StateManager(self.context, self.document)
 
     def _initCapabilities(self, context: Context):
-        self.wksCapability = WorkspaceCapability(context)
         # self.graphCapability = GraphCapability(context)
         # self.runnerCapability = RunnerCapability(context)
         # self.serialCapability = SerializationCapability()
         self.capabilites = [
-            self.wksCapability,
             # self.graphCapability,
             # self.runnerCapability,
             # self.serialCapability,
         ]
 
     def _initComponents(self, context, document, dispatcher):
-        self.wkCpt = WorkspaceComponent(context, document)
+        self.wkCpt = WorkspaceComponent(context)
         # self.graphCpt = GraphComponent(context, document)
         # self.runnerCpt = RunnerComponent(context, document, dispatcher)
 
@@ -81,73 +75,73 @@ class App(QApplication):
             # self.runnerCpt,
         ]
 
-    def _initShortcuts(self):
-        self.workspaceShortcut = QShortcut(QKeySequence.New, self.window)
-        # self.setE1Shortcut = QShortcut(QKeySequence("1"), self.window)
-        # self.setE2Shortcut = QShortcut(QKeySequence("2"), self.window)
-        # self.createEdgeShortcut = QShortcut(QKeySequence("E"), self.window)
-        # self.entryShortcut = QShortcut(QKeySequence("Return"), self.window)
-        # self.executeShortcut = QShortcut(QKeySequence("Ctrl+R"), self.window)
-        # self.exportShortcut = QShortcut(QKeySequence.Save, self.window)
-        # self.importShortcut = QShortcut(QKeySequence.Open, self.window)
+    # def _initShortcuts(self):
+    # self.workspaceShortcut = QShortcut(QKeySequence.New, self.window)
+    # self.setE1Shortcut = QShortcut(QKeySequence("1"), self.window)
+    # self.setE2Shortcut = QShortcut(QKeySequence("2"), self.window)
+    # self.createEdgeShortcut = QShortcut(QKeySequence("E"), self.window)
+    # self.entryShortcut = QShortcut(QKeySequence("Return"), self.window)
+    # self.executeShortcut = QShortcut(QKeySequence("Ctrl+R"), self.window)
+    # self.exportShortcut = QShortcut(QKeySequence.Save, self.window)
+    # self.importShortcut = QShortcut(QKeySequence.Open, self.window)
 
-        self.workspaceShortcut.setContext(Qt.ApplicationShortcut)
-        # self.setE1Shortcut.setContext(Qt.ApplicationShortcut)
-        # self.setE2Shortcut.setContext(Qt.ApplicationShortcut)
-        # self.createEdgeShortcut.setContext(Qt.ApplicationShortcut)
-        # self.entryShortcut.setContext(Qt.ApplicationShortcut)
-        # self.executeShortcut.setContext(Qt.ApplicationShortcut)
-        # self.exportShortcut.setContext(Qt.ApplicationShortcut)
-        # self.importShortcut.setContext(Qt.ApplicationShortcut)
+    # self.workspaceShortcut.setContext(Qt.ApplicationShortcut)
+    # self.setE1Shortcut.setContext(Qt.ApplicationShortcut)
+    # self.setE2Shortcut.setContext(Qt.ApplicationShortcut)
+    # self.createEdgeShortcut.setContext(Qt.ApplicationShortcut)
+    # self.entryShortcut.setContext(Qt.ApplicationShortcut)
+    # self.executeShortcut.setContext(Qt.ApplicationShortcut)
+    # self.exportShortcut.setContext(Qt.ApplicationShortcut)
+    # self.importShortcut.setContext(Qt.ApplicationShortcut)
 
-        setButtonText(self.wksBtn, "Create Workspace", self.workspaceShortcut)
-        # setButtonText(self.setE1Btn, "Set Edge Start", self.setE1Shortcut)
-        # setButtonText(self.setE2Btn, "Set Edge End", self.setE2Shortcut)
-        # setButtonText(self.createEdgeBtn, "Create Edge", self.createEdgeShortcut)
-        # setButtonText(self.entryBtn, "Set Entry", self.entryShortcut)
-        # setButtonText(self.executeBtn, "Execute", self.executeShortcut)
-        # setButtonText(self.exportBtn, "Export", self.exportShortcut)
-        # setButtonText(self.importBtn, "Import", self.importShortcut)
+    # setButtonText(self.wksBtn, "Create Workspace", self.workspaceShortcut)
+    # setButtonText(self.setE1Btn, "Set Edge Start", self.setE1Shortcut)
+    # setButtonText(self.setE2Btn, "Set Edge End", self.setE2Shortcut)
+    # setButtonText(self.createEdgeBtn, "Create Edge", self.createEdgeShortcut)
+    # setButtonText(self.entryBtn, "Set Entry", self.entryShortcut)
+    # setButtonText(self.executeBtn, "Execute", self.executeShortcut)
+    # setButtonText(self.exportBtn, "Export", self.exportShortcut)
+    # setButtonText(self.importBtn, "Import", self.importShortcut)
 
-    def _initSignals(self):
-        actions = {
-            self.wksCapability.requestWorkspace: [
-                self.wksBtn.clicked,
-                self.workspaceShortcut.activated,
-            ],
-            # self.graphCapability.setE1: [
-            #     self.setE1Btn.clicked,
-            #     self.setE1Shortcut.activated,
-            # ],
-            # self.graphCapability.setE2: [
-            #     self.setE2Btn.clicked,
-            #     self.setE2Shortcut.activated,
-            # ],
-            # self.graphCapability.requestEdge: [
-            #     self.createEdgeBtn.clicked,
-            #     self.createEdgeShortcut.activated,
-            # ],
-            # self.runnerCapability.requestEntry: [
-            #     self.entryBtn.clicked,
-            #     self.entryShortcut.activated,
-            # ],
-            # self.runnerCapability.requestExecute: [
-            #     self.executeBtn.clicked,
-            #     self.executeShortcut.activated,
-            # ],
-            # self.serialCapability.handleExport: [
-            #     self.exportBtn.clicked,
-            #     self.exportShortcut.activated,
-            # ],
-            # self.serialCapability.handleImport: [
-            #     self.importBtn.clicked,
-            #     self.importShortcut.activated,
-            # ],
-        }
-
-        for slot, signals in actions.items():
-            for signal in signals:
-                signal.connect(slot)
+    # def _initSignals(self):
+    #     actions = {
+    #         # self.wksCapability.requestWorkspace: [
+    #         #     self.wksBtn.clicked,
+    #         #     self.workspaceShortcut.activated,
+    #         # ],
+    #         # self.graphCapability.setE1: [
+    #         #     self.setE1Btn.clicked,
+    #         #     self.setE1Shortcut.activated,
+    #         # ],
+    #         # self.graphCapability.setE2: [
+    #         #     self.setE2Btn.clicked,
+    #         #     self.setE2Shortcut.activated,
+    #         # ],
+    #         # self.graphCapability.requestEdge: [
+    #         #     self.createEdgeBtn.clicked,
+    #         #     self.createEdgeShortcut.activated,
+    #         # ],
+    #         # self.runnerCapability.requestEntry: [
+    #         #     self.entryBtn.clicked,
+    #         #     self.entryShortcut.activated,
+    #         # ],
+    #         # self.runnerCapability.requestExecute: [
+    #         #     self.executeBtn.clicked,
+    #         #     self.executeShortcut.activated,
+    #         # ],
+    #         # self.serialCapability.handleExport: [
+    #         #     self.exportBtn.clicked,
+    #         #     self.exportShortcut.activated,
+    #         # ],
+    #         # self.serialCapability.handleImport: [
+    #         #     self.importBtn.clicked,
+    #         #     self.importShortcut.activated,
+    #         # ],
+    #     }
+    #
+    #     for slot, signals in actions.items():
+    #         for signal in signals:
+    #             signal.connect(slot)
 
     def _initLayout(self):
         self.window = MainWindow()
@@ -167,7 +161,7 @@ class App(QApplication):
         # self.layoutLeft.addWidget(self.graphCpt.widget)
         self.layoutLeft.addStretch()
 
-        self.wksBtn = QPushButton()
+        # self.wksBtn = QPushButton()
         # self.setE1Btn = QPushButton()
         # self.setE2Btn = QPushButton()
         # self.createEdgeBtn = QPushButton()
@@ -176,7 +170,7 @@ class App(QApplication):
         # self.exportBtn = QPushButton()
         # self.importBtn = QPushButton()
 
-        self.layoutMid.addWidget(self.wksBtn)
+        self.layoutMid.addWidget(self.wkCpt.screen)
         # self.layoutMid.addWidget(self.setE1Btn)
         # self.layoutMid.addWidget(self.setE2Btn)
         # self.layoutMid.addWidget(self.createEdgeBtn)

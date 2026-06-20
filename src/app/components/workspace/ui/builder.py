@@ -1,11 +1,11 @@
+from src.app.frontend.components.workspace.model import WorkspaceModel, WorkspaceSchema
 from src.app.frontend.state import Context
 
-from .components import WorkspaceSchema
 from .view import WorkspaceView
 
 
 class WorkspaceBuilder:
-    def __init__(self, context: Context, view: WorkspaceView):
+    def __init__(self, context: Context, model: WorkspaceModel, view: WorkspaceView):
         self.context = context
         self.view = view
 

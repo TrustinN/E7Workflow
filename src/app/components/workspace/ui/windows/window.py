@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import QWidget
 
-from src.app.frontend.components.utils.colors import Colors
+from src.app.components.utils.colors import Colors
 
 
 class Window(QWidget):
@@ -134,7 +134,6 @@ class Window(QWidget):
             -paddingChange, -paddingChange, paddingChange, paddingChange
         )
         super().setGeometry(newRect)
-        self.resizeSignal.emit()
 
     def getColor(self):
         return self.color

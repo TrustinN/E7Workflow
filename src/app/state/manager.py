@@ -1,6 +1,6 @@
 import os
 
-from src.app.frontend.events import Node
+from src.app.events import Node
 
 from .context import Context
 from .document import Document

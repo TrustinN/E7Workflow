@@ -1,23 +1,10 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from PyQt5.QtCore import QRect, QRectF, Qt
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtSvg import QSvgRenderer
 
-from src.app.frontend.state.layouts.graph import Color, Geometry
+from src.app.components.workspace.model import Color, Geometry, WorkspaceSchema
 
 from .hierarchy import WindowHierarchy
-
-
-@dataclass
-class WorkspaceSchema:
-    displayText: Optional[str] = None
-    geometry: Optional[Geometry] = None
-    iconPath: Optional[str] = None
-    padding: Optional[int] = None
-    color: Optional[Color] = None
-    borderColor: Optional[Color] = None
 
 
 class Workspace(WindowHierarchy):
@@ -54,8 +41,8 @@ class Workspace(WindowHierarchy):
             ),
             iconPath=self.iconPath,
             padding=self.padding,
-            color=self.color,
-            borderColor=self.borderColor,
+            color=Color(*self.color.getRgb()),
+            borderColor=Color(*self.borderColor.getRgb()),
         )
 
     def setData(self, data: WorkspaceSchema):
