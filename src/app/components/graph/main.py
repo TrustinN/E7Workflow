@@ -4,28 +4,18 @@ from src.app.frontend.events import Node
 from src.app.frontend.state import Context, Document
 from src.app.frontend.widgets.utils.colors import Colors
 
-from .builders import GraphFullViewBuilder, GraphMiniViewBuilder
 from .controllers import GraphFullViewController, GraphMiniViewController
-from .layout import GraphLayoutSync
 from .views import GraphMultiView, GraphSingleView
 
 
 class GraphComponent(Node):
 
-    def __init__(self, context: Context, document: Document):
+    def __init__(self, context: Context):
         super().__init__()
         self.context = context
-        self.document = document
 
         self.miniView = GraphMultiView()
-        self.miniViewBuilder = GraphMiniViewBuilder(self.context, self.miniView)
-        self.miniViewLayout = GraphLayoutSync(self.document.miniView, self.miniView)
-        self.miniViewController = GraphMiniViewController(self.context, self.miniView)
-
         self.fullView = GraphSingleView()
-        self.fullViewBuilder = GraphFullViewBuilder(self.context, self.fullView)
-        self.fullViewLayout = GraphLayoutSync(self.document.fullView, self.fullView)
-        self.fullViewController = GraphFullViewController(self.context, self.fullView)
 
         self.widget = QWidget()
         self.layout = QVBoxLayout()
@@ -36,8 +26,6 @@ class GraphComponent(Node):
         self.subscribe("/Graph/Root/Requested", self.createRoot)
         self.subscribe("/Graph/Node/Requested", self.createNode)
         self.subscribe("/Graph/Edge/Requested", self.createEdge)
-
-        self.subscribe("/Runner/Entry/Set", self.onEntrySet)
 
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
@@ -60,16 +48,6 @@ class GraphComponent(Node):
         self.fullViewBuilder.createEdge(id)
         self.publish("/Graph/Edge/Created", data)
 
-    def onEntrySet(self, data):
-        prevID = self.context.runnerModel.getPrevSelected()
-        if prevID:
-            self.miniViewController.setBorder(prevID, Colors.WHITE)
-            self.fullViewController.setBorder(prevID, Colors.WHITE)
-
-        id = self.context.runnerModel.getSelected()
-        self.miniViewController.setBorder(id, Colors.MINT)
-        self.fullViewController.setBorder(id, Colors.MINT)
-
     def resetState(self, data):
         self.miniViewLayout.resetState()
         self.miniViewController.resetState()
@@ -77,13 +55,13 @@ class GraphComponent(Node):
         self.fullViewLayout.resetState()
         self.fullViewController.resetState()
 
-    def loadState(self, data):
-        self.miniViewLayout.freezeLayout()
-        self.miniViewBuilder.buildAll()
-        self.miniViewLayout.rerenderView()
-        self.miniViewLayout.unfreezeLayout()
-
-        self.fullViewLayout.freezeLayout()
-        self.fullViewBuilder.buildAll()
-        self.fullViewLayout.rerenderView()
-        self.fullViewLayout.unfreezeLayout()
+    # def loadState(self, data):
+    #     self.miniViewLayout.freezeLayout()
+    #     self.miniViewBuilder.buildAll()
+    #     self.miniViewLayout.rerenderView()
+    #     self.miniViewLayout.unfreezeLayout()
+    #
+    #     self.fullViewLayout.freezeLayout()
+    #     self.fullViewBuilder.buildAll()
+    #     self.fullViewLayout.rerenderView()
+    #     self.fullViewLayout.unfreezeLayout()
