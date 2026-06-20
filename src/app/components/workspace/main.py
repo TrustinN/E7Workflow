@@ -5,8 +5,7 @@ from src.app.events import Node
 from src.app.state import Context, SelectionType
 
 from .model import WorkspaceModel, WorkspaceSchema
-from .screen import WorkspaceScreen
-from .ui import WorkspaceController, WorkspaceView
+from .ui import WorkspaceController, WorkspaceScreen, WorkspaceView
 
 
 class WorkspaceComponent(Node):
@@ -19,6 +18,7 @@ class WorkspaceComponent(Node):
         self.controller = WorkspaceController(self.context, self.view, self.model)
         self.screen = WorkspaceScreen()
         self.screen.btn.clicked.connect(self.createWorkspace)
+        self.screen.shortcut.activated.connect(self.createWorkspace)
 
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
         self.groupAssignments = {}
