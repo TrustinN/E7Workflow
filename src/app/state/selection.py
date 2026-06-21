@@ -7,7 +7,9 @@ from .models import Model
 
 
 class SelectionType(Enum):
+    NONE = auto()
     WORKSPACE = auto()
+    EDGE = auto()
 
 
 @dataclass
@@ -39,6 +41,9 @@ class SelectionModel(Model):
         self.current = Selection()
 
     def setSelected(self, id, selectionType):
+        if id == self.current.id and selectionType == self.current.type:
+            return
+
         self.previous = Selection(self.current.id, self.current.type)
         self.current = Selection(id, selectionType)
 

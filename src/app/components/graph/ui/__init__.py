@@ -1,3 +1,2 @@
-from .arrow import EdgeSchema
-from .node import NodeSchema, NodeType
+from .node import NodeType
 from .scene import GraphScene

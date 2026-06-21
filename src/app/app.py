@@ -12,8 +12,7 @@ from PyQt5.QtWidgets import (
 
 from src.router.routing import Dispatcher
 
-# from .frontend.components.graph import GraphComponent
-# from .frontend.components.runner import RunnerComponent
+from .components.graph import GraphComponent
 from .components.workspace import WorkspaceComponent
 from .events import PubSubHandler
 from .state import Context, Document, StateManager
@@ -55,28 +54,25 @@ class App(QApplication):
         self.contextManager = StateManager(self.context, self.document)
 
     def _initCapabilities(self, context: Context):
-        # self.graphCapability = GraphCapability(context)
         # self.runnerCapability = RunnerCapability(context)
         # self.serialCapability = SerializationCapability()
         self.capabilites = [
-            # self.graphCapability,
             # self.runnerCapability,
             # self.serialCapability,
         ]
 
     def _initComponents(self, context, document, dispatcher):
         self.wkCpt = WorkspaceComponent(context)
-        # self.graphCpt = GraphComponent(context, document)
+        self.graphCpt = GraphComponent(context)
         # self.runnerCpt = RunnerComponent(context, document, dispatcher)
 
         self.components = [
             self.wkCpt,
-            # self.graphCpt,
+            self.graphCpt,
             # self.runnerCpt,
         ]
 
     # def _initShortcuts(self):
-    # self.workspaceShortcut = QShortcut(QKeySequence.New, self.window)
     # self.setE1Shortcut = QShortcut(QKeySequence("1"), self.window)
     # self.setE2Shortcut = QShortcut(QKeySequence("2"), self.window)
     # self.createEdgeShortcut = QShortcut(QKeySequence("E"), self.window)
@@ -171,7 +167,7 @@ class App(QApplication):
         # self.importBtn = QPushButton()
 
         self.layoutMid.addWidget(self.wkCpt.screen)
-        # self.layoutMid.addWidget(self.setE1Btn)
+        self.layoutMid.addWidget(self.graphCpt.editor)
         # self.layoutMid.addWidget(self.setE2Btn)
         # self.layoutMid.addWidget(self.createEdgeBtn)
         # self.layoutMid.addWidget(self.entryBtn)

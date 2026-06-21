@@ -1,9 +1,8 @@
 from PyQt5.QtGui import QColor
 
 from src.app.components.utils.colors import Alpha, Colors, with_alpha
-from src.app.components.workspace.model import WorkspaceModel, WorkspaceSchema
+from src.app.components.workspace.model import WorkspaceModel
 from src.app.state import Context, Selection, SelectionType
-from src.app.state.layouts.graph import Color
 
 from .view import WorkspaceView
 
@@ -24,11 +23,11 @@ class WorkspaceController:
         self.model.updateItem(id, data)
 
     def setColor(self, id, color: QColor, borderColor: QColor):
-        schema = WorkspaceSchema(
-            color=Color(*color.getRgb()),
-            borderColor=Color(*borderColor.getRgb()),
-        )
-        self.view.setData(id, schema)
+        patch = {
+            "color": list(color.getRgb()),
+            "borderColor": list(borderColor.getRgb()),
+        }
+        self.model.updateItem(id, patch)
 
     def onSelection(self, selection: Selection):
         prev: Selection = self.context.selectionModel.getPrevSelected()

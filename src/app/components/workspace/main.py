@@ -23,13 +23,13 @@ class WorkspaceComponent(Node):
         self.availableGroups = set(chr(ord("A") + i) for i in range(26))
         self.groupAssignments = {}
 
-        self.createRootWorkspace()
+        self.subscribe("/App/Loaded", self.createRootWorkspace)
 
-    def createRootWorkspace(self):
+    def createRootWorkspace(self, data):
         id = generate()
-        schema = WorkspaceSchema(displayText="Root", padding=15)
+        schema = WorkspaceSchema(id=id, displayText="Root", padding=15)
 
-        self.model.addItem(id, schema, parentID=None)
+        self.model.addItem(id, schema)
         self.publish("/Workspace/Root/Created", schema.toData())
 
     def createWorkspace(self):
@@ -43,10 +43,16 @@ class WorkspaceComponent(Node):
         if not name:
             return
         group = self.assignGroup(id, parentID)
-        schema = WorkspaceSchema(displayText=name, grouping=group, padding=0)
+        schema = WorkspaceSchema(
+            id=id,
+            displayText=name,
+            grouping=group,
+            padding=0,
+            parent=parentID,
+        )
 
-        self.model.addItem(id, schema, parentID=parentID)
-        self.publish("/Workspace/Created", schema.toData())
+        self.model.addItem(id, schema)
+        self.publish("/Workspace/Node/Created", schema.toData())
 
     def requestWorkspaceName(self):
         name, ok = QInputDialog.getText(
@@ -68,7 +74,7 @@ class WorkspaceComponent(Node):
 
     def assignGroup(self, id, parentID):
         group = None
-        if self.model.root == parentID:
+        if self.model.rootIndex() == parentID:
             group = self.popGroup()
             self.groupAssignments[id] = group
 

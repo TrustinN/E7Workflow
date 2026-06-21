@@ -29,11 +29,11 @@ class WorkspaceView(QObject):
             self.createRootWorkspace(id)
             self.rootID = id
 
-        self.setData(id, schema)
+        self.setData(id, schema.toData())
 
     def handleModelUpdate(self, id):
         schema = self.model.getItem(id)
-        self.setData(id, schema)
+        self.setData(id, schema.toData())
 
     def _createWorkspace(self, id):
         workspace = Workspace()
@@ -58,11 +58,11 @@ class WorkspaceView(QObject):
         workspace = self._createWorkspace(id)
         self.workspaces[parentID].addChild(workspace)
 
-    def setData(self, id, data: WorkspaceSchema):
+    def setData(self, id, data: dict):
         workspace = self.workspaces[id]
         workspace.setData(data)
 
-    def getData(self, id) -> WorkspaceSchema:
+    def getData(self, id) -> dict:
         workspace = self.workspaces[id]
         return workspace.getData()
 

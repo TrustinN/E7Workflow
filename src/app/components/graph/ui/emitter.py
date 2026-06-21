@@ -1,6 +1,6 @@
-from PyQt5.QtCore import QObject, QPointF, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 class GraphicsEmitter(QObject):
-    onMove_ = pyqtSignal(QPointF)
-    onMousePress_ = pyqtSignal()
+    onMove = pyqtSignal()
+    onMousePress = pyqtSignal()

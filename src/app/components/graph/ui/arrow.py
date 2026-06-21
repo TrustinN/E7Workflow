@@ -1,6 +1,4 @@
 import math
-from dataclasses import dataclass
-from typing import Optional
 
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import (
@@ -14,64 +12,47 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QGraphicsItem
 
+from src.app.components.graph.model import EdgeSchema
+
 from .emitter import GraphicsEmitter
 
 
-@dataclass
-class EdgeSchema:
-    start: Optional[str] = None
-    end: Optional[str] = None
-
-
 class GraphicsArrowItem(QGraphicsItem):
-    def __init__(
-        self,
-        start: QPointF = QPointF(0, 0),
-        end: QPointF = QPointF(1, 1),
-    ):
+    def __init__(self):
         super().__init__()
         self.color = QColor(255, 255, 255)
         self.highlightColor = QColor(0, 163, 255)
-        self.end = QPointF(0, 0)
         self.emitter = GraphicsEmitter()
 
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setZValue(-1)
-        self.setStart(start)
-        self.setEnd(end)
 
     def getData(self) -> EdgeSchema:
         return EdgeSchema()
 
-    def setStart(self, start: QPointF):
+    def setPosition(self, start: QPointF, end: QPointF):
+        self.prepareGeometryChange()
         self.start = start
-        v1 = self.start - self.end
-        v2 = start - self.end
-
-        a1 = math.atan2(v1.y(), v1.x())
-        a2 = math.atan2(v2.y(), v2.x())
-
-        self.setRotation(self.rotation() + a2 - a1)
+        self.end = end
         self.update()
 
-        self.emitter.onMove_.emit(self.start)
+    def setStart(self, start: QPointF):
+        self.prepareGeometryChange()
+        self.start = start
+        self.update()
+        self.emitter.onMove.emit(start)
 
     def setEnd(self, end: QPointF):
+        self.prepareGeometryChange()
         self.end = end
-
-        v1 = self.start - self.end
-        v2 = self.start - end
-
-        a1 = math.atan2(v1.y(), v1.x())
-        a2 = math.atan2(v2.y(), v2.x())
-
-        self.setRotation(self.rotation() + a2 - a1)
         self.update()
-
-        self.emitter.onMove_.emit(self.end)
+        self.emitter.onMove.emit(end)
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)
+
+        if not (self.start and self.end):
+            return
 
         if self.isSelected():
             # Highlight underneath
@@ -152,4 +133,4 @@ class GraphicsArrowItem(QGraphicsItem):
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        self.emitter.onMousePress_.emit()
+        self.emitter.onMousePress.emit()

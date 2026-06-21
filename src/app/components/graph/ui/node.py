@@ -1,22 +1,8 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QFont, QFontMetrics, QPen
 from PyQt5.QtWidgets import QAbstractGraphicsShapeItem, QGraphicsItem
 
-from src.app.frontend.state.layouts.graph import Color, Geometry
-
 from .emitter import GraphicsEmitter
-
-
-@dataclass
-class NodeSchema:
-    position: Optional[tuple[float, float]] = None
-    color: Optional[Color] = None
-    borderColor: Optional[Color] = None
-    geometry: Optional[Geometry] = None
-    displayText: Optional[str] = None
 
 
 class NodeType:
@@ -29,6 +15,7 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
         super().__init__()
 
         self._rect = QRectF(rect)
+        self.shape = NodeType.RECTANGLE
 
         self.displayText = None
         self.highlightColor = QColor(0, 163, 255)
@@ -53,51 +40,56 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
     def boundingRect(self):
         return self._rect.adjusted(-2, -2, 2, 2)
 
-    def getData(self) -> NodeSchema:
+    def getData(self) -> dict:
         color = self.brush().color()
         bc = self.pen().color()
         rect = self.rect()
 
-        return NodeSchema(
-            position=(self.pos().x(), self.pos().y()),
-            color=Color(*color.getRgb()),
-            borderColor=Color(*bc.getRgb()),
-            geometry=Geometry(
-                x=rect.x(),
-                y=rect.y(),
-                width=rect.width(),
-                height=rect.height(),
-            ),
-            displayText=self.displayText,
-        )
+        return {
+            "position": (self.pos().x(), self.pos().y()),
+            "color": list(color.getRgb()),
+            "borderColor": list(bc.getRgb()),
+            "geometry": [
+                rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+            ],
+            "shape": self.shape,
+            "displayText": self.displayText,
+        }
 
-    def setData(self, data: NodeSchema):
-        position = data.position
-        color = data.color
-        borderColor = data.borderColor
-        rect = data.geometry
-        displayText = data.displayText
+    def setData(self, data: dict):
+        position = data.get("position")
+        color = data.get("color")
+        borderColor = data.get("borderColor")
+        rect = data.get("geometry")
+        shape = data.get("shape")
+        displayText = data.get("displayText")
 
         if displayText is not None:
             self.displayText = displayText
             self.resizeToText()
 
         if color is not None:
-            color = QColor(color.r, color.g, color.b, color.a)
+            color = QColor(*color)
             self.setBrush(QBrush(color))
 
         if borderColor is not None:
-            color = QColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
+            borderColor = QColor(*borderColor)
             pen = self.pen()
-            pen.setColor(color)
+            pen.setColor(borderColor)
             self.setPen(pen)
 
         if rect is not None:
-            geometry = QRectF(rect.x, rect.y, rect.width, rect.height)
+            geometry = QRectF(*rect)
             self.setRect(geometry)
 
         if position:
             self.setPos(position[0], position[1])
+
+        if shape:
+            self.shape = shape
 
         self.update()
 
@@ -128,8 +120,11 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
             )
         )
 
-    def drawShape(self, painter):
-        raise NotImplementedError
+    def drawShape(self, painter, rect):
+        if self.shape == NodeType.RECTANGLE:
+            painter.drawRect(rect)
+        elif self.shape == NodeType.CIRCLE:
+            painter.drawEllipse(rect)
 
     def paint(self, painter, option, widget):
         painter.setPen(self.pen())
@@ -175,32 +170,11 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
 
             nextPos = QPointF(clampedX, clampedY)
 
+            self.emitter.onMove.emit()
             return nextPos
-
-        elif change == QGraphicsItem.ItemPositionHasChanged:
-            self.emitter.onMove_.emit(self.center())
 
         return super().itemChange(change, value)
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        self.emitter.onMousePress_.emit()
-
-
-class GraphicsRectNode(GraphicsNode):
-    def __init__(self, rect=QRectF(0, 0, 50, 50)):
-        super().__init__(rect)
-
-    def drawShape(self, painter, rect):
-        painter.drawRect(rect)
-
-
-class GraphicsCircleNode(GraphicsNode):
-    def __init__(self, rect=QRectF(0, 0, 30, 30)):
-        super().__init__(rect)
-
-    def drawShape(self, painter, rect):
-        painter.drawEllipse(rect)
-
-    def resizeToText(self):
-        pass
+        self.emitter.onMousePress.emit()

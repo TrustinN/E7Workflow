@@ -1,1 +1,1 @@
-from .workspace import Workspace, WorkspaceSchema
+from .workspace import Workspace

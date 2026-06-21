@@ -1,103 +1,103 @@
-from PyQt5.QtGui import QColor
-
-from src.app.frontend.state import Context
-from src.app.frontend.state.layouts.graph import Color
-from src.app.frontend.widgets.graph.components import NodeSchema
-from src.app.frontend.widgets.graph.views import GraphMultiView
+from src.app.components.graph.model import GraphModel
+from src.app.components.graph.ui import GraphScene
+from src.app.state import Context, Selection, SelectionType
 
 
 class GraphMiniViewController:
-    def __init__(
-        self,
-        context: Context,
-        view: GraphMultiView,
-    ):
+    def __init__(self, context: Context, scene: GraphScene, model: GraphModel):
         self.context = context
-        self.view = view
+        self.scene = scene
+        self.model = model
+
+        self.activeParent = None
+        self.scene.edgeCreated.connect(self.onEdgeCreate)
+        self.scene.nodeCreated.connect(self.onNodeCreate)
+
+        self.scene.nodeSelected.connect(self.onNodeSelected)
+        self.scene.edgeSelected.connect(self.onEdgeSelected)
+        self.scene.selectionCleared.connect(self.onSelectionClear)
 
         self.context.selectionModel.selected_.connect(self.onExternalSelection)
 
         self._updatingSelection = False
 
-        self.view.nodeSelected_.connect(self.onItemSelected)
-        self.view.nodeDeselected_.connect(self.onItemDeselected)
+    def onEdgeCreate(self, id):
+        if not self.isEdge(id):
+            self.scene.setEdgeVisible(id, False)
+            return
 
-        self.view.edgeSelected_.connect(self.onItemSelected)
-        self.view.edgeDeselected_.connect(self.onItemDeselected)
+        schema = self.model.getEdge(id)
+        parent = self.model.getNode(schema.source).parent
+        if parent != self.activeParent:
+            self.scene.setEdgeVisible(id, False)
+            return
+
+        self.scene.setEdgeVisible(id, True)
+
+    def onNodeCreate(self, id):
+        parent = self.model.getNode(id).parent
+        if parent != self.activeParent:
+            self.scene.setNodeVisible(id, False)
+            return
+
+        self.scene.setNodeVisible(id, True)
 
     def isEdge(self, id):
-        for edgeID in self.context.graphModel.edgeIter():
-            if edgeID == id:
-                e1, e2 = self.context.graphModel.getEdge(id)
-                parentID1 = self.context.workspaceModel.parent(e1)
-                parentID2 = self.context.workspaceModel.parent(e2)
-                if parentID1 == parentID2:
-                    return True
-                return False
-        return False
+        schema = self.model.getEdge(id)
+        n1 = self.model.getNode(schema.source)
+        n2 = self.model.getNode(schema.target)
+        return n1.parent == n2.parent
 
-    def isNode(self, id):
-        for nodeID in self.context.graphModel.nodeIter():
-            if nodeID == id:
-                return True
-        return False
-
-    def unselectItem(self, id):
-        if self.isNode(id):
-            parentID = self.context.workspaceModel.parent(id)
-            if parentID:
-                self.view.unselectNode(id, parentID)
-        elif self.isEdge(id):
-            e1, e2 = self.context.graphModel.getEdge(id)
-            parentID = self.context.workspaceModel.parent(e1)
-            if parentID:
-                self.view.unselectEdge(id, parentID)
-
-    def onExternalSelection(self, id):
-        if self._updatingSelection:
-            return
-
-        prevID = self.context.selectionModel.getPrevSelected()
-        if prevID:
-            self.unselectItem(prevID)
-
-        if self.isNode(id):
-            rootID = self.context.workspaceModel.root
-            id = id or rootID
-            self.view.switchScene(id)
-        elif self.isEdge(id):
-            e1, e2 = self.context.graphModel.getEdge(id)
-            parentID = self.context.workspaceModel.parent(e1)
-            self.view.selectEdge(id, parentID)
-
-    def onItemSelected(self, id):
-        if self._updatingSelection:
-            return
-
+    def onNodeSelected(self, id):
         self._updatingSelection = True
-        prevID = self.context.selectionModel.getPrevSelected()
-        if prevID:
-            self.unselectItem(prevID)
-
-        self.context.selectionModel.setSelected(id)
+        self.context.selectionModel.setSelected(id, SelectionType.WORKSPACE)
         self._updatingSelection = False
 
-    def onItemDeselected(self):
+    def onEdgeSelected(self, id):
+        self._updatingSelection = True
+        self.context.selectionModel.setSelected(id, SelectionType.EDGE)
+        self._updatingSelection = False
+
+    def onSelectionClear(self):
+        self._updatingSelection = True
+        self.context.selectionModel.setSelected(None, SelectionType.NONE)
+        self._updatingSelection = False
+
+    def showComponent(self):
+        schema = self.model.getNode(self.activeParent)
+        children = schema.children
+        for child in children:
+            self.scene.setNodeVisible(child, True)
+
+            for edge in self.model.getNodeEdges(child):
+                self.scene.setEdgeVisible(edge, self.isEdge(edge))
+
+    def onExternalSelection(self, selection: Selection):
         if self._updatingSelection:
             return
 
-        id = self.context.selectionModel.getSelected()
-        parentID = None
-        if self.isEdge(id):
-            e1, e2 = self.context.graphModel.getEdge(id)
-            parentID = self.context.workspaceModel.parent(e1)
-        elif self.isNode(id):
-            parentID = self.context.workspaceModel.parent(id)
-        self.context.selectionModel.setSelected(parentID)
+        self.scene.hideAll()
 
-    def setBorder(self, id, color: QColor):
-        schema = NodeSchema(borderColor=Color(*color.getRgb()))
-        self.view.updateNode(id, schema)
+        prev = self.context.selectionModel.getPrevSelected()
+        if prev.id:
+            self.scene.clearSelection()
+
+        if not selection.id:
+            self.activeParent = None
+            self.scene.clearSelection()
+            return
+
+        if selection.type == SelectionType.WORKSPACE:
+            self.activeParent = selection.id
+            self.scene.selectNode(selection.id)
+
+        elif selection.type == SelectionType.EDGE:
+            schema = self.model.getEdge(selection.id)
+            self.activeParent = self.model.getNode(schema.source).parent
+            self.scene.selectEdge(selection.id)
+
+        if self.activeParent:
+            self.showComponent()
 
     def resetState(self):
         self._updatingSelection = False

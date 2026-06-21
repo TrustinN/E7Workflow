@@ -1,9 +1,9 @@
 from PyQt5.QtGui import QColor
 
-from src.app.frontend.state import Context
-from src.app.frontend.state.layouts.graph import Color
-from src.app.frontend.widgets.graph.components import NodeSchema
-from src.app.frontend.widgets.graph.views import GraphSingleView
+from src.app.components.graph.model import NodeSchema
+from src.app.components.graph.views import GraphSingleView
+from src.app.state import Context
+from src.app.state.layouts.graph import Color
 
 
 class GraphFullViewController:

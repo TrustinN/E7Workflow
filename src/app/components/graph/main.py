@@ -1,11 +1,9 @@
-from PyQt5.QtWidgets import QVBoxLayout, QWidget
+from src.app.components.workspace.model import WorkspaceSchema
+from src.app.events import Node
+from src.app.state import Context
 
-from src.app.frontend.events import Node
-from src.app.frontend.state import Context, Document
-from src.app.frontend.widgets.utils.colors import Colors
-
-from .controllers import GraphFullViewController, GraphMiniViewController
-from .views import GraphMultiView, GraphSingleView
+from .model import GraphModel, NodeSchema
+from .ui.editor import GraphEditor
 
 
 class GraphComponent(Node):
@@ -13,40 +11,41 @@ class GraphComponent(Node):
     def __init__(self, context: Context):
         super().__init__()
         self.context = context
+        self.model = GraphModel()
+        self.editor = GraphEditor(self.context, self.model)
 
-        self.miniView = GraphMultiView()
-        self.fullView = GraphSingleView()
-
-        self.widget = QWidget()
-        self.layout = QVBoxLayout()
-        self.widget.setLayout(self.layout)
-        self.layout.addWidget(self.miniView)
-        self.layout.addWidget(self.fullView)
-
-        self.subscribe("/Graph/Root/Requested", self.createRoot)
-        self.subscribe("/Graph/Node/Requested", self.createNode)
-        self.subscribe("/Graph/Edge/Requested", self.createEdge)
+        self.subscribe("/Workspace/Root/Created", self.createRoot)
+        self.subscribe("/Workspace/Node/Created", self.createNode)
+        # self.subscribe("/Graph/Edge/Requested", self.createEdge)
 
         self.subscribe("/App/Reset", self.resetState)
-        self.subscribe("/App/Import", self.loadState)
+        # self.subscribe("/App/Import", self.loadState)
 
     def createRoot(self, data):
-        id = data["id"]
-        self.miniViewBuilder.createRoot(id)
-        self.fullViewBuilder.createGraph(id)
-        self.publish("/Graph/Root/Created", data)
+        wksSchema = WorkspaceSchema.fromData(data)
+        id = wksSchema.id
+        schema = NodeSchema(id=id)
+
+        self.model.addNode(id, schema)
+        self.publish("/Graph/Root/Created", schema.toData())
 
     def createNode(self, data):
-        id = data["id"]
-        self.miniViewBuilder.createNode(id)
-        self.fullViewBuilder.createNode(id)
-        self.publish("/Graph/Node/Created", data)
+        wksSchema = WorkspaceSchema.fromData(data)
+        id = wksSchema.id
+        schema = NodeSchema(
+            id=id,
+            displayText=wksSchema.displayText,
+            parent=wksSchema.parent,
+        )
 
-    def createEdge(self, data):
-        id = data["id"]
-        self.miniViewBuilder.createEdge(id)
-        self.fullViewBuilder.createEdge(id)
-        self.publish("/Graph/Edge/Created", data)
+        self.model.addNode(id, schema)
+        self.publish("/Graph/Node/Created", schema.toData())
+
+    # def createEdge(self, data):
+    #     id = data["id"]
+    #     self.miniViewBuilder.createEdge(id)
+    #     self.fullViewBuilder.createEdge(id)
+    #     self.publish("/Graph/Edge/Created", data)
 
     def resetState(self, data):
         self.miniViewLayout.resetState()

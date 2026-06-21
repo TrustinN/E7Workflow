@@ -2,8 +2,6 @@ from PyQt5.QtCore import QRect, QRectF, Qt
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtSvg import QSvgRenderer
 
-from src.app.components.workspace.model import Color, Geometry, WorkspaceSchema
-
 from .hierarchy import WindowHierarchy
 
 
@@ -29,29 +27,29 @@ class Workspace(WindowHierarchy):
         self.iconPath = None
         self.update()
 
-    def getData(self) -> WorkspaceSchema:
+    def getData(self) -> dict:
         rect = self.geometry()
-        return WorkspaceSchema(
-            displayText=self.name,
-            geometry=Geometry(
-                x=rect.x(),
-                y=rect.y(),
-                width=rect.width(),
-                height=rect.height(),
-            ),
-            iconPath=self.iconPath,
-            padding=self.padding,
-            color=Color(*self.color.getRgb()),
-            borderColor=Color(*self.borderColor.getRgb()),
-        )
+        return {
+            "displayText": self.name,
+            "geometry": [
+                rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+            ],
+            "iconPath": self.iconPath,
+            "padding": self.padding,
+            "color": list(self.color.getRgb()),
+            "borderColor": list(self.borderColor.getRgb()),
+        }
 
-    def setData(self, data: WorkspaceSchema):
-        displayText = data.displayText
-        rect = data.geometry
-        iconPath = data.iconPath
-        padding = data.padding
-        color = data.color
-        borderColor = data.borderColor
+    def setData(self, data: dict):
+        displayText = data.get("displayText")
+        rect = data.get("geometry")
+        iconPath = data.get("iconPath")
+        padding = data.get("padding")
+        color = data.get("color")
+        borderColor = data.get("borderColor")
 
         if displayText is not None:
             self.setName(displayText)
@@ -60,7 +58,7 @@ class Workspace(WindowHierarchy):
             self.setPadding(padding)
 
         if rect is not None:
-            geometry = QRect(rect.x, rect.y, rect.width, rect.height)
+            geometry = QRect(*rect)
             self.setGeometry(geometry)
 
         if iconPath is not None:
@@ -70,12 +68,10 @@ class Workspace(WindowHierarchy):
                 self.setIcon(iconPath)
 
         if color:
-            color = QColor(color.r, color.g, color.b, color.a)
+            color = QColor(*color)
 
         if borderColor:
-            borderColor = QColor(
-                borderColor.r, borderColor.g, borderColor.b, borderColor.a
-            )
+            borderColor = QColor(*borderColor)
 
         if color and borderColor:
             self.setColor(color, borderColor)

@@ -8,6 +8,8 @@ from src.app.state.layouts.graph import Color, Geometry
 
 @dataclass
 class WorkspaceSchema:
+    id: Optional[str] = None
+
     displayText: Optional[str] = None
     geometry: Optional[Geometry] = None
     iconPath: Optional[str] = None
@@ -25,10 +27,7 @@ class WorkspaceSchema:
         schema.update(data)
         return schema
 
-    def update(self, data: Union["WorkspaceSchema", dict]):
-        if isinstance(data, WorkspaceSchema):
-            data = data.toData()
-
+    def update(self, data: dict):
         for k, v in data.items():
             if k == "geometry":
                 self.geometry = Geometry(**v) if isinstance(v, dict) else v
@@ -52,6 +51,12 @@ class WorkspaceModel(QObject):
         self.nodes: dict[str, WorkspaceSchema] = {}
         self.root: str = None
 
+    def rootIndex(self):
+        return self.root
+
+    def parent(self, id: str):
+        return self.nodes[id].parent
+
     def getItem(self, id: str) -> WorkspaceSchema:
         return self.nodes[id]
 
@@ -59,20 +64,19 @@ class WorkspaceModel(QObject):
         self,
         id: str,
         schema: Union[WorkspaceSchema, dict],
-        parentID: str = None,
     ):
         if isinstance(schema, dict):
             schema = WorkspaceSchema.fromData(schema)
 
         self.nodes[id] = schema
+        parentID = schema.parent
         if parentID is None:
             self.root = id
         else:
-            schema.parent = parentID
             self.nodes[parentID].children.append(id)
 
         self.modelCreated.emit(id)
 
-    def updateItem(self, id: str, schema: Union[WorkspaceSchema, dict]):
-        self.nodes[id].update(schema)
+    def updateItem(self, id: str, patch: dict):
+        self.nodes[id].update(patch)
         self.modelUpdated.emit(id)
