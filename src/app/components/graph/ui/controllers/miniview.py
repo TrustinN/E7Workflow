@@ -22,31 +22,22 @@ class GraphMiniViewController:
         self._updatingSelection = False
 
     def onEdgeCreate(self, id):
-        if not self.isEdge(id):
+        if self.model.isCrossEdge(id):
             self.scene.setEdgeVisible(id, False)
             return
 
-        schema = self.model.getEdge(id)
-        parent = self.model.getNode(schema.source).parent
-        if parent != self.activeParent:
+        if self.model.parentEdge(id) != self.activeParent:
             self.scene.setEdgeVisible(id, False)
             return
 
         self.scene.setEdgeVisible(id, True)
 
     def onNodeCreate(self, id):
-        parent = self.model.getNode(id).parent
-        if parent != self.activeParent:
+        if self.model.parentNode(id) != self.activeParent:
             self.scene.setNodeVisible(id, False)
             return
 
         self.scene.setNodeVisible(id, True)
-
-    def isEdge(self, id):
-        schema = self.model.getEdge(id)
-        n1 = self.model.getNode(schema.source)
-        n2 = self.model.getNode(schema.target)
-        return n1.parent == n2.parent
 
     def onNodeSelected(self, id):
         self._updatingSelection = True
@@ -63,14 +54,12 @@ class GraphMiniViewController:
         self.context.selectionModel.setSelected(None, SelectionType.NONE)
         self._updatingSelection = False
 
-    def showComponent(self):
-        schema = self.model.getNode(self.activeParent)
-        children = schema.children
-        for child in children:
-            self.scene.setNodeVisible(child, True)
+    def renderComponent(self):
+        for node in self.model.getComponentNodes(self.activeParent):
+            self.scene.setNodeVisible(node, True)
 
-            for edge in self.model.getNodeEdges(child):
-                self.scene.setEdgeVisible(edge, self.isEdge(edge))
+        for edge in self.model.getComponentEdges(self.activeParent):
+            self.scene.setEdgeVisible(edge, True)
 
     def onExternalSelection(self, selection: Selection):
         if self._updatingSelection:
@@ -78,13 +67,8 @@ class GraphMiniViewController:
 
         self.scene.hideAll()
 
-        prev = self.context.selectionModel.getPrevSelected()
-        if prev.id:
-            self.scene.clearSelection()
-
         if not selection.id:
             self.activeParent = None
-            self.scene.clearSelection()
             return
 
         if selection.type == SelectionType.WORKSPACE:
@@ -97,7 +81,7 @@ class GraphMiniViewController:
             self.scene.selectEdge(selection.id)
 
         if self.activeParent:
-            self.showComponent()
+            self.renderComponent()
 
     def resetState(self):
         self._updatingSelection = False

@@ -75,8 +75,12 @@ class GraphModel(QObject):
 
         self.adjacency: dict[str, set] = defaultdict(set)
 
-    def parent(self, id: str):
-        return self.nodes[id].parent
+    def parentNode(self, id: str) -> str:
+        return self.getNode(id).parent
+
+    def parentEdge(self, id: str) -> str:
+        edge = self.getEdge(id)
+        return self.parentNode(edge.source)
 
     def getNode(self, id: str) -> NodeSchema:
         return self.nodes[id]
@@ -113,3 +117,22 @@ class GraphModel(QObject):
     def updateEdge(self, id: str, patch: dict):
         self.edges[id].update(patch)
         self.edgeUpdated.emit(id)
+
+    def getComponentNodes(self, id: str) -> list[str]:
+        return list(self.nodes[id].children)
+
+    def getComponentEdges(self, id: str) -> list[str]:
+        edges = []
+
+        for node in self.getComponentNodes(id):
+            for edge in self.getNodeEdges(node):
+                if not self.isCrossEdge(edge):
+                    edges.append(edge)
+
+        return edges
+
+    def isCrossEdge(self, id: str) -> bool:
+        edge = self.getEdge(id)
+        source = self.getNode(edge.source)
+        target = self.getNode(edge.target)
+        return source.parent != target.parent
