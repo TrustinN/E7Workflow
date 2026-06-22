@@ -51,7 +51,11 @@ class MiniViewController:
 
     def onRootSelected(self):
         self._updatingSelection = True
-        self.context.selectionModel.setSelected(None, SelectionType.NONE)
+        root = self.activeParent
+        if not root:
+            self.context.selectionModel.setSelected(None, SelectionType.NONE)
+        else:
+            self.context.selectionModel.setSelected(root, SelectionType.WORKSPACE)
         self._updatingSelection = False
 
     def renderComponent(self, id):
@@ -72,16 +76,17 @@ class MiniViewController:
 
         if not selection.id:
             self.activeParent = None
+            self.renderComponent(self.activeParent)
 
         elif selection.type == SelectionType.WORKSPACE:
             self.activeParent = selection.id
+            self.renderComponent(self.activeParent)
             self.scene.selectNode(selection.id)
 
         elif selection.type == SelectionType.EDGE:
             self.activeParent = self.model.parentEdge(selection.id)
+            self.renderComponent(self.activeParent)
             self.scene.selectEdge(selection.id)
-
-        self.renderComponent(self.activeParent)
 
     def resetState(self):
         self._updatingSelection = False

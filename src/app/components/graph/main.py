@@ -1,8 +1,10 @@
+from nanoid import generate
+
 from src.app.components.workspace.model import WorkspaceSchema
 from src.app.events import Node
 from src.app.state import Context
 
-from .model import GraphModel, NodeSchema
+from .model import EdgeSchema, GraphModel, NodeSchema
 from .ui.editor import GraphEditor
 
 
@@ -13,12 +15,12 @@ class GraphComponent(Node):
         self.context = context
         self.model = GraphModel()
         self.editor = GraphEditor(self.context, self.model)
+        self.editor.requestEdge.connect(self.createEdge)
 
         self.subscribe("/Workspace/Root/Created", self.createRoot)
         self.subscribe("/Workspace/Node/Created", self.createNode)
-        # self.subscribe("/Graph/Edge/Requested", self.createEdge)
 
-        self.subscribe("/App/Reset", self.resetState)
+        # self.subscribe("/App/Reset", self.resetState)
         # self.subscribe("/App/Import", self.loadState)
 
     def createRoot(self, data):
@@ -42,19 +44,20 @@ class GraphComponent(Node):
         self.model.addNode(id, schema)
         self.publish("/Graph/Node/Created", schema.toData())
 
-    # def createEdge(self, data):
-    #     id = data["id"]
-    #     self.miniViewBuilder.createEdge(id)
-    #     self.fullViewBuilder.createEdge(id)
-    #     self.publish("/Graph/Edge/Created", data)
+    def createEdge(self, source, target):
+        id = generate()
 
-    def resetState(self, data):
-        self.miniViewLayout.resetState()
-        self.miniViewController.resetState()
+        schema = EdgeSchema(id=id, source=source, target=target)
+        self.model.addEdge(id, schema)
+        self.publish("/Graph/Edge/Created", schema.toData())
 
-        self.fullViewLayout.resetState()
-        self.fullViewController.resetState()
-
+    # def resetState(self, data):
+    #     self.miniViewLayout.resetState()
+    #     self.miniViewController.resetState()
+    #
+    #     self.fullViewLayout.resetState()
+    #     self.fullViewController.resetState()
+    #
     # def loadState(self, data):
     #     self.miniViewLayout.freezeLayout()
     #     self.miniViewBuilder.buildAll()

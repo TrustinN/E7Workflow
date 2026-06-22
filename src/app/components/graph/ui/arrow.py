@@ -46,13 +46,13 @@ class GraphicsArrowItem(QGraphicsItem):
         self.prepareGeometryChange()
         self.start = start
         self.update()
-        self.emitter.onMove.emit(start)
+        self.emitter.onMove.emit()
 
     def setEnd(self, end: QPointF):
         self.prepareGeometryChange()
         self.end = end
         self.update()
-        self.emitter.onMove.emit(end)
+        self.emitter.onMove.emit()
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)

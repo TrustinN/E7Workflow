@@ -46,8 +46,8 @@ class GraphScene(QGraphicsScene):
         n2 = self.nodes[target]
         arrow = GraphicsArrowItem()
         arrow.setPosition(n1.center(), n2.center())
-        n1.emitter.onMove.connect(arrow.setStart)
-        n2.emitter.onMove.connect(arrow.setEnd)
+        n1.emitter.onMove.connect(lambda: arrow.setStart(n1.center()))
+        n2.emitter.onMove.connect(lambda: arrow.setEnd(n2.center()))
 
         arrow.emitter.onMousePress.connect(lambda: self.edgeSelected.emit(id))
 
