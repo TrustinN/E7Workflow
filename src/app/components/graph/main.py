@@ -34,7 +34,8 @@ class GraphComponent(Node):
         id = wksSchema.id
         schema = NodeSchema(
             id=id,
-            displayText=wksSchema.displayText,
+            name=wksSchema.displayText,
+            group=wksSchema.grouping,
             parent=wksSchema.parent,
         )
 

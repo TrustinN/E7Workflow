@@ -12,8 +12,6 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QGraphicsItem
 
-from src.app.components.graph.model import EdgeSchema
-
 from .emitter import GraphicsEmitter
 
 
@@ -27,8 +25,16 @@ class GraphicsArrowItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setZValue(-1)
 
-    def getData(self) -> EdgeSchema:
-        return EdgeSchema()
+    def getData(self) -> dict:
+        return {
+            "visible": self.isVisible(),
+        }
+
+    def setData(self, data) -> dict:
+        visible = data.get("visible")
+
+        if visible is not None:
+            self.setVisible(visible)
 
     def setPosition(self, start: QPointF, end: QPointF):
         self.prepareGeometryChange()

@@ -1,7 +1,5 @@
-from PyQt5.QtCore import QSignalBlocker, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QGraphicsScene
-
-from src.app.components.graph.model import GraphModel
 
 from .arrow import GraphicsArrowItem
 from .node import GraphicsNode
@@ -16,34 +14,19 @@ class GraphScene(QGraphicsScene):
 
     nodeSelected = pyqtSignal(str)
     edgeSelected = pyqtSignal(str)
-    selectionCleared = pyqtSignal()
+    rootSelected = pyqtSignal()
 
-    def __init__(self, model: GraphModel):
+    def __init__(self):
         super().__init__()
         self.setSceneRect(0, 0, 400, 300)
-
-        self.model = model
-        self.model.nodeCreated.connect(self.createNode)
-        self.model.edgeCreated.connect(self.createEdge)
-
-        self.model.nodeUpdated.connect(self.updateNode)
-
-        self.nodeUpdated.connect(self.updateModelNode)
-        self.selectionChanged.connect(self.onSelectionChanged)
 
         self.nodes: dict[str, GraphicsNode] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
 
-    def updateModelNode(self, id):
-        data = self.nodes[id].getData()
-        self.model.updateNode(id, data)
-
     def createNode(self, id):
         node = GraphicsNode()
-
-        schema = self.model.getNode(id)
-        node.setData(schema.toData())
         node.emitter.onMove.connect(lambda: self.nodeUpdated.emit(id))
+        node.emitter.onMousePress.connect(lambda: self.nodeSelected.emit(id))
 
         self.nodes[id] = node
         self.addItem(node)
@@ -54,85 +37,65 @@ class GraphScene(QGraphicsScene):
         node = self.nodes[id]
         return node.getData()
 
-    def updateNode(self, id):
+    def updateNode(self, id, data):
         node = self.nodes[id]
-        schema = self.model.getNode(id)
-        node.setData(schema.toData())
+        node.setData(data)
 
-    def createEdge(self, id):
-        schema = self.model.getEdge(id)
-        id1 = schema.source
-        id2 = schema.target
-
-        n1 = self.nodes[id1]
-        n2 = self.nodes[id2]
+    def createEdge(self, id, source, target):
+        n1 = self.nodes[source]
+        n2 = self.nodes[target]
         arrow = GraphicsArrowItem()
         arrow.setPosition(n1.center(), n2.center())
         n1.emitter.onMove.connect(arrow.setStart)
         n2.emitter.onMove.connect(arrow.setEnd)
+
+        arrow.emitter.onMousePress.connect(lambda: self.edgeSelected.emit(id))
 
         self.edges[id] = arrow
         self.addItem(arrow)
 
         self.edgeCreated.emit(id)
 
+    def readEdge(self, id) -> dict:
+        edge = self.edges[id]
+        return edge.getData()
+
+    def updateEdge(self, id, data):
+        edge = self.edges[id]
+        edge.setData(data)
+
     def setNodeVisible(self, id, show=True):
-        with QSignalBlocker(self):
-            if show:
-                self.nodes[id].show()
-            else:
-                self.nodes[id].hide()
+        if show:
+            self.nodes[id].show()
+            self.nodeUpdated.emit(id)
+        else:
+            self.nodes[id].hide()
+            self.nodeUpdated.emit(id)
 
     def setEdgeVisible(self, id, show=True):
-        with QSignalBlocker(self):
-            if show:
-                self.edges[id].show()
-            else:
-                self.edges[id].hide()
+        if show:
+            self.edges[id].show()
+            self.edgeUpdated.emit(id)
+        else:
+            self.edges[id].hide()
+            self.edgeUpdated.emit(id)
 
     def hideAll(self):
-        with QSignalBlocker(self):
-            for node in self.nodes.values():
-                node.hide()
+        for id, node in self.nodes.items():
+            node.hide()
+            self.nodeUpdated.emit(id)
 
-            for edge in self.edges.values():
-                edge.hide()
+        for id, edge in self.edges.items():
+            edge.hide()
+            self.edgeUpdated.emit(id)
+
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        if not self.selectedItems():
+            self.rootSelected.emit()
 
     def selectNode(self, id):
-        with QSignalBlocker(self):
-            super().clearSelection()
-            self.nodes[id].setSelected(True)
-
-    def unselectNode(self, id):
-        with QSignalBlocker(self):
-            self.nodes[id].setSelected(False)
+        self.nodes[id].setSelected(True)
 
     def selectEdge(self, id):
-        with QSignalBlocker(self):
-            super().clearSelection()
-            self.edges[id].setSelected(True)
-
-    def unselectEdge(self, id):
-        with QSignalBlocker(self):
-            self.edges[id].setSelected(False)
-
-    def clearSelection(self):
-        with QSignalBlocker(self):
-            super().clearSelection()
-
-    def onSelectionChanged(self):
-        selected = self.selectedItems()
-        if not selected:
-            self.selectionCleared.emit()
-            return
-
-        node = selected[0]
-        for id, graphicsNode in self.nodes.items():
-            if graphicsNode is node:
-                self.nodeSelected.emit(id)
-                break
-
-        for id, graphicsEdge in self.edges.items():
-            if graphicsEdge is node:
-                self.edgeSelected.emit(id)
-                break
+        self.edges[id].setSelected(True)

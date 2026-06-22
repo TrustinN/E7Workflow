@@ -1,2 +1,2 @@
-# from .fullview import GraphFullViewController
-from .miniview import GraphMiniViewController
+from .fullview import FullViewController
+from .miniview import MiniViewController

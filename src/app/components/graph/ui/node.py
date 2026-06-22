@@ -57,6 +57,7 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
             ],
             "shape": self.shape,
             "displayText": self.displayText,
+            "visible": self.isVisible(),
         }
 
     def setData(self, data: dict):
@@ -66,6 +67,7 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
         rect = data.get("geometry")
         shape = data.get("shape")
         displayText = data.get("displayText")
+        visible = data.get("visible")
 
         if displayText is not None:
             self.displayText = displayText
@@ -90,6 +92,9 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
 
         if shape:
             self.shape = shape
+
+        if visible is not None:
+            self.setVisible(visible)
 
         self.update()
 

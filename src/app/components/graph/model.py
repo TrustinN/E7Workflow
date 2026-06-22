@@ -11,15 +11,35 @@ from src.app.state.layouts.graph import Color, Geometry
 class NodeSchema:
     id: Optional[str] = None
 
+    name: Optional[str] = None
+    group: Optional[str] = None
+
+    children: list[str] = field(default_factory=list)
+    parent: Optional[str] = None
+
+    @classmethod
+    def fromData(cls, data: dict):
+        schema = cls()
+        schema.update(data)
+        return schema
+
+    def update(self, data: dict):
+        for k, v in data.items():
+            setattr(self, k, v)
+
+    def toData(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class NodeViewState:
     displayText: Optional[str] = None
     geometry: Optional[Geometry] = None
     shape: Optional[str] = None
     position: Optional[tuple[float, float]] = None
     color: Optional[Color] = None
     borderColor: Optional[Color] = None
-
-    children: list[str] = field(default_factory=list)
-    parent: Optional[str] = None
+    visible: Optional[bool] = None
 
     @classmethod
     def fromData(cls, data: dict):
@@ -46,6 +66,24 @@ class EdgeSchema:
 
     source: Optional[str] = None
     target: Optional[str] = None
+
+    @classmethod
+    def fromData(cls, data: dict):
+        schema = cls()
+        schema.update(data)
+        return schema
+
+    def update(self, data: dict):
+        for k, v in data.items():
+            setattr(self, k, v)
+
+    def toData(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class EdgeViewState:
+    visible: Optional[bool] = None
 
     @classmethod
     def fromData(cls, data: dict):
@@ -136,3 +174,52 @@ class GraphModel(QObject):
         source = self.getNode(edge.source)
         target = self.getNode(edge.target)
         return source.parent != target.parent
+
+
+class GraphViewState(QObject):
+    nodeCreated = pyqtSignal(str)
+    nodeUpdated = pyqtSignal(str)
+
+    edgeCreated = pyqtSignal(str)
+    edgeUpdated = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+
+        self.nodes: dict[str, NodeViewState] = {}
+        self.edges: dict[str, EdgeViewState] = {}
+
+    def addNode(self, id, state):
+        self.nodes[id] = state
+        self.nodeCreated.emit(id)
+
+    def addEdge(self, id, state):
+        self.edges[id] = state
+        self.edgeCreated.emit(id)
+
+    def getNode(self, id):
+        return self.nodes[id]
+
+    def getEdge(self, id):
+        return self.edges[id]
+
+    def updateNode(self, id, state):
+        self.nodes[id].update(state)
+        self.nodeUpdated.emit(id)
+
+    def updateEdge(self, id, state):
+        self.edges[id].update(state)
+        self.edgeUpdated.emit(id)
+
+
+class GraphDocument:
+    def __init__(self, model: GraphModel):
+        self.model = model
+
+        self.viewStates: dict[str, GraphViewState] = {}
+
+    def addViewState(self, id, viewState: GraphViewState):
+        self.viewStates[id] = viewState
+
+    def layout(self, id):
+        return self.viewStates[id]
