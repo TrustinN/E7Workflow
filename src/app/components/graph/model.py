@@ -106,12 +106,21 @@ class GraphModel(QObject):
     edgeCreated = pyqtSignal(str)
     edgeUpdated = pyqtSignal(str)
 
+    modelCleared = pyqtSignal()
+    modelLoaded = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.nodes: dict[str, NodeSchema] = {}
         self.edges: dict[str, EdgeSchema] = {}
 
         self.adjacency: dict[str, set] = defaultdict(set)
+
+    def nodeList(self) -> list[str]:
+        return list(self.nodes.keys())
+
+    def edgeList(self) -> list[str]:
+        return list(self.edges.keys())
 
     def parentNode(self, id: str) -> str:
         return self.getNode(id).parent
@@ -175,6 +184,34 @@ class GraphModel(QObject):
         target = self.getNode(edge.target)
         return source.parent != target.parent
 
+    def toData(self) -> dict:
+        return {
+            "nodes": {k: v.toData() for k, v in self.nodes.items()},
+            "edges": {k: v.toData() for k, v in self.edges.items()},
+        }
+
+    def fromData(self, data: dict):
+        nodes = data["nodes"]
+        edges = data["edges"]
+
+        for id, node in nodes.items():
+            self.nodes[id] = NodeSchema.fromData(node)
+
+        for id, edge in edges.items():
+            schema = EdgeSchema.fromData(edge)
+            self.edges[id] = schema
+            source = schema.source
+            self.adjacency[source].add(id)
+
+        self.modelLoaded.emit()
+
+    def clear(self):
+        self.nodes.clear()
+        self.edges.clear()
+        self.adjacency.clear()
+
+        self.modelCleared.emit()
+
 
 class GraphViewState(QObject):
     nodeCreated = pyqtSignal(str)
@@ -182,6 +219,9 @@ class GraphViewState(QObject):
 
     edgeCreated = pyqtSignal(str)
     edgeUpdated = pyqtSignal(str)
+
+    modelCleared = pyqtSignal()
+    modelLoaded = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -210,6 +250,30 @@ class GraphViewState(QObject):
     def updateEdge(self, id, state):
         self.edges[id].update(state)
         self.edgeUpdated.emit(id)
+
+    def toData(self) -> dict:
+        return {
+            "nodes": {k: v.toData() for k, v in self.nodes.items()},
+            "edges": {k: v.toData() for k, v in self.edges.items()},
+        }
+
+    def fromData(self, data: dict):
+        nodes = data["nodes"]
+        edges = data["edges"]
+
+        for id, node in nodes.items():
+            self.nodes[id] = NodeViewState.fromData(node)
+
+        for id, edge in edges.items():
+            self.edges[id] = EdgeViewState.fromData(edge)
+
+        self.modelLoaded.emit()
+
+    def clear(self):
+        self.nodes.clear()
+        self.edges.clear()
+
+        self.modelCleared.emit()
 
 
 class GraphDocument:

@@ -1,3 +1,1 @@
-Add state functionality to the runner to have actions write to state
-
-Add conditional edges to runner
+Add selected parameter to workspace to prevent duplicate highlighted windows on load

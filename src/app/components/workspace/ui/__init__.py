@@ -1,3 +1,3 @@
 from .controller import WorkspaceController
-from .screen import WorkspaceScreen
+from .editor import WorkspaceEditor
 from .view import WorkspaceView

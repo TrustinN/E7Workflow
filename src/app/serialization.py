@@ -9,16 +9,20 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from src.app.config import SAVE_DIR
-from src.app.frontend.events import Node
+from .config import SAVE_DIR
+from .events import Node
+from .state import Context
 
 
-class SerializationCapability(Node):
-    def __init__(self):
+class SerializerNode(Node):
+    def __init__(self, context: Context):
         super().__init__()
+
+        self.context = context
         os.makedirs(SAVE_DIR, exist_ok=True)
 
     def requestReset(self):
+        self.context.clear()
         self.publish("/App/Reset")
 
     def requestExport(self, id):

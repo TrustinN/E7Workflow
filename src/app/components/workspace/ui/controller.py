@@ -41,6 +41,3 @@ class WorkspaceController:
 
     def onWorkspacePressed(self, id):
         self.context.selectionModel.setSelected(id, SelectionType.WORKSPACE)
-
-    def resetState(self):
-        self.view.clearState()

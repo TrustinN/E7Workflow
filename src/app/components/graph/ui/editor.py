@@ -1,4 +1,7 @@
-from PyQt5.QtCore import pyqtSignal
+import json
+import os
+
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QGraphicsView, QPushButton, QShortcut, QVBoxLayout, QWidget
 
@@ -30,29 +33,38 @@ class GraphEditor(QWidget):
         self.miniController = MiniViewController(context, self.miniScene, model)
         self.miniViewModel = GraphViewModel(self.miniScene, model, self.miniViewState)
         self.miniView = QGraphicsView(self.miniScene)
+        self.miniView.setFixedSize(400, 300)
+        self.miniView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.miniView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.fullScene = GraphScene()
         self.fullController = FullViewController(context, self.fullScene, model)
         self.fullViewModel = GraphViewModel(self.fullScene, model, self.fullViewState)
         self.fullView = QGraphicsView(self.fullScene)
+        self.fullView.setFixedSize(400, 300)
+        self.fullView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fullView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.e1Shortcut = QShortcut("1", self)
         key = self.e1Shortcut.key().toString(QKeySequence.NativeText)
         self.e1Btn = QPushButton(f"Set Edge Start ({key})")
         self.e1Shortcut.activated.connect(self.setE1)
         self.e1Btn.clicked.connect(self.setE1)
+        self.e1Shortcut.setContext(Qt.ApplicationShortcut)
 
         self.e2Shortcut = QShortcut("2", self)
         key = self.e2Shortcut.key().toString(QKeySequence.NativeText)
         self.e2Btn = QPushButton(f"Set Edge End ({key})")
         self.e2Shortcut.activated.connect(self.setE2)
         self.e2Btn.clicked.connect(self.setE2)
+        self.e2Shortcut.setContext(Qt.ApplicationShortcut)
 
         self.edgeShortcut = QShortcut("E", self)
         key = self.edgeShortcut.key().toString(QKeySequence.NativeText)
         self.edgeBtn = QPushButton(f"Create Edge ({key})")
         self.edgeShortcut.activated.connect(self.setEdge)
         self.edgeBtn.clicked.connect(self.setEdge)
+        self.edgeShortcut.setContext(Qt.ApplicationShortcut)
 
         self.e1 = None
         self.e2 = None
@@ -80,3 +92,27 @@ class GraphEditor(QWidget):
         self.requestEdge.emit(self.e1, self.e2)
         self.e1 = None
         self.e2 = None
+
+    def saveState(self, path):
+        miniSaveFile = os.path.join(path, "miniview.json")
+        miniState = self.miniViewState.toData()
+        with open(miniSaveFile, "w") as f:
+            json.dump(miniState, f, indent=4)
+
+        fullSaveFile = os.path.join(path, "fullview.json")
+        fullState = self.fullViewState.toData()
+        with open(fullSaveFile, "w") as f:
+            json.dump(fullState, f, indent=4)
+
+    def loadState(self, path):
+        miniSaveFile = os.path.join(path, "miniview.json")
+        miniState = None
+        with open(miniSaveFile, "r") as f:
+            miniState = json.load(f)
+        self.miniViewState.fromData(miniState)
+
+        fullSaveFile = os.path.join(path, "fullview.json")
+        fullState = None
+        with open(fullSaveFile, "r") as f:
+            fullState = json.load(f)
+        self.fullViewState.fromData(fullState)

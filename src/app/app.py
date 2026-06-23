@@ -1,11 +1,10 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
+    QAction,
     QApplication,
     QHBoxLayout,
     QMainWindow,
-    QPushButton,
-    QShortcut,
     QVBoxLayout,
     QWidget,
 )
@@ -15,12 +14,28 @@ from src.router.routing import Dispatcher
 from .components.graph import GraphComponent
 from .components.workspace import WorkspaceComponent
 from .events import PubSubHandler
-from .state import Context, Document, StateManager
+from .serialization import SerializerNode
+from .state import Context
 
 
 class MainWindow(QMainWindow):
+    requestExport = pyqtSignal()
+    requestImport = pyqtSignal()
+
     def __init__(self):
         super().__init__()
+        fileMenu = self.menuBar().addMenu("&File")
+
+        saveAction = QAction("Save", self)
+        saveAction.setShortcut(QKeySequence.Save)
+        saveAction.triggered.connect(self.requestExport.emit)
+
+        loadAction = QAction("Open...", self)
+        loadAction.setShortcut(QKeySequence.Open)
+        loadAction.triggered.connect(self.requestImport.emit)
+
+        fileMenu.addAction(loadAction)
+        fileMenu.addAction(saveAction)
 
     def closeEvent(self, event):
         QApplication.quit()
@@ -36,32 +51,22 @@ class App(QApplication):
         super().__init__([])
 
         self._initState()
-        self._initComponents(self.context, self.document, dispatcher)
+        self._initComponents(self.context, dispatcher)
         self._initLayout()
-        # self._initShortcuts()
-        self._initCapabilities(self.context)
-        # self._initSignals()
+
+        self.serializerNode = SerializerNode(self.context)
+        self.window.requestExport.connect(self.serializerNode.handleExport)
+        self.window.requestImport.connect(self.serializerNode.handleImport)
 
         self.pubSubHandler = PubSubHandler()
-        self.pubSubHandler.registerNode(self.contextManager)
-        self.pubSubHandler.registerNodes(self.capabilites)
+        self.pubSubHandler.registerNode(self.serializerNode)
         self.pubSubHandler.registerNodes(self.components)
         self.pubSubHandler.handlePublish("/App/Loaded")
 
     def _initState(self):
         self.context = Context()
-        self.document = Document()
-        self.contextManager = StateManager(self.context, self.document)
 
-    def _initCapabilities(self, context: Context):
-        # self.runnerCapability = RunnerCapability(context)
-        # self.serialCapability = SerializationCapability()
-        self.capabilites = [
-            # self.runnerCapability,
-            # self.serialCapability,
-        ]
-
-    def _initComponents(self, context, document, dispatcher):
+    def _initComponents(self, context, dispatcher):
         self.wkCpt = WorkspaceComponent(context)
         self.graphCpt = GraphComponent(context)
         # self.runnerCpt = RunnerComponent(context, document, dispatcher)
@@ -73,27 +78,16 @@ class App(QApplication):
         ]
 
     # def _initShortcuts(self):
-    # self.setE1Shortcut = QShortcut(QKeySequence("1"), self.window)
-    # self.setE2Shortcut = QShortcut(QKeySequence("2"), self.window)
-    # self.createEdgeShortcut = QShortcut(QKeySequence("E"), self.window)
     # self.entryShortcut = QShortcut(QKeySequence("Return"), self.window)
     # self.executeShortcut = QShortcut(QKeySequence("Ctrl+R"), self.window)
     # self.exportShortcut = QShortcut(QKeySequence.Save, self.window)
     # self.importShortcut = QShortcut(QKeySequence.Open, self.window)
 
-    # self.workspaceShortcut.setContext(Qt.ApplicationShortcut)
-    # self.setE1Shortcut.setContext(Qt.ApplicationShortcut)
-    # self.setE2Shortcut.setContext(Qt.ApplicationShortcut)
-    # self.createEdgeShortcut.setContext(Qt.ApplicationShortcut)
     # self.entryShortcut.setContext(Qt.ApplicationShortcut)
     # self.executeShortcut.setContext(Qt.ApplicationShortcut)
     # self.exportShortcut.setContext(Qt.ApplicationShortcut)
     # self.importShortcut.setContext(Qt.ApplicationShortcut)
 
-    # setButtonText(self.wksBtn, "Create Workspace", self.workspaceShortcut)
-    # setButtonText(self.setE1Btn, "Set Edge Start", self.setE1Shortcut)
-    # setButtonText(self.setE2Btn, "Set Edge End", self.setE2Shortcut)
-    # setButtonText(self.createEdgeBtn, "Create Edge", self.createEdgeShortcut)
     # setButtonText(self.entryBtn, "Set Entry", self.entryShortcut)
     # setButtonText(self.executeBtn, "Execute", self.executeShortcut)
     # setButtonText(self.exportBtn, "Export", self.exportShortcut)
@@ -157,19 +151,13 @@ class App(QApplication):
         # self.layoutLeft.addWidget(self.graphCpt.widget)
         self.layoutLeft.addStretch()
 
-        # self.wksBtn = QPushButton()
-        # self.setE1Btn = QPushButton()
-        # self.setE2Btn = QPushButton()
-        # self.createEdgeBtn = QPushButton()
         # self.entryBtn = QPushButton()
         # self.executeBtn = QPushButton()
         # self.exportBtn = QPushButton()
         # self.importBtn = QPushButton()
 
-        self.layoutMid.addWidget(self.wkCpt.screen)
+        self.layoutMid.addWidget(self.wkCpt.editor)
         self.layoutMid.addWidget(self.graphCpt.editor)
-        # self.layoutMid.addWidget(self.setE2Btn)
-        # self.layoutMid.addWidget(self.createEdgeBtn)
         # self.layoutMid.addWidget(self.entryBtn)
         # self.layoutMid.addWidget(self.executeBtn)
         # self.layoutMid.addWidget(self.exportBtn)

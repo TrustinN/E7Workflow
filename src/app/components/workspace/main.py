@@ -1,3 +1,6 @@
+import json
+import os
+
 from nanoid import generate
 from PyQt5.QtWidgets import QInputDialog, QLineEdit
 
@@ -5,7 +8,7 @@ from src.app.events import Node
 from src.app.state import Context, SelectionType
 
 from .model import WorkspaceModel, WorkspaceSchema
-from .ui import WorkspaceController, WorkspaceScreen, WorkspaceView
+from .ui import WorkspaceEditor
 
 
 class WorkspaceComponent(Node):
@@ -14,16 +17,13 @@ class WorkspaceComponent(Node):
 
         self.context = context
         self.model = WorkspaceModel()
-        self.view = WorkspaceView(self.model)
-        self.controller = WorkspaceController(self.context, self.view, self.model)
-        self.screen = WorkspaceScreen()
-        self.screen.btn.clicked.connect(self.createWorkspace)
-        self.screen.shortcut.activated.connect(self.createWorkspace)
-
-        self.availableGroups = set(chr(ord("A") + i) for i in range(26))
-        self.groupAssignments = {}
+        self.editor = WorkspaceEditor(self.context, self.model)
+        self.editor.requestWorkspace.connect(self.createWorkspace)
 
         self.subscribe("/App/Loaded", self.createRootWorkspace)
+        self.subscribe("/App/Export", self.saveState)
+        self.subscribe("/App/Reset", self.resetState)
+        self.subscribe("/App/Import", self.loadState)
 
     def createRootWorkspace(self, data):
         id = generate()
@@ -42,11 +42,9 @@ class WorkspaceComponent(Node):
         name = self.requestWorkspaceName()
         if not name:
             return
-        group = self.assignGroup(id, parentID)
         schema = WorkspaceSchema(
             id=id,
             displayText=name,
-            grouping=group,
             padding=0,
             parent=parentID,
         )
@@ -67,32 +65,21 @@ class WorkspaceComponent(Node):
 
         return name
 
-    def popGroup(self):
-        group = min(self.availableGroups)
-        self.availableGroups.remove(group)
-        return group
-
-    def assignGroup(self, id, parentID):
-        group = None
-        if self.model.rootIndex() == parentID:
-            group = self.popGroup()
-            self.groupAssignments[id] = group
-
-        else:
-            group = self.groupAssignments[parentID]
-            self.groupAssignments[id] = group
-
-        return group
+    def saveState(self, data):
+        path = data["path"]
+        saveFile = os.path.join(path, "workspace.json")
+        state = self.model.toData()
+        with open(saveFile, "w") as f:
+            json.dump(state, f, indent=4)
 
     def resetState(self, data):
-        self.availableGroups = set(chr(ord("A") + i) for i in range(26))
-        self.groupAssignments = {}
+        self.model.clear()
 
-    # def loadState(self, data):
-    #     for nodeID in self.context.workspaceModel.nodeIter():
-    #         if self.context.workspaceModel.isRoot(nodeID):
-    #             continue
-    #
-    #         grouping = self.context.workspaceModel.nodeData(nodeID)["grouping"]
-    #         self.groupAssignments[nodeID] = grouping
-    #         self.availableGroups.discard(grouping)
+    def loadState(self, data):
+        path = data["path"]
+        saveFile = os.path.join(path, "workspace.json")
+        state = None
+        with open(saveFile, "r") as f:
+            state = json.load(f)
+
+        self.model.fromData(state)

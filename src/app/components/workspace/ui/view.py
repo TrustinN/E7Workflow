@@ -1,8 +1,9 @@
+from collections import deque
 from functools import partial
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.components.workspace.model import WorkspaceModel, WorkspaceSchema
+from src.app.components.workspace.model import WorkspaceModel
 
 from .windows import Workspace
 
@@ -19,6 +20,8 @@ class WorkspaceView(QObject):
 
         self.model.modelCreated.connect(self.handleModelCreate)
         self.model.modelUpdated.connect(self.handleModelUpdate)
+        self.model.modelCleared.connect(self.clear)
+        self.model.modelLoaded.connect(self.rebuild)
 
     def handleModelCreate(self, id):
         schema = self.model.getItem(id)
@@ -66,8 +69,25 @@ class WorkspaceView(QObject):
         workspace = self.workspaces[id]
         return workspace.getData()
 
-    def clearState(self):
+    def clear(self):
         rootWorkspace = self.workspaces[self.rootID]
         rootWorkspace.deleteLater()
 
         self.workspaces.clear()
+
+    def rebuild(self):
+        self.rootID = self.model.rootIndex()
+
+        queue = deque([self.rootID])
+        while queue:
+            cur = queue.popleft()
+            schema = self.model.getItem(cur)
+            if cur == self.rootID:
+                self.createRootWorkspace(cur)
+            else:
+                self.createChildWorkspace(cur, schema.parent)
+
+            self.setData(cur, schema.toData())
+
+            for child in schema.children:
+                queue.append(child)

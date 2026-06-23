@@ -44,6 +44,8 @@ class WorkspaceModel(QObject):
     modelCreated = pyqtSignal(str)
     modelUpdated = pyqtSignal(str)
     modelDeleted = pyqtSignal(str)
+    modelCleared = pyqtSignal()
+    modelLoaded = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -51,10 +53,33 @@ class WorkspaceModel(QObject):
         self.nodes: dict[str, WorkspaceSchema] = {}
         self.root: str = None
 
-    def rootIndex(self):
+        self.availableGroups = set(chr(ord("A") + i) for i in range(26))
+        self.groupAssignments = {}
+
+    def popGroup(self):
+        group = min(self.availableGroups)
+        self.availableGroups.remove(group)
+        return group
+
+    def assignGroup(self, id, parentID):
+        group = None
+        if self.rootIndex() == parentID:
+            group = self.popGroup()
+            self.groupAssignments[id] = group
+
+        else:
+            group = self.groupAssignments[parentID]
+            self.groupAssignments[id] = group
+
+        return group
+
+    def rootIndex(self) -> str:
         return self.root
 
-    def parent(self, id: str):
+    def workspaces(self) -> list[str]:
+        return list(self.nodes.keys())
+
+    def parent(self, id: str) -> str:
         return self.nodes[id].parent
 
     def getItem(self, id: str) -> WorkspaceSchema:
@@ -74,9 +99,43 @@ class WorkspaceModel(QObject):
             self.root = id
         else:
             self.nodes[parentID].children.append(id)
+            schema.grouping = self.assignGroup(id, parentID)
 
         self.modelCreated.emit(id)
 
     def updateItem(self, id: str, patch: dict):
         self.nodes[id].update(patch)
         self.modelUpdated.emit(id)
+
+    def toData(self):
+        return {
+            "nodes": {k: v.toData() for k, v in self.nodes.items()},
+            "root": self.root,
+        }
+
+    def fromData(self, data):
+        nodes = data["nodes"]
+        root = data["root"]
+
+        self.root = root
+        for id, node in nodes.items():
+            schema = WorkspaceSchema.fromData(node)
+            self.nodes[id] = schema
+
+            if id == self.rootIndex():
+                continue
+
+            grouping = schema.grouping
+            self.groupAssignments[id] = grouping
+            self.availableGroups.discard(grouping)
+
+        self.modelLoaded.emit()
+
+    def clear(self):
+        self.nodes.clear()
+        self.root = None
+
+        self.availableGroups = set(chr(ord("A") + i) for i in range(26))
+        self.groupAssignments = {}
+
+        self.modelCleared.emit()

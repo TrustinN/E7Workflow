@@ -99,3 +99,9 @@ class GraphScene(QGraphicsScene):
 
     def selectEdge(self, id):
         self.edges[id].setSelected(True)
+
+    def clear(self):
+        self.nodes.clear()
+        self.edges.clear()
+
+        super().clear()
