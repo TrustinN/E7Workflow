@@ -13,6 +13,7 @@ from src.router.routing import Dispatcher
 
 from .components.action import ActionComponent
 from .components.graph import GraphComponent
+from .components.script import ScriptComponent
 from .components.workspace import WorkspaceComponent
 from .events import PubSubHandler
 from .serialization import SerializerNode
@@ -71,12 +72,14 @@ class App(QApplication):
         self.wkCpt = WorkspaceComponent(context)
         self.graphCpt = GraphComponent(context)
         self.actionCpt = ActionComponent(context)
+        self.scriptCpt = ScriptComponent(context)
         # self.runnerCpt = RunnerComponent(context, document, dispatcher)
 
         self.components = [
             self.wkCpt,
             self.graphCpt,
             self.actionCpt,
+            self.scriptCpt,
             # self.runnerCpt,
         ]
 
@@ -151,22 +154,12 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        # self.layoutLeft.addWidget(self.graphCpt.widget)
         self.layoutLeft.addStretch()
-
-        # self.entryBtn = QPushButton()
-        # self.executeBtn = QPushButton()
-        # self.exportBtn = QPushButton()
-        # self.importBtn = QPushButton()
 
         self.layoutMid.addWidget(self.wkCpt.editor)
         self.layoutMid.addWidget(self.graphCpt.editor)
-        self.layoutMid.addWidget(self.actionCpt.editor)
-        # self.layoutMid.addWidget(self.executeBtn)
-        # self.layoutMid.addWidget(self.exportBtn)
-        # self.layoutMid.addWidget(self.importBtn)
-        # self.layoutMid.addWidget(self.runnerCpt.actionEditor)
         self.layoutMid.addStretch()
 
-        # self.layoutRight.addWidget(self.runnerCpt.edgeEditor)
+        self.layoutRight.addWidget(self.actionCpt.editor)
+        self.layoutRight.addWidget(self.scriptCpt.editor)
         self.layoutRight.addStretch()

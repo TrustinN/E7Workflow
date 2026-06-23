@@ -49,31 +49,8 @@ class ScriptManager(QWidget):
         addLayout.addStretch()
         addLayout.addWidget(addButton)
 
-        setRow = QWidget()
-        setLayout = QHBoxLayout(setRow)
-        setLayout.setContentsMargins(0, 0, 0, 0)
-
-        setButton = QPushButton("Set")
-        setButton.clicked.connect(self.requestSetScript.emit)
-
-        setLayout.addWidget(QLabel("Set Script"))
-        setLayout.addWidget(self.combo)
-        setLayout.addWidget(setButton)
-
-        unsetRow = QWidget()
-        unsetLayout = QHBoxLayout(unsetRow)
-        unsetLayout.setContentsMargins(0, 0, 0, 0)
-
-        unsetButton = QPushButton("Unset")
-        unsetButton.clicked.connect(self.requestUnsetScript.emit)
-
-        unsetLayout.addWidget(QLabel("Unset Script"))
-        unsetLayout.addWidget(unsetButton)
-
         layout.addWidget(self.codeTabs)
         layout.addWidget(addRow)
-        layout.addWidget(setRow)
-        layout.addWidget(unsetRow)
 
         self.editors = {}
 
@@ -122,12 +99,11 @@ class ScriptManager(QWidget):
         index = self.combo.findData(id)
         editor = self.editors[id]
         return {
-            "id": id,
             "name": self.combo.itemText(index),
             "code": editor.text(),
         }
 
-    def clearState(self):
+    def clear(self):
         self.combo.clear()
         self.editors.clear()
         self.codeTabs.clear()
