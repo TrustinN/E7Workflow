@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
 
 from src.router.routing import Dispatcher
 
+from .components.action import ActionComponent
 from .components.graph import GraphComponent
 from .components.workspace import WorkspaceComponent
 from .events import PubSubHandler
@@ -69,11 +70,13 @@ class App(QApplication):
     def _initComponents(self, context, dispatcher):
         self.wkCpt = WorkspaceComponent(context)
         self.graphCpt = GraphComponent(context)
+        self.actionCpt = ActionComponent(context)
         # self.runnerCpt = RunnerComponent(context, document, dispatcher)
 
         self.components = [
             self.wkCpt,
             self.graphCpt,
+            self.actionCpt,
             # self.runnerCpt,
         ]
 
@@ -158,7 +161,7 @@ class App(QApplication):
 
         self.layoutMid.addWidget(self.wkCpt.editor)
         self.layoutMid.addWidget(self.graphCpt.editor)
-        # self.layoutMid.addWidget(self.entryBtn)
+        self.layoutMid.addWidget(self.actionCpt.editor)
         # self.layoutMid.addWidget(self.executeBtn)
         # self.layoutMid.addWidget(self.exportBtn)
         # self.layoutMid.addWidget(self.importBtn)

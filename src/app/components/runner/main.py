@@ -8,14 +8,13 @@ from .script import ScriptSync
 
 
 class RunnerComponent(Node):
-    def __init__(self, context: Context, document: Document, dispatcher: Dispatcher):
+    def __init__(self, context: Context, dispatcher: Dispatcher):
         super().__init__()
 
         self.context = context
-        self.document = document
         self.client = Client("RunnerClient", dispatcher)
 
-        self.runner = Runner(self.context, self.document, self.client)
+        self.runner = Runner(self.context, self.client)
 
         self.subscribe("/Workspace/Created", self.requestActionUnset)
         self.subscribe("/Runner/Execute/Requested", self.runner.execute)

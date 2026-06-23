@@ -13,14 +13,21 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import QGraphicsItem
 
 from .emitter import GraphicsEmitter
+from .node import GraphicsNode
 
 
 class GraphicsArrowItem(QGraphicsItem):
-    def __init__(self):
+    def __init__(self, start: GraphicsNode, end: GraphicsNode):
         super().__init__()
         self.color = QColor(255, 255, 255)
         self.highlightColor = QColor(0, 163, 255)
         self.emitter = GraphicsEmitter()
+
+        self.start = start
+        self.start.emitter.onMove.connect(self.onNodeMove)
+
+        self.end = end
+        self.end.emitter.onMove.connect(self.onNodeMove)
 
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setZValue(-1)
@@ -36,41 +43,28 @@ class GraphicsArrowItem(QGraphicsItem):
         if visible is not None:
             self.setVisible(visible)
 
-    def setPosition(self, start: QPointF, end: QPointF):
+    def onNodeMove(self):
         self.prepareGeometryChange()
-        self.start = start
-        self.end = end
-        self.update()
-
-    def setStart(self, start: QPointF):
-        self.prepareGeometryChange()
-        self.start = start
-        self.update()
-        self.emitter.onMove.emit()
-
-    def setEnd(self, end: QPointF):
-        self.prepareGeometryChange()
-        self.end = end
         self.update()
         self.emitter.onMove.emit()
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)
 
-        if not (self.start and self.end):
-            return
+        p1 = self.start.center()
+        p2 = self.end.center()
 
         if self.isSelected():
             # Highlight underneath
             painter.setPen(QPen(self.highlightColor, 3))
-            painter.drawLine(self.start, self.end)
-            self.drawArrowHead(painter, self.start, self.end)
+            painter.drawLine(p1, p2)
+            self.drawArrowHead(painter, p1, p2)
 
         # Normal edge on top
         painter.setPen(QPen(self.color, 1))
         painter.setBrush(QBrush(QColor(20, 20, 20)))
-        painter.drawLine(self.start, self.end)
-        self.drawArrowHead(painter, self.start, self.end)
+        painter.drawLine(p1, p2)
+        self.drawArrowHead(painter, p1, p2)
 
     def drawArrowHead(self, painter, start, end):
         dx = end.x() - start.x()
@@ -120,18 +114,24 @@ class GraphicsArrowItem(QGraphicsItem):
         painter.drawPolygon(QPolygonF([tip, arrowPoint1, arrowPoint2]))
 
     def boundingRect(self):
+        p1 = self.start.center()
+        p2 = self.end.center()
+
         extra = 10
-        xMin = min(self.start.x(), self.end.x()) - extra
-        yMin = min(self.start.y(), self.end.y()) - extra
-        xMax = max(self.start.x(), self.end.x()) + extra
-        yMax = max(self.start.y(), self.end.y()) + extra
+        xMin = min(p1.x(), p2.x()) - extra
+        yMin = min(p1.y(), p2.y()) - extra
+        xMax = max(p1.x(), p2.x()) + extra
+        yMax = max(p1.y(), p2.y()) + extra
 
         return QRectF(xMin, yMin, xMax - xMin, yMax - yMin)
 
     def shape(self):
+        p1 = self.start.center()
+        p2 = self.end.center()
+
         path = QPainterPath()
-        path.moveTo(self.start)
-        path.lineTo(self.end)
+        path.moveTo(p1)
+        path.lineTo(p2)
         stroker = QPainterPathStroker()
         stroker.setWidth(16)
 
