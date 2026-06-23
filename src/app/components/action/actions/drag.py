@@ -5,7 +5,7 @@ from .action import Action
 
 class DragAction(Action):
     def __init__(self):
-        super().__init__("Drag")
+        super().__init__()
 
     def info():
         return {

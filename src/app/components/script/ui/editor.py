@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 from .code import CodeEditor
 
 
-class EdgeEditor(QWidget):
+class ScriptManager(QWidget):
     requestScript = pyqtSignal()
     requestSetScript = pyqtSignal()
     requestUnsetScript = pyqtSignal()

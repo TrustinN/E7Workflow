@@ -6,7 +6,7 @@ from .action import Action
 
 class ClickAction(Action):
     def __init__(self):
-        super().__init__("Click")
+        super().__init__()
 
     def info():
         return {
