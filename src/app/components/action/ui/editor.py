@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -11,7 +10,7 @@ from PyQt5.QtWidgets import (
 
 
 class ActionEditor(QWidget):
-    requestSetAction = pyqtSignal()
+    actionChanged = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -20,12 +19,9 @@ class ActionEditor(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        self.actionBtn = QPushButton("Set Action")
-        self.actionBtn.clicked.connect(self.requestSetAction.emit)
-
         self.combo = QComboBox()
-        self.combo.currentTextChanged.connect(self.actionChanged)
-        self.layout.addWidget(self.actionBtn)
+        self.combo.currentTextChanged.connect(self.setEditor)
+        self.combo.currentTextChanged.connect(self.actionChanged.emit)
         self.layout.addWidget(self.combo)
 
         self.stack = QStackedWidget()
@@ -73,6 +69,7 @@ class ActionEditor(QWidget):
                 rowLayout.addWidget(editor)
 
                 self.editors[name][key] = editor
+                editor.currentTextChanged.connect(self.actionChanged.emit)
 
             layout.addWidget(row)
 
@@ -92,7 +89,7 @@ class ActionEditor(QWidget):
 
         return {"name": name, "userParams": schema}
 
-    def actionChanged(self, name):
+    def setEditor(self, name):
         widget = self.widgets.get(name)
 
         if widget is not None:

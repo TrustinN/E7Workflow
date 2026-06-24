@@ -3,7 +3,14 @@ import os
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QGraphicsView, QPushButton, QShortcut, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QGraphicsView,
+    QHBoxLayout,
+    QPushButton,
+    QShortcut,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.app.components.graph.model import GraphDocument, GraphModel, GraphViewState
 from src.app.state import Context, SelectionType
@@ -33,7 +40,7 @@ class GraphEditor(QWidget):
         self.miniController = MiniViewController(context, self.miniScene, model)
         self.miniViewModel = GraphViewModel(self.miniScene, model, self.miniViewState)
         self.miniView = QGraphicsView(self.miniScene)
-        self.miniView.setFixedSize(400, 300)
+        self.miniView.setFixedSize(500, 300)
         self.miniView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.miniView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -41,9 +48,12 @@ class GraphEditor(QWidget):
         self.fullController = FullViewController(context, self.fullScene, model)
         self.fullViewModel = GraphViewModel(self.fullScene, model, self.fullViewState)
         self.fullView = QGraphicsView(self.fullScene)
-        self.fullView.setFixedSize(400, 300)
+        self.fullView.setFixedSize(500, 300)
         self.fullView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fullView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.buttons = QWidget()
+        self.btnLayout = QHBoxLayout(self.buttons)
 
         self.e1Shortcut = QShortcut("1", self)
         key = self.e1Shortcut.key().toString(QKeySequence.NativeText)
@@ -66,14 +76,16 @@ class GraphEditor(QWidget):
         self.edgeBtn.clicked.connect(self.setEdge)
         self.edgeShortcut.setContext(Qt.ApplicationShortcut)
 
+        self.btnLayout.addWidget(self.e1Btn)
+        self.btnLayout.addWidget(self.e2Btn)
+        self.btnLayout.addWidget(self.edgeBtn)
+
         self.e1 = None
         self.e2 = None
 
         self.layout.addWidget(self.miniView)
         self.layout.addWidget(self.fullView)
-        self.layout.addWidget(self.e1Btn)
-        self.layout.addWidget(self.e2Btn)
-        self.layout.addWidget(self.edgeBtn)
+        self.layout.addWidget(self.buttons)
 
     def setE1(self):
         selection = self.context.selectionModel.getSelected()

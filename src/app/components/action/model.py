@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
+from nanoid import generate
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
@@ -23,10 +24,11 @@ class ActionSchema:
     def toData(self) -> dict:
         return asdict(self)
 
+    def copy(self):
+        return ActionSchema.fromData(self.toData())
+
 
 class ActionModel(QObject):
-    actionSet = pyqtSignal(str)
-    actionUnset = pyqtSignal(str)
     modelCleared = pyqtSignal()
     modelLoaded = pyqtSignal()
 
@@ -34,23 +36,29 @@ class ActionModel(QObject):
         super().__init__()
 
         self.actions: dict[str, ActionSchema] = {}
+        self.action: ActionSchema = None
+
+    def createAction(self):
+        id = generate()
+        self.actions[id] = self.action.copy()
 
     def setAction(self, id: str, schema: ActionSchema):
         self.actions[id] = schema
-        self.actionSet.emit(id)
 
-    def unsetAction(self, id: str):
-        if id not in self.actions:
-            return
+    def setActiveAction(self, schema: ActionSchema):
+        self.action = schema
 
-        self.actions.pop(id)
-        self.actionUnset.emit(id)
+    def activeAction(self):
+        return self.action
 
     def toData(self) -> dict:
-        return {"actions": {k: v.toData() for k, v in self.actions.items()}}
+        return {
+            "actions": {k: v.toData() for k, v in self.actions.items()},
+        }
 
     def clear(self):
         self.actions.clear()
+        self.action = None
         self.modelCleared.emit()
 
     def fromData(self, data):
