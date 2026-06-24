@@ -2,6 +2,7 @@ import numpy as np
 import pyautogui
 
 from .action import Action
+from .types import ActionType
 
 
 class ClickAction(Action):
@@ -10,7 +11,7 @@ class ClickAction(Action):
 
     def info():
         return {
-            "name": "Click",
+            "name": ActionType.CLICK,
             "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},

@@ -31,6 +31,13 @@ class ScriptModel(QObject):
         super().__init__()
 
         self.scripts: dict[str, ScriptSchema] = {}
+        self.activeScript: str = None
+
+    def setActiveScript(self, id):
+        self.activeScript = id
+
+    def getActiveScript(self):
+        return self.activeScript
 
     def addScript(self, id: str, schema: ScriptSchema):
         if schema.name is None:
@@ -52,6 +59,7 @@ class ScriptModel(QObject):
 
     def clear(self):
         self.scripts.clear()
+        self.activeScript = None
         self.modelCleared.emit()
 
     def fromData(self, data):

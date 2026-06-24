@@ -1,40 +1,41 @@
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .actions import ClickAction, DragAction
+from .actions import ActionType, ClickAction, DragAction
+from .model import ActionModel
 
 
 class ActionRoute:
     NAME = "ActionService"
     ACTION = "Action"
+    CREATE = "Create"
 
 
-class ActionType:
-    CLICK = "Click"
-    DRAG = "Drag"
+ACTIONS = {
+    ActionType.CLICK: ClickAction,
+    ActionType.DRAG: DragAction,
+}
 
 
 class ActionService(EndpointService):
-    actionTypes = {
-        ActionType.CLICK: ClickAction,
-        ActionType.DRAG: DragAction,
-    }
 
-    def __init__(self, dispatcher: Dispatcher):
+    def __init__(self, model: ActionModel, dispatcher: Dispatcher):
         super().__init__(ActionRoute.NAME, dispatcher)
 
-        # Get data about action like user params
-        getRoute = route(ActionRoute.ACTION, ":id")
-        self.addRoute(RequestType.GET, getRoute, self.getAction)
+        self.model = model
+
+        # Create action
+        createRoute = route(ActionRoute.CREATE)
+        self.addRoute(RequestType.POST, createRoute, self.createAction)
 
         # Run action
         postRoute = route(ActionRoute.ACTION, ":id")
-        self.addRoute(RequestType.POST, postRoute, self.postAction)
+        self.addRoute(RequestType.POST, postRoute, self.runAction)
 
-    def getAction(self, id, data):
-        actionCls = self.actionTypes[id]
-        return actionCls.info()
+    def createAction(self):
+        id = self.model.createAction()
+        return {"id": id}
 
-    def postAction(self, id, data):
-        actionCls = self.actionTypes[id]
-        action = actionCls()
-        return action.execute(data)
+    def runAction(self, id, data):
+        schema = self.model.getAction(id)
+        actionCls = ACTIONS.get(schema.name)
+        return actionCls().execute(schema.toData())

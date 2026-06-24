@@ -3,14 +3,16 @@ import os
 
 from src.app.events import Node
 from src.app.state import Context
+from src.router.routing import Dispatcher
 
 from .actions import ClickAction, DragAction
 from .model import ActionModel, ActionSchema
+from .service import ActionService
 from .ui import ActionEditor
 
 
 class ActionComponent(Node):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, dispatcher: Dispatcher):
         super().__init__()
 
         self.context = context
@@ -26,6 +28,8 @@ class ActionComponent(Node):
 
         self.editor.addAction(ClickAction.info())
         self.editor.addAction(DragAction.info())
+
+        self.service = ActionService(self.model, dispatcher)
 
     def onActionChanged(self):
         data = self.editor.getActionData()

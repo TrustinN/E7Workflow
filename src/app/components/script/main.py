@@ -5,13 +5,15 @@ from nanoid import generate
 
 from src.app.events import Node
 from src.app.state import Context
+from src.router.routing import Dispatcher
 
 from .model import ScriptModel, ScriptSchema
+from .service import ScriptService
 from .ui import ScriptManager
 
 
 class ScriptComponent(Node):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, dispatcher: Dispatcher):
         super().__init__()
 
         self.context = context
@@ -20,10 +22,13 @@ class ScriptComponent(Node):
         self.editor = ScriptManager()
         self.editor.requestScript.connect(self.createScript)
         self.editor.editorUpdated.connect(self.updateScript)
+        self.editor.editorSwitched.connect(self.setActiveScript)
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
+
+        self.service = ScriptService(self.model, dispatcher)
 
     def createScript(self):
         id = generate()
@@ -36,6 +41,10 @@ class ScriptComponent(Node):
     def updateScript(self, id):
         data = self.editor.getData(id)
         self.model.updateScript(id, data)
+
+    def setActiveScript(self):
+        id = self.editor.currentEditor()
+        self.model.setActiveScript(id)
 
     def saveState(self, data):
         path = data["path"]

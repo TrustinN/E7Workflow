@@ -18,6 +18,7 @@ class ScriptManager(QWidget):
     requestSetScript = pyqtSignal()
     requestUnsetScript = pyqtSignal()
     editorUpdated = pyqtSignal(str)
+    editorSwitched = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -35,6 +36,7 @@ class ScriptManager(QWidget):
 
         self.codeTabs = QTabWidget()
         self.codeTabs.tabBarDoubleClicked.connect(self.renameTab)
+        self.codeTabs.currentChanged.connect(self.editorSwitched.emit)
 
         self.combo = QComboBox()
 
@@ -56,14 +58,14 @@ class ScriptManager(QWidget):
 
     def addCodeTab(self, id, name):
         editor = CodeEditor()
+        editor.textChanged.connect(lambda: self.editorUpdated.emit(id))
+        self.editors[id] = editor
+
         index = self.codeTabs.addTab(editor, name)
         self.codeTabs.setCurrentIndex(index)
 
         self.combo.addItem(name, userData=id)
         self.combo.setCurrentIndex(index)
-
-        self.editors[id] = editor
-        editor.textChanged.connect(lambda: self.editorUpdated.emit(id))
 
         return editor
 

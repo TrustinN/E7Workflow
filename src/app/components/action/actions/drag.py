@@ -1,6 +1,7 @@
 import pyautogui
 
 from .action import Action
+from .types import ActionType
 
 
 class DragAction(Action):
@@ -9,7 +10,7 @@ class DragAction(Action):
 
     def info():
         return {
-            "name": "Drag",
+            "name": ActionType.DRAG,
             "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},

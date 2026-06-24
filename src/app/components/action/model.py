@@ -41,9 +41,13 @@ class ActionModel(QObject):
     def createAction(self):
         id = generate()
         self.actions[id] = self.action.copy()
+        return id
 
     def setAction(self, id: str, schema: ActionSchema):
         self.actions[id] = schema
+
+    def getAction(self, id: str) -> ActionSchema:
+        return self.actions[id]
 
     def setActiveAction(self, schema: ActionSchema):
         self.action = schema
