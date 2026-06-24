@@ -54,6 +54,15 @@ class RunnerModel(QObject):
 
         self.entry: str = None
 
+    def setAction(self, nodeID: str, actionID: str):
+        self.nodes[nodeID] = actionID
+
+    def setScript(self, edgeID: str, scriptID: str):
+        self.edges[edgeID] = scriptID
+
+    def setEntry(self, id: str):
+        self.entry = id
+
     def toData(self) -> dict:
         return {
             "nodes": {k: v.toData() for k, v in self.nodes.items()},

@@ -1,12 +1,15 @@
 import json
 import os
 
+from src.app.components.action.service import ActionRoute
+from src.app.components.script.service import ScriptRoute
 from src.app.events import Node
-from src.app.state import Context
+from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher, Link
 
 from .model import RunnerModel
 from .runner import Runner
+from .ui import RunnerEditor
 
 
 class RunnerComponent(Node):
@@ -19,9 +22,30 @@ class RunnerComponent(Node):
         self.model = RunnerModel()
         self.runner = Runner(self.context, self.client)
 
+        self.editor = RunnerEditor()
+        self.editor.requestActionSet.connect(self.setAction)
+        self.editor.requestScriptSet.connect(self.setScript)
+        # self.editor.requestEntrySet.connect()
+
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
+
+    def setAction(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type == SelectionType.WORKSPACE):
+            return
+        link = Link(ActionRoute.NAME, ActionRoute.CREATE)
+        resp = self.client.post(link)
+        self.model.setAction(selection.id, resp["id"])
+
+    def setScript(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type == SelectionType.EDGE):
+            return
+        link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT)
+        resp = self.client.get(link)
+        self.model.setScript(selection.id, resp["id"])
 
     def saveState(self, data):
         path = data["path"]

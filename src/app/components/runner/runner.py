@@ -3,8 +3,8 @@ import math
 import cv2
 import numpy as np
 
-from src.app.backend.action import ActionRoute
-from src.app.frontend.state import Context, Document
+from src.app.components.action.service import ActionRoute
+from src.app.state import Context
 from src.router.routing import Client, Link
 
 
