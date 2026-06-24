@@ -9,9 +9,8 @@ from src.router.routing import Client, Link
 
 
 class Runner:
-    def __init__(self, context: Context, document: Document, client: Client):
+    def __init__(self, context: Context, client: Client):
         self.context = context
-        self.document = document
         self.client = client
 
     def _evaluateEdge(self, edgeID, context):

@@ -1,10 +1,12 @@
+import json
+import os
+
 from src.app.events import Node
-from src.app.state import Context, Document
+from src.app.state import Context
 from src.router.routing import Client, Dispatcher, Link
 
-from .components import ActionEditor, EdgeEditor
+from .model import RunnerModel
 from .runner import Runner
-from .script import ScriptSync
 
 
 class RunnerComponent(Node):
@@ -14,25 +16,28 @@ class RunnerComponent(Node):
         self.context = context
         self.client = Client("RunnerClient", dispatcher)
 
+        self.model = RunnerModel()
         self.runner = Runner(self.context, self.client)
 
-        self.subscribe("/Workspace/Created", self.requestActionUnset)
-        self.subscribe("/Runner/Execute/Requested", self.runner.execute)
-
-        self.subscribe("/Runner/Script/Requested", self.handleScriptRequest)
+        self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-    #
-    # def resetState(self, data):
-    #     self.edgeEditor.clearState()
-    #     self.scriptSync.clearState()
-    #
-    # def loadState(self, data):
-    #     self.scriptSync.freezeState()
-    #     for key in self.context.codeModel.keys():
-    #         data = self.context.codeModel.getData(key)
-    #
-    #         self.edgeEditor.setData(key, data)
-    #
-    #     self.scriptSync.unfreezeState()
+    def saveState(self, data):
+        path = data["path"]
+        saveFile = os.path.join(path, "runner.json")
+        state = self.model.toData()
+        with open(saveFile, "w") as f:
+            json.dump(state, f, indent=4)
+
+    def resetState(self, data):
+        self.model.clear()
+
+    def loadState(self, data):
+        path = data["path"]
+        saveFile = os.path.join(path, "runner.json")
+        state = None
+        with open(saveFile, "r") as f:
+            state = json.load(f)
+
+        self.model.fromData(state)
