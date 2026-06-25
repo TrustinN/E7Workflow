@@ -1,4 +1,3 @@
-import json
 import os
 
 from src.app.components.utils.colors import Colors
@@ -60,7 +59,7 @@ class RunnerComponent(Node):
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
 
-        prev = self.model.getEntry()
+        prev = self.manager.setEntry(selection.id)
         if prev:
             self.publish(
                 "/Graph/UpdateNode",
@@ -76,8 +75,6 @@ class RunnerComponent(Node):
                     },
                 },
             )
-
-        self.model.setEntry(selection.id)
 
         self.publish(
             "/Graph/UpdateNode",
@@ -97,18 +94,12 @@ class RunnerComponent(Node):
     def saveState(self, data):
         path = data["path"]
         saveFile = os.path.join(path, "runner.json")
-        state = self.model.toData()
-        with open(saveFile, "w") as f:
-            json.dump(state, f, indent=4)
+        self.manager.saveModel(saveFile)
 
     def resetState(self, data):
-        self.model.clear()
+        self.manager.resetModel()
 
     def loadState(self, data):
         path = data["path"]
         saveFile = os.path.join(path, "runner.json")
-        state = None
-        with open(saveFile, "r") as f:
-            state = json.load(f)
-
-        self.model.fromData(state)
+        self.manager.loadModel(saveFile)
