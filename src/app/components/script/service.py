@@ -5,7 +5,7 @@ import numpy as np
 
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .model import ScriptModel
+from .model import ScriptModel, ScriptViewModel
 
 
 class ScriptRoute:
@@ -15,10 +15,16 @@ class ScriptRoute:
 
 class ScriptService(EndpointService):
 
-    def __init__(self, model: ScriptModel, dispatcher: Dispatcher):
+    def __init__(
+        self,
+        model: ScriptModel,
+        viewModel: ScriptViewModel,
+        dispatcher: Dispatcher,
+    ):
         super().__init__(ScriptRoute.NAME, dispatcher)
 
         self.model = model
+        self.viewModel = viewModel
 
         # Get data about action like user params
         getRoute = route(ScriptRoute.SCRIPT)
@@ -28,7 +34,7 @@ class ScriptService(EndpointService):
         self.addRoute(RequestType.POST, runRoute, self.runScript)
 
     def getScript(self, data):
-        return {"id": self.model.getActiveScript()}
+        return {"id": self.viewModel.getActiveScript()}
 
     def runScript(self, id, data):
         schema = self.model.getScript(id)

@@ -5,10 +5,9 @@ from src.app.events import Node
 from src.app.state import Context
 from src.router.routing import Dispatcher
 
-from .actions import ClickAction, DragAction
-from .model import ActionModel, ActionSchema
+from .model import ActionModel, ActionViewModel
 from .service import ActionService
-from .ui import ActionEditor
+from .ui import ActionEditor, ActionEditorController
 
 
 class ActionComponent(Node):
@@ -18,23 +17,18 @@ class ActionComponent(Node):
         self.context = context
 
         self.editor = ActionEditor()
-        self.editor.actionChanged.connect(self.onActionChanged)
-
         self.model = ActionModel()
+        self.viewModel = ActionViewModel()
+
+        self.controller = ActionEditorController(
+            self.editor, self.model, self.viewModel
+        )
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.editor.addAction(ClickAction.info())
-        self.editor.addAction(DragAction.info())
-
-        self.service = ActionService(self.model, dispatcher)
-
-    def onActionChanged(self):
-        data = self.editor.getActionData()
-        schema = ActionSchema.fromData(data)
-        self.model.setActiveAction(schema)
+        self.service = ActionService(self.model, self.viewModel, dispatcher)
 
     def saveState(self, data):
         path = data["path"]

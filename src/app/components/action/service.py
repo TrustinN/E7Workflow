@@ -1,7 +1,7 @@
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
 from .actions import ActionType, ClickAction, DragAction
-from .model import ActionModel
+from .model import ActionModel, ActionViewModel
 
 
 class ActionRoute:
@@ -18,10 +18,16 @@ ACTIONS = {
 
 class ActionService(EndpointService):
 
-    def __init__(self, model: ActionModel, dispatcher: Dispatcher):
+    def __init__(
+        self,
+        model: ActionModel,
+        viewModel: ActionViewModel,
+        dispatcher: Dispatcher,
+    ):
         super().__init__(ActionRoute.NAME, dispatcher)
 
         self.model = model
+        self.viewModel = viewModel
 
         # Create action
         createRoute = route(ActionRoute.CREATE)
@@ -32,7 +38,8 @@ class ActionService(EndpointService):
         self.addRoute(RequestType.POST, postRoute, self.runAction)
 
     def createAction(self):
-        id = self.model.createAction()
+        schema = self.viewModel.getDraft()
+        id = self.model.createAction(schema)
         return {"id": id}
 
     def runAction(self, id, data):

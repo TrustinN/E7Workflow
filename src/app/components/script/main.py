@@ -1,15 +1,13 @@
 import json
 import os
 
-from nanoid import generate
-
 from src.app.events import Node
 from src.app.state import Context
 from src.router.routing import Dispatcher
 
-from .model import ScriptModel, ScriptSchema
+from .model import ScriptModel, ScriptViewModel
 from .service import ScriptService
-from .ui import ScriptManager
+from .ui import ScriptEditorController, ScriptManager
 
 
 class ScriptComponent(Node):
@@ -17,34 +15,20 @@ class ScriptComponent(Node):
         super().__init__()
 
         self.context = context
-        self.model = ScriptModel()
 
+        self.model = ScriptModel()
+        self.viewModel = ScriptViewModel()
         self.editor = ScriptManager()
-        self.editor.requestScript.connect(self.createScript)
-        self.editor.editorUpdated.connect(self.updateScript)
-        self.editor.editorSwitched.connect(self.setActiveScript)
+
+        self.controller = ScriptEditorController(
+            self.editor, self.model, self.viewModel
+        )
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.service = ScriptService(self.model, dispatcher)
-
-    def createScript(self):
-        id = generate()
-        schema = ScriptSchema()
-        self.model.addScript(id, schema)
-
-        schema = self.model.getScript(id)
-        self.editor.addCodeTab(id, schema.name)
-
-    def updateScript(self, id):
-        data = self.editor.getData(id)
-        self.model.updateScript(id, data)
-
-    def setActiveScript(self):
-        id = self.editor.currentEditor()
-        self.model.setActiveScript(id)
+        self.service = ScriptService(self.model, self.viewModel, dispatcher)
 
     def saveState(self, data):
         path = data["path"]
@@ -55,7 +39,6 @@ class ScriptComponent(Node):
 
     def resetState(self, data):
         self.model.clear()
-        self.editor.clear()
 
     def loadState(self, data):
         path = data["path"]
@@ -65,7 +48,3 @@ class ScriptComponent(Node):
             state = json.load(f)
 
         self.model.fromData(state)
-
-        for id in self.model.getScripts():
-            schema = self.model.getScript(id)
-            self.editor.setData(id, schema.toData())

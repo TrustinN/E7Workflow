@@ -42,7 +42,7 @@ class RunnerEditor(QWidget):
         self.executeBtn.clicked.connect(self.requestExecute)
         self.executeShortcut.setContext(Qt.ApplicationShortcut)
 
-        self.layout.add(self.actionBtn)
-        self.layout.add(self.scriptBtn)
-        self.layout.add(self.entryBtn)
-        self.layout.add(self.executeBtn)
+        self.layout.addWidget(self.actionBtn)
+        self.layout.addWidget(self.scriptBtn)
+        self.layout.addWidget(self.entryBtn)
+        self.layout.addWidget(self.executeBtn)

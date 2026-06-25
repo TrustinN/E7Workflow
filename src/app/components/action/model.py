@@ -36,11 +36,10 @@ class ActionModel(QObject):
         super().__init__()
 
         self.actions: dict[str, ActionSchema] = {}
-        self.action: ActionSchema = None
 
-    def createAction(self):
+    def createAction(self, schema: ActionSchema):
         id = generate()
-        self.actions[id] = self.action.copy()
+        self.actions[id] = schema.copy()
         return id
 
     def setAction(self, id: str, schema: ActionSchema):
@@ -49,12 +48,6 @@ class ActionModel(QObject):
     def getAction(self, id: str) -> ActionSchema:
         return self.actions[id]
 
-    def setActiveAction(self, schema: ActionSchema):
-        self.action = schema
-
-    def activeAction(self):
-        return self.action
-
     def toData(self) -> dict:
         return {
             "actions": {k: v.toData() for k, v in self.actions.items()},
@@ -62,7 +55,6 @@ class ActionModel(QObject):
 
     def clear(self):
         self.actions.clear()
-        self.action = None
         self.modelCleared.emit()
 
     def fromData(self, data):
@@ -71,3 +63,19 @@ class ActionModel(QObject):
             self.actions[id] = ActionSchema.fromData(action)
 
         self.modelLoaded.emit()
+
+
+class ActionViewModel(QObject):
+    def __init__(self):
+        super().__init__()
+
+        self.draftAction: ActionSchema = None
+
+    def setDraft(self, schema: ActionSchema):
+        self.draftAction = schema
+
+    def getDraft(self):
+        return self.draftAction
+
+    def clear(self):
+        self.draftAction = None
