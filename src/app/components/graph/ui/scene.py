@@ -18,7 +18,6 @@ class GraphScene(QGraphicsScene):
 
     def __init__(self):
         super().__init__()
-        self.setSceneRect(0, 0, 500, 300)
 
         self.nodes: dict[str, GraphicsNode] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}

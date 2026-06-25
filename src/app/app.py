@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QMainWindow,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -107,7 +108,10 @@ class App(QApplication):
         self.layoutMid.addWidget(self.graphCpt.editor)
         self.layoutMid.addStretch()
 
-        self.layoutRight.addWidget(self.actionCpt.editor)
-        self.layoutRight.addWidget(self.scriptCpt.editor)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.actionCpt.editor, "Actions")
+        self.tabs.addTab(self.scriptCpt.editor, "Scripts")
+
         self.layoutRight.addWidget(self.runnerCpt.editor)
+        self.layoutRight.addWidget(self.tabs)
         self.layoutRight.addStretch()

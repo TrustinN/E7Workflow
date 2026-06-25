@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import QSize, pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -53,6 +53,7 @@ class ScriptManager(QWidget):
 
         layout.addWidget(self.codeTabs)
         layout.addWidget(addRow)
+        self.setMinimumSize(QSize(450, 350))
 
         self.editors = {}
 
