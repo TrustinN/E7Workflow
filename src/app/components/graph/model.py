@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.state.layouts.graph import Color
+from src.app.state import Color
 
 
 @dataclass

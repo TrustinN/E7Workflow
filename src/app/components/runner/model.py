@@ -1,4 +1,3 @@
-from dataclasses import asdict, dataclass
 from typing import Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal

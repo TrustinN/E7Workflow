@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.state.layouts.graph import Color, Geometry
+from src.app.state import Color, Geometry
 
 
 @dataclass

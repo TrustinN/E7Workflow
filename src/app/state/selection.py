@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from PyQt5.QtCore import pyqtSignal
-
-from .models import Model
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 class SelectionType(Enum):
@@ -31,7 +29,7 @@ class Selection:
         )
 
 
-class SelectionModel(Model):
+class SelectionModel(QObject):
     selected_ = pyqtSignal(object)
 
     def __init__(self):
@@ -67,17 +65,3 @@ class SelectionModel(Model):
     def clear(self):
         self.previous = Selection()
         self.current = Selection()
-
-        self.modelClear_.emit()
-
-    def serialize(self):
-        return {
-            "previous": self.previous.serialize(),
-            "current": self.current.serialize(),
-        }
-
-    def deserialize(self, state):
-        self.previous = Selection.deserialize(state["previous"])
-        self.current = Selection.deserialize(state["current"])
-
-        self.modelLoaded_.emit()

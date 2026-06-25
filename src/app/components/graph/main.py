@@ -34,7 +34,7 @@ class GraphComponent(Node):
     def createRoot(self, data):
         wksSchema = WorkspaceSchema.fromData(data)
         id = wksSchema.id
-        schema = NodeSchema(id=id)
+        schema = NodeSchema(id=id, name=wksSchema.displayText)
 
         self.model.addNode(id, schema)
         self.publish("/Graph/Root/Created", schema.toData())

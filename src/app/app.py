@@ -18,7 +18,7 @@ from .components.script import ScriptComponent
 from .components.workspace import WorkspaceComponent
 from .events import PubSubHandler
 from .serialization import SerializerNode
-from .state import Context
+from .state import Context, ContextManager
 
 
 class MainWindow(QMainWindow):
@@ -62,12 +62,14 @@ class App(QApplication):
         self.window.requestImport.connect(self.serializerNode.handleImport)
 
         self.pubSubHandler = PubSubHandler()
+        self.pubSubHandler.registerNode(self.contextManager)
         self.pubSubHandler.registerNode(self.serializerNode)
         self.pubSubHandler.registerNodes(self.components)
         self.pubSubHandler.handlePublish("/App/Loaded")
 
     def _initState(self):
         self.context = Context()
+        self.contextManager = ContextManager(self.context)
 
     def _initComponents(self, context, dispatcher):
         self.wkCpt = WorkspaceComponent(context, dispatcher)
