@@ -1,14 +1,11 @@
-import json
 import os
-
-from nanoid import generate
-from PyQt5.QtWidgets import QInputDialog, QLineEdit
 
 from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Dispatcher
 
-from .model import WorkspaceModel, WorkspaceSchema
+from .manager import WorkspaceManager
+from .model import WorkspaceModel
 from .service import WorkspaceService
 from .ui import WorkspaceEditor
 
@@ -18,7 +15,11 @@ class WorkspaceComponent(Node):
         super().__init__()
 
         self.context = context
+
         self.model = WorkspaceModel()
+        self.manager = WorkspaceManager(self.model)
+        self.service = WorkspaceService(self.model, dispatcher)
+
         self.editor = WorkspaceEditor(self.context, self.model)
         self.editor.requestWorkspace.connect(self.createWorkspace)
 
@@ -29,51 +30,19 @@ class WorkspaceComponent(Node):
 
         self.subscribe("/Workspace/UpdateNode", self.updateWorkspace)
 
-        self.service = WorkspaceService(self.model, dispatcher)
-
     def createRootWorkspace(self, data):
-        id = generate()
-        schema = WorkspaceSchema(
-            id=id,
-            name="Root",
-            padding=15,
-        )
-
-        self.model.addItem(id, schema)
+        id = self.manager.createWorkspace(name="Root", padding=15)
+        schema = self.model.getItem(id)
         self.publish("/Workspace/Root/Created", schema.toData())
 
-    def createWorkspace(self):
-        id = generate()
+    def createWorkspace(self, name):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type is SelectionType.WORKSPACE):
             return
-        parentID = selection.id
 
-        name = self.requestWorkspaceName()
-        if not name:
-            return
-        schema = WorkspaceSchema(
-            id=id,
-            name=name,
-            padding=0,
-            parent=parentID,
-        )
-
-        self.model.addItem(id, schema)
+        id = self.manager.createWorkspace(name=name, parent=selection.id)
+        schema = self.model.getItem(id)
         self.publish("/Workspace/Node/Created", schema.toData())
-
-    def requestWorkspaceName(self):
-        name, ok = QInputDialog.getText(
-            None,
-            "QInputDialog.getText()",
-            "Workspace Name:",
-            QLineEdit.Normal,
-            "WS Name",
-        )
-        if not ok:
-            return False
-
-        return name
 
     def updateWorkspace(self, data):
         id = data["id"]
@@ -83,18 +52,12 @@ class WorkspaceComponent(Node):
     def saveState(self, data):
         path = data["path"]
         saveFile = os.path.join(path, "workspace.json")
-        state = self.model.toData()
-        with open(saveFile, "w") as f:
-            json.dump(state, f, indent=4)
+        self.manager.saveModel(saveFile)
 
     def resetState(self, data):
-        self.model.clear()
+        self.manager.resetModel()
 
     def loadState(self, data):
         path = data["path"]
         saveFile = os.path.join(path, "workspace.json")
-        state = None
-        with open(saveFile, "r") as f:
-            state = json.load(f)
-
-        self.model.fromData(state)
+        self.manager.loadModel(saveFile)
