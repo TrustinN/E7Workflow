@@ -34,7 +34,7 @@ class ScriptModel(QObject):
 
     def addScript(self, id: str, schema: ScriptSchema):
         if schema.name is None:
-            schema.name = self.uniqueName("Unititled")
+            schema.name = self.uniqueName("Untitled")
 
         self.scripts[id] = schema
 
