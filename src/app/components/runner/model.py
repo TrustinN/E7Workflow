@@ -4,44 +4,6 @@ from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
-@dataclass
-class RunnerNodeSchema:
-    id: Optional[str] = None
-    action: Optional[str] = None
-
-    @classmethod
-    def fromData(cls, data: dict):
-        schema = cls()
-        schema.update(data)
-        return schema
-
-    def update(self, data: dict):
-        for k, v in data.items():
-            setattr(self, k, v)
-
-    def toData(self) -> dict:
-        return asdict(self)
-
-
-@dataclass
-class RunnerEdgeSchema:
-    id: Optional[str] = None
-    script: Optional[str] = None
-
-    @classmethod
-    def fromData(cls, data: dict):
-        schema = cls()
-        schema.update(data)
-        return schema
-
-    def update(self, data: dict):
-        for k, v in data.items():
-            setattr(self, k, v)
-
-    def toData(self) -> dict:
-        return asdict(self)
-
-
 class RunnerModel(QObject):
     modelCleared = pyqtSignal()
     modelLoaded = pyqtSignal()
@@ -49,8 +11,8 @@ class RunnerModel(QObject):
     def __init__(self):
         super().__init__()
 
-        self.nodes: dict[str, RunnerNodeSchema] = {}
-        self.edges: dict[str, RunnerEdgeSchema] = {}
+        self.nodes: dict[str, str] = {}
+        self.edges: dict[str, str] = {}
 
         self.entry: str = None
 
@@ -63,10 +25,19 @@ class RunnerModel(QObject):
     def setEntry(self, id: str):
         self.entry = id
 
+    def getAction(self, nodeID: str) -> Optional[str]:
+        return self.nodes.get(nodeID)
+
+    def getScript(self, edgeID: str) -> Optional[str]:
+        return self.edges.get(edgeID)
+
+    def getEntry(self) -> Optional[str]:
+        return self.entry
+
     def toData(self) -> dict:
         return {
-            "nodes": {k: v.toData() for k, v in self.nodes.items()},
-            "edges": {k: v.toData() for k, v in self.edges.items()},
+            "nodes": self.nodes,
+            "edges": self.edges,
             "entry": self.entry,
         }
 
@@ -74,12 +45,11 @@ class RunnerModel(QObject):
         nodes = data["nodes"]
         edges = data["edges"]
 
-        for id, node in nodes.items():
-            self.nodes[id] = RunnerNodeSchema.fromData(node)
+        for id, val in nodes.items():
+            self.nodes[id] = val
 
-        for id, edge in edges.items():
-            schema = RunnerEdgeSchema.fromData(edge)
-            self.edges[id] = schema
+        for id, val in edges.items():
+            self.edges[id] = val
 
         self.modelLoaded.emit()
 

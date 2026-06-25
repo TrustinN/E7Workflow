@@ -6,14 +6,16 @@ from nanoid import generate
 from src.app.components.workspace.model import WorkspaceSchema
 from src.app.events import Node
 from src.app.state import Context
+from src.router.routing import Dispatcher
 
 from .model import EdgeSchema, GraphModel, NodeSchema
+from .service import GraphService
 from .ui.editor import GraphEditor
 
 
 class GraphComponent(Node):
 
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, dispatcher: Dispatcher):
         super().__init__()
         self.context = context
         self.model = GraphModel()
@@ -26,6 +28,8 @@ class GraphComponent(Node):
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
+
+        self.service = GraphService(self.model, dispatcher)
 
     def createRoot(self, data):
         wksSchema = WorkspaceSchema.fromData(data)

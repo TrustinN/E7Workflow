@@ -37,12 +37,13 @@ class ActionService(EndpointService):
         postRoute = route(ActionRoute.ACTION, ":id")
         self.addRoute(RequestType.POST, postRoute, self.runAction)
 
-    def createAction(self):
+    def createAction(self, data):
         schema = self.viewModel.getDraft()
         id = self.model.createAction(schema)
         return {"id": id}
 
     def runAction(self, id, data):
         schema = self.model.getAction(id)
+        schema.update(data)
         actionCls = ACTIONS.get(schema.name)
         return actionCls().execute(schema.toData())

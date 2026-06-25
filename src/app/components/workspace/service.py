@@ -1,12 +1,11 @@
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .model import WorkspaceModel, WorkspaceSchema
+from .model import WorkspaceModel
 
 
 class WorkspaceRoute:
     NAME = "workspaceService"
     WORKSPACE = "workspace"
-    DELETE = "delete"
     EXPORT = "export"
     IMPORT = "import"
 
@@ -15,7 +14,7 @@ wr = WorkspaceRoute
 
 
 class WorkspaceService(EndpointService):
-    def __init__(self, dispatcher: Dispatcher, model: WorkspaceModel):
+    def __init__(self, model: WorkspaceModel, dispatcher: Dispatcher):
         super().__init__(wr.NAME, dispatcher)
 
         self.model = model
@@ -23,9 +22,6 @@ class WorkspaceService(EndpointService):
         self.addRoute(RequestType.GET, route(wr.WORKSPACE), self.listWorkspaces)
         self.addRoute(RequestType.GET, route(wr.WORKSPACE, ":id"), self.getWorkspace)
         self.addRoute(RequestType.PUT, route(wr.WORKSPACE, ":id"), self.updateWorkspace)
-        self.addRoute(
-            RequestType.DELETE, route(wr.WORKSPACE, ":id"), self.deleteWorkspace
-        )
 
     def getWorkspace(self, id, data):
         return self.model.nodes[id].toData()
@@ -35,6 +31,3 @@ class WorkspaceService(EndpointService):
 
     def listWorkspaces(self, data):
         return {"workspaces": list(self.model.nodes.keys())}
-
-    def deleteWorkspaces(self, data):
-        pass

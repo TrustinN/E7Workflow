@@ -1,6 +1,6 @@
+from src.app.components.action.actions import ClickAction, DragAction
 from src.app.components.action.model import ActionModel, ActionSchema, ActionViewModel
 
-from .actions import ClickAction, DragAction
 from .editor import ActionEditor
 
 

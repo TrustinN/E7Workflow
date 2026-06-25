@@ -24,8 +24,18 @@ class WorkspaceController:
 
     def setColor(self, id, color: QColor, borderColor: QColor):
         patch = {
-            "color": list(color.getRgb()),
-            "borderColor": list(borderColor.getRgb()),
+            "color": {
+                "r": color.red(),
+                "g": color.green(),
+                "b": color.blue(),
+                "a": color.alpha(),
+            },
+            "borderColor": {
+                "r": borderColor.red(),
+                "g": borderColor.green(),
+                "b": borderColor.blue(),
+                "a": borderColor.alpha(),
+            },
         }
         self.model.updateItem(id, patch)
 

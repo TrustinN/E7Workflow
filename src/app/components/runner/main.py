@@ -20,12 +20,13 @@ class RunnerComponent(Node):
         self.client = Client("RunnerClient", dispatcher)
 
         self.model = RunnerModel()
-        self.runner = Runner(self.context, self.client)
+        self.runner = Runner(self.model, self.client)
 
         self.editor = RunnerEditor()
         self.editor.requestActionSet.connect(self.setAction)
         self.editor.requestScriptSet.connect(self.setScript)
-        # self.editor.requestEntrySet.connect()
+        self.editor.requestEntrySet.connect(self.setEntry)
+        self.editor.requestExecute.connect(self.runner.execute)
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
@@ -38,6 +39,7 @@ class RunnerComponent(Node):
         link = Link(ActionRoute.NAME, ActionRoute.CREATE)
         resp = self.client.post(link)
         self.model.setAction(selection.id, resp["id"])
+        print(self.model.toData())
 
     def setScript(self):
         selection = self.context.selectionModel.getSelected()
@@ -46,6 +48,14 @@ class RunnerComponent(Node):
         link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT)
         resp = self.client.get(link)
         self.model.setScript(selection.id, resp["id"])
+        print(self.model.toData())
+
+    def setEntry(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type == SelectionType.WORKSPACE):
+            return
+        self.model.setEntry(selection.id)
+        print(self.model.toData())
 
     def saveState(self, data):
         path = data["path"]

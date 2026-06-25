@@ -70,8 +70,8 @@ class App(QApplication):
         self.context = Context()
 
     def _initComponents(self, context, dispatcher):
-        self.wkCpt = WorkspaceComponent(context)
-        self.graphCpt = GraphComponent(context)
+        self.wkCpt = WorkspaceComponent(context, dispatcher)
+        self.graphCpt = GraphComponent(context, dispatcher)
         self.actionCpt = ActionComponent(context, dispatcher)
         self.scriptCpt = ScriptComponent(context, dispatcher)
         self.runnerCpt = RunnerComponent(context, dispatcher)

@@ -6,13 +6,15 @@ from PyQt5.QtWidgets import QInputDialog, QLineEdit
 
 from src.app.events import Node
 from src.app.state import Context, SelectionType
+from src.router.routing import Dispatcher
 
 from .model import WorkspaceModel, WorkspaceSchema
+from .service import WorkspaceService
 from .ui import WorkspaceEditor
 
 
 class WorkspaceComponent(Node):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, dispatcher: Dispatcher):
         super().__init__()
 
         self.context = context
@@ -24,6 +26,8 @@ class WorkspaceComponent(Node):
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
+
+        self.service = WorkspaceService(self.model, dispatcher)
 
     def createRootWorkspace(self, data):
         id = generate()
