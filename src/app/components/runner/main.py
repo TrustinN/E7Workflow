@@ -1,13 +1,12 @@
 import json
 import os
 
-from src.app.components.action.service import ActionRoute
-from src.app.components.script.service import ScriptRoute
 from src.app.components.utils.colors import Colors
 from src.app.events import Node
 from src.app.state import Context, SelectionType
-from src.router.routing import Client, Dispatcher, Link
+from src.router.routing import Client, Dispatcher
 
+from .manager import RunnerManager
 from .model import RunnerModel
 from .runner import Runner
 from .ui import RunnerEditor
@@ -22,6 +21,7 @@ class RunnerComponent(Node):
 
         self.model = RunnerModel()
         self.runner = Runner(self.model, self.client)
+        self.manager = RunnerManager(self.model, self.client)
 
         self.editor = RunnerEditor()
         self.editor.requestActionSet.connect(self.setAction)
@@ -37,16 +37,14 @@ class RunnerComponent(Node):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
-        link = Link(ActionRoute.NAME, ActionRoute.CREATE)
-        resp = self.client.post(link)
-        self.model.setAction(selection.id, resp["id"])
 
-        schema = resp["schema"]
+        actionID = self.manager.setAction(selection.id)
+        schema = self.manager.getAction(actionID)
         self.publish(
             "/Workspace/UpdateNode",
             {
                 "id": selection.id,
-                "patch": {"iconPath": schema["icon"]},
+                "patch": {"iconPath": schema.icon},
             },
         )
 
@@ -54,9 +52,8 @@ class RunnerComponent(Node):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.EDGE):
             return
-        link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT)
-        resp = self.client.get(link)
-        self.model.setScript(selection.id, resp["id"])
+
+        self.manager.setScript(selection.id)
 
     def setEntry(self):
         selection = self.context.selectionModel.getSelected()

@@ -33,14 +33,19 @@ class ActionService(EndpointService):
         createRoute = route(ActionRoute.CREATE)
         self.addRoute(RequestType.POST, createRoute, self.createAction)
 
-        # Run action
-        postRoute = route(ActionRoute.ACTION, ":id")
-        self.addRoute(RequestType.POST, postRoute, self.runAction)
+        actionRoute = route(ActionRoute.ACTION, ":id")
+
+        self.addRoute(RequestType.GET, actionRoute, self.getAction)
+        self.addRoute(RequestType.POST, actionRoute, self.runAction)
 
     def createAction(self, data):
         schema = self.viewModel.getDraft()
         id = self.model.createAction(schema)
         return {"id": id, "schema": schema.toData()}
+
+    def getAction(self, id, data):
+        schema = self.model.getAction(id)
+        return schema.toData()
 
     def runAction(self, id, data):
         schema = self.model.getAction(id)

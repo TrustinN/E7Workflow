@@ -33,7 +33,11 @@ class WorkspaceComponent(Node):
 
     def createRootWorkspace(self, data):
         id = generate()
-        schema = WorkspaceSchema(id=id, displayText="Root", padding=15)
+        schema = WorkspaceSchema(
+            id=id,
+            name="Root",
+            padding=15,
+        )
 
         self.model.addItem(id, schema)
         self.publish("/Workspace/Root/Created", schema.toData())
@@ -50,7 +54,7 @@ class WorkspaceComponent(Node):
             return
         schema = WorkspaceSchema(
             id=id,
-            displayText=name,
+            name=name,
             padding=0,
             parent=parentID,
         )
