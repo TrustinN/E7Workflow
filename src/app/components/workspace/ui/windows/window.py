@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPoint, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import QWidget
 
-from src.app.components.utils.colors import Colors
+from src.app.components.utils.colors import Alpha, Colors, with_alpha
 
 
 class Window(QWidget):
@@ -24,6 +24,9 @@ class Window(QWidget):
 
         self.color = Colors.DEFAULT_COLOR
         self.borderColor = Colors.DEFAULT_BORDER
+
+        self.selectionColor = with_alpha(Colors.SKY_BLUE, Alpha.LIGHT)
+        self.selectionBorderColor = with_alpha(Colors.SKY_BLUE, Alpha.MEDIUM)
         self.padding = 0
 
         super().setGeometry(500, 500, 500, 300)
@@ -33,6 +36,12 @@ class Window(QWidget):
         self.resizeIndices = []
         self.resizeError = (np.array([0.0, 0.0]), np.array([0.0, 0.0]))
         self.fixed = False
+
+        self.selected = False
+
+    def setSelected(self, selected: bool):
+        self.selected = selected
+        self.repaint()
 
     def grabMouse(self) -> bool:
         if not self.canMove():
@@ -155,12 +164,19 @@ class Window(QWidget):
         self.setMask(maskedRegion)
 
     def paintEvent(self, event):
+        color = self.color
+        borderColor = self.borderColor
+
+        if self.selected:
+            color = self.selectionColor
+            borderColor = self.selectionBorderColor
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        brush = QBrush(self.color)
+        brush = QBrush(color)
         painter.setBrush(brush)
 
-        pen = QPen(self.borderColor)
+        pen = QPen(borderColor)
         painter.setPen(pen)
 
         rect = self.rect()

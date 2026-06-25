@@ -15,7 +15,9 @@ class WorkspaceView(QObject):
     def __init__(self, model: WorkspaceModel):
         super().__init__()
         self.workspaces: dict[str, Workspace] = {}
-        self.rootID = None
+        self.root: Workspace = None
+        self.selected = None
+        self.prevSelected = None
         self.model = model
 
         self.model.modelCreated.connect(self.handleModelCreate)
@@ -23,14 +25,15 @@ class WorkspaceView(QObject):
         self.model.modelCleared.connect(self.clear)
         self.model.modelLoaded.connect(self.rebuild)
 
+        self.workspacePressed.connect(self.setSelected)
+
     def handleModelCreate(self, id):
         schema = self.model.getItem(id)
         parentID = schema.parent
         if parentID:
             self.createChildWorkspace(id, schema.parent)
         else:
-            self.createRootWorkspace(id)
-            self.rootID = id
+            self.root = self.createRootWorkspace(id)
 
         self.setData(id, schema.toData())
 
@@ -55,11 +58,27 @@ class WorkspaceView(QObject):
         return workspace
 
     def createRootWorkspace(self, id):
-        self._createWorkspace(id)
+        return self._createWorkspace(id)
 
     def createChildWorkspace(self, id, parentID):
         workspace = self._createWorkspace(id)
         self.workspaces[parentID].addChild(workspace)
+
+    def setSelected(self, id):
+        self.prevSelected = self.selected
+        self.selected = id
+
+        if self.prevSelected:
+            self.workspaces[self.prevSelected].setSelected(False)
+
+        self.workspaces[self.selected].setSelected(True)
+
+    def removeSelection(self):
+        self.prevSelected = self.selected
+        self.selected = None
+
+        if self.prevSelected:
+            self.workspaces[self.prevSelected].setSelected(False)
 
     def setData(self, id, data: dict):
         workspace = self.workspaces[id]
@@ -70,20 +89,23 @@ class WorkspaceView(QObject):
         return workspace.getData()
 
     def clear(self):
-        rootWorkspace = self.workspaces[self.rootID]
-        rootWorkspace.deleteLater()
+        self.root.deleteLater()
+
+        self.root = None
+        self.selected = None
+        self.prevSelected = None
 
         self.workspaces.clear()
 
     def rebuild(self):
-        self.rootID = self.model.rootIndex()
+        rootID = self.model.rootIndex()
 
-        queue = deque([self.rootID])
+        queue = deque([rootID])
         while queue:
             cur = queue.popleft()
             schema = self.model.getItem(cur)
-            if cur == self.rootID:
-                self.createRootWorkspace(cur)
+            if cur == rootID:
+                self.root = self.createRootWorkspace(cur)
             else:
                 self.createChildWorkspace(cur, schema.parent)
 

@@ -1,6 +1,3 @@
-from PyQt5.QtGui import QColor
-
-from src.app.components.utils.colors import Alpha, Colors, with_alpha
 from src.app.components.workspace.model import WorkspaceModel
 from src.app.state import Context, Selection, SelectionType
 
@@ -22,32 +19,11 @@ class WorkspaceController:
         data = self.view.getData(id)
         self.model.updateItem(id, data)
 
-    def setColor(self, id, color: QColor, borderColor: QColor):
-        patch = {
-            "color": {
-                "r": color.red(),
-                "g": color.green(),
-                "b": color.blue(),
-                "a": color.alpha(),
-            },
-            "borderColor": {
-                "r": borderColor.red(),
-                "g": borderColor.green(),
-                "b": borderColor.blue(),
-                "a": borderColor.alpha(),
-            },
-        }
-        self.model.updateItem(id, patch)
-
     def onSelection(self, selection: Selection):
-        prev: Selection = self.context.selectionModel.getPrevSelected()
-        if prev.id and prev.type is SelectionType.WORKSPACE:
-            self.setColor(prev.id, Colors.DEFAULT_COLOR, Colors.DEFAULT_BORDER)
-
-        if selection.id and selection.type is SelectionType.WORKSPACE:
-            color = with_alpha(Colors.SKY_BLUE, Alpha.LIGHT)
-            borderColor = with_alpha(Colors.SKY_BLUE, Alpha.MEDIUM)
-            self.setColor(selection.id, color, borderColor)
+        if selection.type is SelectionType.WORKSPACE:
+            self.view.setSelected(selection.id)
+        else:
+            self.view.removeSelection()
 
     def onWorkspacePressed(self, id):
         self.context.selectionModel.setSelected(id, SelectionType.WORKSPACE)
