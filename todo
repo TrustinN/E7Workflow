@@ -1,1 +1,17 @@
-Add selected parameter to workspace to prevent duplicate highlighted windows on load
+Add validation for setting actions
+
+remove action upon workspace create
+
+fix viewmodel signals in graph component
+
+add state widget
+
+add node->action editor widget
+
+add edge->script visualization widget
+
+add workspace delete functionality
+
+add action delete functionality
+
+add script delete functionality
