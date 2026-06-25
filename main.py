@@ -1,3 +1,4 @@
+import src.app.resources
 from src.app import App
 from src.router.routing import Dispatcher
 

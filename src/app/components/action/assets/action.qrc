@@ -1,0 +1,10 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/action">
+        <file>icons/mouse-pointer-click.svg</file>
+        <file>icons/move-down.svg</file>
+        <file>icons/move-left.svg</file>
+        <file>icons/move-right.svg</file>
+        <file>icons/move-up.svg</file>
+    </qresource>
+</RCC>

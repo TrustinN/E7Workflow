@@ -40,7 +40,7 @@ class ActionService(EndpointService):
     def createAction(self, data):
         schema = self.viewModel.getDraft()
         id = self.model.createAction(schema)
-        return {"id": id}
+        return {"id": id, "schema": schema.toData()}
 
     def runAction(self, id, data):
         schema = self.model.getAction(id)

@@ -40,6 +40,15 @@ class RunnerComponent(Node):
         resp = self.client.post(link)
         self.model.setAction(selection.id, resp["id"])
 
+        schema = resp["schema"]
+        self.publish(
+            "/Workspace/UpdateNode",
+            {
+                "id": selection.id,
+                "patch": {"iconPath": schema["icon"]},
+            },
+        )
+
     def setScript(self):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.EDGE):

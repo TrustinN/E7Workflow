@@ -8,7 +8,8 @@ class DragAction(Action):
     def __init__(self):
         super().__init__()
 
-    def info():
+    @classmethod
+    def info(cls):
         return {
             "name": ActionType.DRAG,
             "systemParams": {
@@ -23,6 +24,19 @@ class DragAction(Action):
                 }
             },
         }
+
+    @classmethod
+    def icon(cls, data):
+        value = data["userParams"]["dir"]["value"]
+
+        icons = {
+            "up": ":/icon/move-up.svg",
+            "down": ":/icon/move-down.svg",
+            "left": ":/icon/move-left.svg",
+            "right": ":/icon/move-right.svg",
+        }
+
+        return icons[value]
 
     def action(self, data):
         userParams = data["userParams"]

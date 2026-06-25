@@ -8,6 +8,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 @dataclass
 class ActionSchema:
     name: Optional[str] = None
+    icon: Optional[str] = None
     systemParams: Optional[dict] = field(default_factory=dict)
     userParams: Optional[dict] = field(default_factory=dict)
 

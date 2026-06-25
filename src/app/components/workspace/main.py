@@ -27,6 +27,8 @@ class WorkspaceComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
+        self.subscribe("/Workspace/UpdateNode", self.updateWorkspace)
+
         self.service = WorkspaceService(self.model, dispatcher)
 
     def createRootWorkspace(self, data):
@@ -68,6 +70,11 @@ class WorkspaceComponent(Node):
             return False
 
         return name
+
+    def updateWorkspace(self, data):
+        id = data["id"]
+        patch = data["patch"]
+        self.model.updateItem(id, patch)
 
     def saveState(self, data):
         path = data["path"]

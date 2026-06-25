@@ -9,7 +9,8 @@ class ClickAction(Action):
     def __init__(self):
         super().__init__()
 
-    def info():
+    @classmethod
+    def info(cls):
         return {
             "name": ActionType.CLICK,
             "systemParams": {

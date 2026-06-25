@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from .icon import ActionIconResolver
+
 
 class ActionEditor(QWidget):
     actionChanged = pyqtSignal()
@@ -87,7 +89,11 @@ class ActionEditor(QWidget):
             if param["type"] == "enum":
                 schema[key]["value"] = editor.currentText()
 
-        return {"name": name, "userParams": schema}
+        return {
+            "name": name,
+            "userParams": schema,
+            "icon": ActionIconResolver.resolveIcon(name, schema),
+        }
 
     def setEditor(self, name):
         widget = self.widgets.get(name)

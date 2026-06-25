@@ -7,7 +7,12 @@ class Action:
     def __init__(self, sleep=DEFAULT_SLEEP_TIME):
         self.sleep = sleep
 
-    def info():
+    @classmethod
+    def info(cls):
+        pass
+
+    @classmethod
+    def icon(cls, data):
         pass
 
     def action(self, data):
