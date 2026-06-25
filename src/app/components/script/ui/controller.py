@@ -25,9 +25,10 @@ class ScriptEditorController:
 
     def createScript(self):
         id = generate()
-        schema = ScriptSchema()
+        name = self.model.uniqueName("Untitled")
+        schema = ScriptSchema(name=name)
         self.model.addScript(id, schema)
-        self.editor.addCodeTab(id, schema.name)
+        self.editor.addCodeTab(id, name)
 
     def updateScript(self, id):
         data = self.editor.getData(id)

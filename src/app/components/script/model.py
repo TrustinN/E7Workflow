@@ -33,9 +33,6 @@ class ScriptModel(QObject):
         self.scripts: dict[str, ScriptSchema] = {}
 
     def addScript(self, id: str, schema: ScriptSchema):
-        if schema.name is None:
-            schema.name = self.uniqueName("Untitled")
-
         self.scripts[id] = schema
 
     def getScript(self, id: str):
