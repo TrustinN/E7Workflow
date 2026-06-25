@@ -45,11 +45,6 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
 
-def setButtonText(button, text, shortcut):
-    key = shortcut.key().toString(QKeySequence.NativeText)
-    button.setText(f"{text} ({key})")
-
-
 class App(QApplication):
     def __init__(self, dispatcher: Dispatcher):
         super().__init__([])

@@ -8,7 +8,7 @@ from src.router.routing import Dispatcher
 from .manager import GraphManager
 from .model import GraphModel
 from .service import GraphService
-from .ui.editor import GraphEditor
+from .ui import GraphEditor
 
 
 class GraphComponent(Node):

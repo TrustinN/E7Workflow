@@ -21,7 +21,7 @@ class RunnerManager:
         return actionID
 
     def getAction(self, actionID: str) -> ActionSchema:
-        link = Link(ActionRoute.NAME, ActionRoute.ACTION)
+        link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)
         resp = self.client.get(link)
         return ActionSchema.fromData(resp)
 
