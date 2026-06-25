@@ -76,11 +76,11 @@ class GraphViewModel:
     def rebuild(self):
         self._loading = True
         for id in self.model.nodeList():
-            self.scene.createNode(id)
+            self.scene._createNode(id)
 
         for id in self.model.edgeList():
             schema = self.model.getEdge(id)
-            self.scene.createEdge(id, schema.source, schema.target)
+            self.scene._createEdge(id, schema.source, schema.target)
         self._loading = False
 
     def rerender(self):

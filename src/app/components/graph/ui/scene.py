@@ -23,7 +23,7 @@ class GraphScene(QGraphicsScene):
         self.nodes: dict[str, GraphicsNode] = {}
         self.edges: dict[str, GraphicsArrowItem] = {}
 
-    def createNode(self, id):
+    def _createNode(self, id):
         node = GraphicsNode()
         node.emitter.onMove.connect(lambda: self.nodeUpdated.emit(id))
         node.emitter.onMousePress.connect(lambda: self.nodeSelected.emit(id))
@@ -31,6 +31,8 @@ class GraphScene(QGraphicsScene):
         self.nodes[id] = node
         self.addItem(node)
 
+    def createNode(self, id):
+        self._createNode(id)
         self.nodeCreated.emit(id)
 
     def readNode(self, id) -> dict:
@@ -41,7 +43,7 @@ class GraphScene(QGraphicsScene):
         node = self.nodes[id]
         node.setData(data)
 
-    def createEdge(self, id, source, target):
+    def _createEdge(self, id, source, target):
         n1 = self.nodes[source]
         n2 = self.nodes[target]
         arrow = GraphicsArrowItem(n1, n2)
@@ -51,6 +53,8 @@ class GraphScene(QGraphicsScene):
         self.edges[id] = arrow
         self.addItem(arrow)
 
+    def createEdge(self, id, source, target):
+        self._createEdge(id, source, target)
         self.edgeCreated.emit(id)
 
     def readEdge(self, id) -> dict:

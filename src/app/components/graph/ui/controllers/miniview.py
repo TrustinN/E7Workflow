@@ -1,13 +1,20 @@
-from src.app.components.graph.model import GraphModel
+from src.app.components.graph.model import GraphModel, GraphViewState
 from src.app.components.graph.ui import GraphScene
 from src.app.state import Context, Selection, SelectionType
 
 
 class MiniViewController:
-    def __init__(self, context: Context, scene: GraphScene, model: GraphModel):
+    def __init__(
+        self,
+        context: Context,
+        scene: GraphScene,
+        model: GraphModel,
+        viewModel: GraphViewState,
+    ):
         self.context = context
         self.scene = scene
         self.model = model
+        self.viewModel = viewModel
 
         self.activeParent = None
         self.scene.nodeCreated.connect(self.onNodeCreate)
@@ -27,6 +34,9 @@ class MiniViewController:
             return
 
         self.scene.setNodeVisible(id, True)
+
+        schema = self.model.getNode(id)
+        self.viewModel.updateNode(id, {"displayText": schema.name})
 
     def onEdgeCreate(self, id):
         if self.model.isCrossEdge(id):

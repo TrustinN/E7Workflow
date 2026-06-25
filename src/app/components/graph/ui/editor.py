@@ -37,7 +37,9 @@ class GraphEditor(QWidget):
         self.document.addViewState("fullView", self.fullViewState)
 
         self.miniScene = GraphScene()
-        self.miniController = MiniViewController(context, self.miniScene, model)
+        self.miniController = MiniViewController(
+            context, self.miniScene, model, self.miniViewState
+        )
         self.miniViewModel = GraphViewModel(self.miniScene, model, self.miniViewState)
         self.miniView = QGraphicsView(self.miniScene)
         self.miniView.setFixedSize(500, 300)
@@ -45,7 +47,9 @@ class GraphEditor(QWidget):
         self.miniView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.fullScene = GraphScene()
-        self.fullController = FullViewController(context, self.fullScene, model)
+        self.fullController = FullViewController(
+            context, self.fullScene, model, self.fullViewState
+        )
         self.fullViewModel = GraphViewModel(self.fullScene, model, self.fullViewState)
         self.fullView = QGraphicsView(self.fullScene)
         self.fullView.setFixedSize(500, 300)

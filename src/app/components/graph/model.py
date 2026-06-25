@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from src.app.state.layouts.graph import Color, Geometry
+from src.app.state.layouts.graph import Color
 
 
 @dataclass
@@ -34,7 +34,6 @@ class NodeSchema:
 @dataclass
 class NodeViewState:
     displayText: Optional[str] = None
-    geometry: Optional[Geometry] = None
     shape: Optional[str] = None
     position: Optional[tuple[float, float]] = None
     color: Optional[Color] = None
@@ -49,9 +48,7 @@ class NodeViewState:
 
     def update(self, data: dict):
         for k, v in data.items():
-            if k == "geometry":
-                self.geometry = Geometry(**v) if isinstance(v, dict) else v
-            elif k in ("color", "borderColor"):
+            if k in ("color", "borderColor"):
                 setattr(self, k, Color(**v) if isinstance(v, dict) else v)
             else:
                 setattr(self, k, v)

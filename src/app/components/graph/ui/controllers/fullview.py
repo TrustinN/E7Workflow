@@ -1,13 +1,22 @@
-from src.app.components.graph.model import GraphModel
+from src.app.components.graph.model import GraphModel, GraphViewState
 from src.app.components.graph.ui import GraphScene
 from src.app.state import Context, Selection, SelectionType
 
 
 class FullViewController:
-    def __init__(self, context: Context, scene: GraphScene, model: GraphModel):
+    def __init__(
+        self,
+        context: Context,
+        scene: GraphScene,
+        model: GraphModel,
+        viewModel: GraphViewState,
+    ):
         self.context = context
         self.scene = scene
         self.model = model
+        self.viewModel = viewModel
+
+        self.scene.nodeCreated.connect(self.onNodeCreate)
 
         self.scene.nodeSelected.connect(self.onNodeSelected)
         self.scene.edgeSelected.connect(self.onEdgeSelected)
@@ -16,6 +25,13 @@ class FullViewController:
         self.context.selectionModel.selected_.connect(self.onExternalSelection)
 
         self._updatingSelection = False
+
+    def onNodeCreate(self, id):
+        schema = self.model.getNode(id)
+        self.viewModel.updateNode(
+            id,
+            {"displayText": schema.group, "shape": "Circle"},
+        )
 
     def onNodeSelected(self, id):
         self._updatingSelection = True

@@ -37,24 +37,35 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
         self._rect = QRectF(rect)
         self.update()
 
+    def setShape(self, shape: str):
+        self.shape = shape
+        if self.shape == NodeType.RECTANGLE:
+            self.setRect(QRectF(0, 0, 50, 50))
+            self.resizeToText()
+        elif self.shape == NodeType.CIRCLE:
+            self.setRect(QRectF(0, 0, 35, 35))
+
     def boundingRect(self):
         return self._rect.adjusted(-2, -2, 2, 2)
 
     def getData(self) -> dict:
         color = self.brush().color()
         bc = self.pen().color()
-        rect = self.rect()
 
         return {
             "position": (self.pos().x(), self.pos().y()),
-            "color": list(color.getRgb()),
-            "borderColor": list(bc.getRgb()),
-            "geometry": [
-                rect.x(),
-                rect.y(),
-                rect.width(),
-                rect.height(),
-            ],
+            "color": {
+                "r": color.red(),
+                "g": color.green(),
+                "b": color.blue(),
+                "a": color.alpha(),
+            },
+            "borderColor": {
+                "r": bc.red(),
+                "g": bc.green(),
+                "b": bc.blue(),
+                "a": bc.alpha(),
+            },
             "shape": self.shape,
             "displayText": self.displayText,
             "visible": self.isVisible(),
@@ -64,7 +75,6 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
         position = data.get("position")
         color = data.get("color")
         borderColor = data.get("borderColor")
-        rect = data.get("geometry")
         shape = data.get("shape")
         displayText = data.get("displayText")
         visible = data.get("visible")
@@ -74,24 +84,22 @@ class GraphicsNode(QAbstractGraphicsShapeItem):
             self.resizeToText()
 
         if color is not None:
-            color = QColor(*color)
+            color = QColor(color["r"], color["g"], color["b"], color["a"])
             self.setBrush(QBrush(color))
 
         if borderColor is not None:
-            borderColor = QColor(*borderColor)
+            borderColor = QColor(
+                borderColor["r"], borderColor["g"], borderColor["b"], borderColor["a"]
+            )
             pen = self.pen()
             pen.setColor(borderColor)
             self.setPen(pen)
-
-        if rect is not None:
-            geometry = QRectF(*rect)
-            self.setRect(geometry)
 
         if position:
             self.setPos(position[0], position[1])
 
         if shape:
-            self.shape = shape
+            self.setShape(shape)
 
         if visible is not None:
             self.setVisible(visible)
