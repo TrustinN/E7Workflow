@@ -29,6 +29,8 @@ class GraphComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
+        self.subscribe("/Graph/UpdateNode", self.updateNode)
+
         self.service = GraphService(self.model, dispatcher)
 
     def createRoot(self, data):
@@ -58,6 +60,11 @@ class GraphComponent(Node):
         schema = EdgeSchema(id=id, source=source, target=target)
         self.model.addEdge(id, schema)
         self.publish("/Graph/Edge/Created", schema.toData())
+
+    def updateNode(self, data):
+        id = data["id"]
+        patch = data["patch"]
+        self.editor.updateNode(id, patch)
 
     def saveState(self, data):
         path = data["path"]

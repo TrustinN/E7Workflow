@@ -3,6 +3,7 @@ import os
 
 from src.app.components.action.service import ActionRoute
 from src.app.components.script.service import ScriptRoute
+from src.app.components.utils.colors import Colors
 from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher, Link
@@ -61,7 +62,40 @@ class RunnerComponent(Node):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
+
+        prev = self.model.getEntry()
+        if prev:
+            self.publish(
+                "/Graph/UpdateNode",
+                {
+                    "id": prev,
+                    "patch": {
+                        "borderColor": {
+                            "r": Colors.WHITE.red(),
+                            "g": Colors.WHITE.green(),
+                            "b": Colors.WHITE.blue(),
+                            "a": Colors.WHITE.alpha(),
+                        }
+                    },
+                },
+            )
+
         self.model.setEntry(selection.id)
+
+        self.publish(
+            "/Graph/UpdateNode",
+            {
+                "id": selection.id,
+                "patch": {
+                    "borderColor": {
+                        "r": Colors.MINT.red(),
+                        "g": Colors.MINT.green(),
+                        "b": Colors.MINT.blue(),
+                        "a": Colors.MINT.alpha(),
+                    }
+                },
+            },
+        )
 
     def saveState(self, data):
         path = data["path"]

@@ -43,12 +43,15 @@ class RunnerModel(QObject):
     def fromData(self, data: dict):
         nodes = data["nodes"]
         edges = data["edges"]
+        entry = data["entry"]
 
         for id, val in nodes.items():
             self.nodes[id] = val
 
         for id, val in edges.items():
             self.edges[id] = val
+
+        self.entry = entry
 
         self.modelLoaded.emit()
 

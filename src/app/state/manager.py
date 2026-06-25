@@ -11,4 +11,4 @@ class ContextManager(Node):
         self.subscribe("/App/Reset", self.contextReset)
 
     def contextReset(self, data):
-        self.document.clear()
+        self.context.clear()
