@@ -37,24 +37,24 @@ class GraphEditor(QWidget):
         self.document.addViewState("fullView", self.fullViewState)
 
         self.miniScene = GraphScene()
-        self.miniScene.setSceneRect(0, 0, 450, 250)
+        self.miniScene.setSceneRect(0, 0, 450, 275)
         self.miniController = MiniViewController(
             context, self.miniScene, model, self.miniViewState
         )
         self.miniViewModel = GraphViewModel(self.miniScene, model, self.miniViewState)
         self.miniView = QGraphicsView(self.miniScene)
-        self.miniView.setFixedSize(450, 250)
+        self.miniView.setFixedSize(450, 275)
         self.miniView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.miniView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.fullScene = GraphScene()
-        self.fullScene.setSceneRect(0, 0, 450, 250)
+        self.fullScene.setSceneRect(0, 0, 450, 275)
         self.fullController = FullViewController(
             context, self.fullScene, model, self.fullViewState
         )
         self.fullViewModel = GraphViewModel(self.fullScene, model, self.fullViewState)
         self.fullView = QGraphicsView(self.fullScene)
-        self.fullView.setFixedSize(450, 250)
+        self.fullView.setFixedSize(450, 275)
         self.fullView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fullView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -89,9 +89,9 @@ class GraphEditor(QWidget):
         self.e1 = None
         self.e2 = None
 
+        self.layout.addWidget(self.buttons)
         self.layout.addWidget(self.miniView)
         self.layout.addWidget(self.fullView)
-        self.layout.addWidget(self.buttons)
 
     def setE1(self):
         selection = self.context.selectionModel.getSelected()

@@ -26,6 +26,7 @@ class GraphComponent(Node):
 
         self.subscribe("/Workspace/Root/Created", self.createNode)
         self.subscribe("/Workspace/Node/Created", self.createNode)
+        # self.subscribe("/Workspace/Node/Deleted")
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)

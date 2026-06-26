@@ -104,6 +104,7 @@ class App(QApplication):
         self.layoutMid.addStretch()
 
         self.tabs = QTabWidget()
+        self.tabs.addTab(self.wkCpt.editor, "Workspaces")
         self.tabs.addTab(self.actionCpt.editor, "Actions")
         self.tabs.addTab(self.scriptCpt.editor, "Scripts")
 

@@ -54,7 +54,7 @@ class WorkspaceComponent(Node):
             return
 
         self.model.removeItem(selection.id)
-        self.publish("/Workspace/Node/Delete", {"id": selection.id})
+        self.publish("/Workspace/Node/Deleted", {"id": selection.id})
 
     def updateWorkspace(self, data):
         id = data["id"]
