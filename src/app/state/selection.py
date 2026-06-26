@@ -13,7 +13,7 @@ class SelectionType(Enum):
 @dataclass
 class Selection:
     id: str | None = None
-    type: SelectionType | None = None
+    type: SelectionType = SelectionType.NONE
 
     def serialize(self):
         return {
@@ -55,6 +55,13 @@ class SelectionModel(QObject):
 
     def getPrevSelected(self):
         return self.previous
+
+    def onItemDelete(self, id, selectionType):
+        if id == self.current.id and selectionType == self.current.type:
+            self.current = Selection()
+
+        if id == self.previous.id and selectionType == self.previous.type:
+            self.previous = Selection()
 
     def clearSelection(self):
         self.previous = Selection(self.current.id, self.current.type)

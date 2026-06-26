@@ -21,7 +21,8 @@ class WorkspaceComponent(Node):
         self.service = WorkspaceService(self.model, dispatcher)
 
         self.editor = WorkspaceEditor(self.context, self.model)
-        self.editor.requestWorkspace.connect(self.createWorkspace)
+        self.editor.requestCreate.connect(self.createWorkspace)
+        self.editor.requestDelete.connect(self.deleteWorkspace)
 
         self.subscribe("/App/Loaded", self.createRootWorkspace)
         self.subscribe("/App/Export", self.saveState)
@@ -43,6 +44,17 @@ class WorkspaceComponent(Node):
         id = self.manager.createWorkspace(name=name, parent=selection.id)
         schema = self.model.getItem(id)
         self.publish("/Workspace/Node/Created", schema.toData())
+
+    def deleteWorkspace(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type is SelectionType.WORKSPACE):
+            return
+
+        if selection.id == self.model.rootIndex():
+            return
+
+        self.model.removeItem(selection.id)
+        self.publish("/Workspace/Node/Delete", {"id": selection.id})
 
     def updateWorkspace(self, data):
         id = data["id"]

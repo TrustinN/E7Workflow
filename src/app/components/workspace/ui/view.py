@@ -22,6 +22,7 @@ class WorkspaceView(QObject):
 
         self.model.modelCreated.connect(self.handleModelCreate)
         self.model.modelUpdated.connect(self.handleModelUpdate)
+        self.model.modelDeleted.connect(self.handleModelDelete)
         self.model.modelCleared.connect(self.clear)
         self.model.modelLoaded.connect(self.rebuild)
 
@@ -40,6 +41,17 @@ class WorkspaceView(QObject):
     def handleModelUpdate(self, id):
         schema = self.model.getItem(id)
         self.setData(id, schema.toData())
+
+    def handleModelDelete(self, id):
+        wks = self.workspaces[id]
+        wks.deleteLater()
+        self.workspaces.pop(id)
+
+        if id == self.selected:
+            self.selected = None
+
+        if id == self.prevSelected:
+            self.prevSelected = None
 
     def _createWorkspace(self, id):
         workspace = Workspace()
@@ -62,7 +74,7 @@ class WorkspaceView(QObject):
 
     def createChildWorkspace(self, id, parentID):
         workspace = self._createWorkspace(id)
-        self.workspaces[parentID].addChild(workspace)
+        self.workspaces[parentID].addChild(id, workspace)
 
     def setSelected(self, id):
         self.prevSelected = self.selected

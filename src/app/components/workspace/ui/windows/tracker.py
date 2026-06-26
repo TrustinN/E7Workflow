@@ -13,12 +13,7 @@ class GeometryTracker:
         self.indexLeft = {}
         self.indexRight = {}
 
-        self._id_counter = 0
-
-    def addGeometry(self, rect: QRect):
-        id = self._id_counter
-        self._id_counter += 1
-
+    def addGeometry(self, id: str, rect: QRect):
         self._insert_sorted(self.top, self.indexTop, rect.top(), id)
         self._insert_sorted(self.bottom, self.indexBottom, rect.bottom(), id)
         self._insert_sorted(self.left, self.indexLeft, rect.left(), id)
@@ -65,7 +60,26 @@ class GeometryTracker:
             self._swap(arr, indexMap, i, i + 1)
             i += 1
 
+    def removeGeometry(self, id):
+        self._remove_axis(self.top, self.indexTop, id)
+        self._remove_axis(self.bottom, self.indexBottom, id)
+        self._remove_axis(self.left, self.indexLeft, id)
+        self._remove_axis(self.right, self.indexRight, id)
+
+    def _remove_axis(self, arr, indexMap, id):
+        i = indexMap.pop(id)
+
+        # remove the element
+        arr.pop(i)
+
+        # fix indices of shifted elements
+        for j in range(i, len(arr)):
+            _, other_id = arr[j]
+            indexMap[other_id] = j
+
     def boundingBox(self):
+        if not self.left:
+            return QRect()
         return QRect(
             self.left[0][0],
             self.top[0][0],

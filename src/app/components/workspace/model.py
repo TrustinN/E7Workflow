@@ -108,6 +108,22 @@ class WorkspaceModel(QObject):
 
         self.modelCreated.emit(id)
 
+    def removeItem(self, id: str):
+        if id not in self.nodes:
+            return
+
+        schema = self.getItem(id)
+        if schema.parent:
+            parent = self.getItem(schema.parent)
+            parent.children.remove(id)
+
+        while schema.children:
+            self.removeItem(schema.children[0])
+
+        self.nodes.pop(id)
+
+        self.modelDeleted.emit(id)
+
     def updateItem(self, id: str, patch: dict):
         self.nodes[id].update(patch)
         self.modelUpdated.emit(id)

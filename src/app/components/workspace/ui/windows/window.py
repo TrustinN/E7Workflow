@@ -30,6 +30,7 @@ class Window(QWidget):
         self.padding = 0
 
         super().setGeometry(500, 500, 500, 300)
+        self.defaultSize = QRect(500, 500, 500, 300)
         self.dragPosition = QPoint()
         self.resizing = False
         self.moving = False

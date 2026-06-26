@@ -17,7 +17,8 @@ from .view import WorkspaceView
 
 
 class WorkspaceEditor(QWidget):
-    requestWorkspace = pyqtSignal(str)
+    requestCreate = pyqtSignal(str)
+    requestDelete = pyqtSignal()
 
     def __init__(self, context: Context, model: WorkspaceModel):
         super().__init__()
@@ -26,15 +27,22 @@ class WorkspaceEditor(QWidget):
         self.view = WorkspaceView(model)
         self.controller = WorkspaceController(context, self.view, model)
 
-        self.shortcut = QShortcut(QKeySequence.New, self)
-        self.shortcut.setContext(Qt.ApplicationShortcut)
-        key = self.shortcut.key().toString(QKeySequence.NativeText)
-        self.btn = QPushButton(f"Add Workspace ({key})")
+        self.createShortcut = QShortcut(QKeySequence.New, self)
+        self.createShortcut.setContext(Qt.ApplicationShortcut)
+        key = self.createShortcut.key().toString(QKeySequence.NativeText)
+        self.createBtn = QPushButton(f"Add Workspace ({key})")
+        self.createBtn.clicked.connect(self.onWorkspaceCreate)
+        self.createShortcut.activated.connect(self.onWorkspaceCreate)
 
-        self.btn.clicked.connect(self.onWorkspaceCreate)
-        self.shortcut.activated.connect(self.onWorkspaceCreate)
+        self.deleteShortcut = QShortcut(QKeySequence("Meta+Backspace"), self)
+        self.deleteShortcut.setContext(Qt.ApplicationShortcut)
+        key = self.deleteShortcut.key().toString(QKeySequence.NativeText)
+        self.deleteBtn = QPushButton(f"Delete Workspace ({key})")
+        self.deleteBtn.clicked.connect(self.requestDelete.emit)
+        self.deleteShortcut.activated.connect(self.requestDelete.emit)
 
-        self.layout.addWidget(self.btn)
+        self.layout.addWidget(self.createBtn)
+        self.layout.addWidget(self.deleteBtn)
         self.layout.addStretch()
 
     def onWorkspaceCreate(self):
@@ -51,4 +59,4 @@ class WorkspaceEditor(QWidget):
         if not name:
             return
 
-        self.requestWorkspace.emit(name)
+        self.requestCreate.emit(name)

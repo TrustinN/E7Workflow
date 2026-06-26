@@ -11,6 +11,7 @@ class WorkspaceController:
         self.model = model
 
         self.context.selectionModel.selected_.connect(self.onSelection)
+        self.model.modelDeleted.connect(self.onWorkspaceDelete)
 
         self.view.workspacePressed.connect(self.onWorkspacePressed)
         self.view.workspaceUpdated.connect(self.setModelData)
@@ -27,3 +28,6 @@ class WorkspaceController:
 
     def onWorkspacePressed(self, id):
         self.context.selectionModel.setSelected(id, SelectionType.WORKSPACE)
+
+    def onWorkspaceDelete(self, id):
+        self.context.selectionModel.onItemDelete(id, SelectionType.WORKSPACE)
