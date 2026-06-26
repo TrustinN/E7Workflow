@@ -16,7 +16,7 @@ class GraphManager:
             id=schema.id,
             parentID=schema.parent,
             schema=NodeSchema(
-                id=id,
+                id=schema.id,
                 name=schema.name,
                 group=schema.grouping,
             ),

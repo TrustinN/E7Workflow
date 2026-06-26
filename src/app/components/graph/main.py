@@ -27,6 +27,10 @@ class GraphComponent(Node):
         self.editor = GraphEditor(self.context, self.model)
         self.editor.requestEdge.connect(self.createEdge)
 
+        self.model.edgeDeleted.connect(
+            lambda id: self.publish("/Graph/Edge/Deleted", {"edgeID": id})
+        )
+
         self.subscribe("/Workspace/Root/Created", self.createNode)
         self.subscribe("/Workspace/Node/Created", self.createNode)
         self.subscribe("/Workspace/Node/Deleted", self.deleteNode)

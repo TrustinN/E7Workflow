@@ -34,6 +34,8 @@ class RunnerComponent(Node):
         self.subscribe("/App/Import", self.loadState)
 
         self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
+        self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDelete)
+        self.subscribe("/Graph/Edge/Deleted", self.onEdgeDelete)
         self.subscribe("/Script/Updated", self.onScriptUpdate)
 
     def setAction(self):
@@ -72,6 +74,14 @@ class RunnerComponent(Node):
         self.manager.unsetScript(selection.id)
         self.publish("/Runner/Script/Unset", {"edgeID": selection.id})
 
+    def onScriptUpdate(self, data):
+        scriptID = data["id"]
+        edges = self.model.edgesFromScript(scriptID)
+        for edge in edges:
+            self.publish(
+                "/Runner/Script/Update", {"edgeID": edge, "scriptID": scriptID}
+            )
+
     def setEntry(self):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
@@ -83,13 +93,16 @@ class RunnerComponent(Node):
     def onWorkspaceCreate(self, data):
         self.unsetAction()
 
-    def onScriptUpdate(self, data):
-        scriptID = data["id"]
-        edges = self.model.edgesFromScript(scriptID)
-        for edge in edges:
-            self.publish(
-                "/Runner/Script/Update", {"edgeID": edge, "scriptID": scriptID}
-            )
+    def onWorkspaceDelete(self, data):
+        id = data["id"]
+        self.manager.unsetAction(id)
+
+        if id == self.model.getEntry():
+            self.manager.unsetEntry()
+
+    def onEdgeDelete(self, data):
+        edgeID = data["edgeID"]
+        self.manager.unsetScript(edgeID)
 
     def saveState(self, data):
         path = data["path"]

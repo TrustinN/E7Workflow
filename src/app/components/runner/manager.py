@@ -65,6 +65,11 @@ class RunnerManager:
         self.model.setEntry(nodeID)
         return prev
 
+    def unsetEntry(self):
+        prev = self.model.getEntry()
+        self.model.setEntry(None)
+        return prev
+
     def saveModel(self, file):
         state = self.model.toData()
         with open(file, "w") as f:
