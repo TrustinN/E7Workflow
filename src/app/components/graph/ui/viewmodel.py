@@ -18,6 +18,10 @@ class GraphViewModel:
         self.model.nodeCreated.connect(self.createNode)
         self.model.edgeCreated.connect(self.createModelEdge)
         self.model.edgeCreated.connect(self.createEdge)
+        self.model.nodeDeleted.connect(self.deleteModelNode)
+        self.model.nodeDeleted.connect(self.deleteNode)
+        self.model.edgeDeleted.connect(self.deleteModelEdge)
+        self.model.edgeDeleted.connect(self.deleteEdge)
         self.model.modelCleared.connect(self.viewState.clear)
         self.model.modelCleared.connect(self.scene.clear)
         self.model.modelLoaded.connect(self.rebuild)
@@ -41,6 +45,12 @@ class GraphViewModel:
         state = EdgeViewState()
         self.viewState.addEdge(id, state)
 
+    def deleteModelNode(self, id):
+        self.viewState.deleteNode(id)
+
+    def deleteModelEdge(self, id):
+        self.viewState.deleteEdge(id)
+
     def createNode(self, id):
         self.scene.createNode(id)
 
@@ -58,6 +68,12 @@ class GraphViewModel:
     def updateEdge(self, id):
         state = self.viewState.getEdge(id)
         self.scene.updateEdge(id, state.toData())
+
+    def deleteNode(self, id):
+        self.scene.deleteNode(id)
+
+    def deleteEdge(self, id):
+        self.scene.deleteEdge(id)
 
     def updateModelNode(self, id):
         if self._loading:

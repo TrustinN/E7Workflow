@@ -24,8 +24,8 @@ class GraphScene(QGraphicsScene):
 
     def _createNode(self, id):
         node = GraphicsNode()
-        node.emitter.onMove.connect(lambda: self.nodeUpdated.emit(id))
-        node.emitter.onMousePress.connect(lambda: self.nodeSelected.emit(id))
+        node.moved.connect(lambda: self.nodeUpdated.emit(id))
+        node.mousePressed.connect(lambda: self.nodeSelected.emit(id))
 
         self.nodes[id] = node
         self.addItem(node)
@@ -42,12 +42,17 @@ class GraphScene(QGraphicsScene):
         node = self.nodes[id]
         node.setData(data)
 
+    def deleteNode(self, id):
+        node = self.nodes.pop(id)
+        self.removeItem(node)
+        node.deleteLater()
+
     def _createEdge(self, id, source, target):
         n1 = self.nodes[source]
         n2 = self.nodes[target]
         arrow = GraphicsArrowItem(n1, n2)
 
-        arrow.emitter.onMousePress.connect(lambda: self.edgeSelected.emit(id))
+        arrow.mousePressed.connect(lambda: self.edgeSelected.emit(id))
 
         self.edges[id] = arrow
         self.addItem(arrow)
@@ -63,6 +68,11 @@ class GraphScene(QGraphicsScene):
     def updateEdge(self, id, data):
         edge = self.edges[id]
         edge.setData(data)
+
+    def deleteEdge(self, id):
+        edge = self.edges.pop(id)
+        self.removeItem(edge)
+        edge.deleteLater()
 
     def setNodeVisible(self, id, show=True):
         if show:

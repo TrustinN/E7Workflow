@@ -1,6 +1,6 @@
 import math
 
-from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt, pyqtSignal
 from PyQt5.QtGui import (
     QBrush,
     QColor,
@@ -11,13 +11,15 @@ from PyQt5.QtGui import (
     QPen,
     QPolygonF,
 )
-from PyQt5.QtWidgets import QApplication, QGraphicsItem
+from PyQt5.QtWidgets import QApplication, QGraphicsItem, QGraphicsObject
 
-from .emitter import GraphicsEmitter
 from .node import GraphicsNode
 
 
-class GraphicsArrowItem(QGraphicsItem):
+class GraphicsArrowItem(QGraphicsObject):
+    moved = pyqtSignal()
+    mousePressed = pyqtSignal()
+
     def __init__(self, start: GraphicsNode, end: GraphicsNode):
         super().__init__()
         self.color = QColor(255, 255, 255)
@@ -25,13 +27,11 @@ class GraphicsArrowItem(QGraphicsItem):
         self.label = ""
         self.minLabelLength = 80
 
-        self.emitter = GraphicsEmitter()
-
         self.start = start
-        self.start.emitter.onMove.connect(self.onNodeMove)
+        self.start.moved.connect(self.onNodeMove)
 
         self.end = end
-        self.end.emitter.onMove.connect(self.onNodeMove)
+        self.end.moved.connect(self.onNodeMove)
 
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setZValue(-1)
@@ -57,7 +57,7 @@ class GraphicsArrowItem(QGraphicsItem):
     def onNodeMove(self):
         self.prepareGeometryChange()
         self.update()
-        self.emitter.onMove.emit()
+        self.moved.emit()
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)
@@ -208,4 +208,4 @@ class GraphicsArrowItem(QGraphicsItem):
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        self.emitter.onMousePress.emit()
+        self.mousePressed.emit()

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Optional, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -13,9 +13,6 @@ class NodeSchema:
 
     name: Optional[str] = None
     group: Optional[str] = None
-
-    children: list[str] = field(default_factory=list)
-    parent: Optional[str] = None
 
     @classmethod
     def fromData(cls, data: dict):
@@ -100,9 +97,11 @@ class EdgeViewState:
 class GraphModel(QObject):
     nodeCreated = pyqtSignal(str)
     nodeUpdated = pyqtSignal(str)
+    nodeDeleted = pyqtSignal(str)
 
     edgeCreated = pyqtSignal(str)
     edgeUpdated = pyqtSignal(str)
+    edgeDeleted = pyqtSignal(str)
 
     modelCleared = pyqtSignal()
     modelLoaded = pyqtSignal()
@@ -113,6 +112,10 @@ class GraphModel(QObject):
         self.edges: dict[str, EdgeSchema] = {}
 
         self.adjacency: dict[str, set] = defaultdict(set)
+        self.adjacencyC: dict[str, set] = defaultdict(set)
+
+        self.parent: dict[str, str] = {}
+        self.children: dict[str, set[str]] = defaultdict(set)
 
     def nodeList(self) -> list[str]:
         return list(self.nodes.keys())
@@ -121,7 +124,7 @@ class GraphModel(QObject):
         return list(self.edges.keys())
 
     def parentNode(self, id: str) -> str:
-        return self.getNode(id).parent
+        return self.parent.get(id)
 
     def parentEdge(self, id: str) -> str:
         edge = self.getEdge(id)
@@ -136,14 +139,16 @@ class GraphModel(QObject):
     def getNodeEdges(self, id: str) -> set[str]:
         return self.adjacency[id]
 
-    def addNode(self, id: str, schema: Union[NodeSchema, dict]):
+    def addNode(
+        self, id: str, parentID: Optional[str], schema: Union[NodeSchema, dict]
+    ):
         if isinstance(schema, dict):
             schema = NodeSchema.fromData(schema)
 
         self.nodes[id] = schema
-        parentID = schema.parent
+        self.parent[id] = parentID
         if parentID:
-            self.nodes[parentID].children.append(id)
+            self.children[parentID].add(id)
 
         self.nodeCreated.emit(id)
 
@@ -153,6 +158,7 @@ class GraphModel(QObject):
 
         self.edges[id] = schema
         self.adjacency[schema.source].add(id)
+        self.adjacencyC[schema.target].add(id)
         self.edgeCreated.emit(id)
 
     def updateNode(self, id: str, patch: dict):
@@ -163,8 +169,42 @@ class GraphModel(QObject):
         self.edges[id].update(patch)
         self.edgeUpdated.emit(id)
 
+    def deleteNode(self, id):
+        parent = self.parent.get(id)
+        if parent:
+            self.children[parent].remove(id)
+
+        for child in self.children[id]:
+            self.parent[child] = None
+
+        self.parent.pop(id, None)
+        self.children.pop(id, None)
+
+        for edge in list(self.adjacency[id]):
+            self.deleteEdge(edge)
+
+        for edge in list(self.adjacencyC[id]):
+            self.deleteEdge(edge)
+
+        self.nodes.pop(id)
+        self.nodeDeleted.emit(id)
+
+    def deleteEdge(self, id: str):
+        if id not in self.edges:
+            return
+
+        edge = self.getEdge(id)
+        source = edge.source
+        target = edge.target
+
+        self.adjacency[source].remove(id)
+        self.adjacencyC[target].remove(id)
+
+        self.edges.pop(id)
+        self.edgeDeleted.emit(id)
+
     def getComponentNodes(self, id: str) -> list[str]:
-        return list(self.nodes[id].children)
+        return list(self.children[id])
 
     def getComponentEdges(self, id: str) -> list[str]:
         edges = []
@@ -178,19 +218,19 @@ class GraphModel(QObject):
 
     def isCrossEdge(self, id: str) -> bool:
         edge = self.getEdge(id)
-        source = self.getNode(edge.source)
-        target = self.getNode(edge.target)
-        return source.parent != target.parent
+        return self.parentNode(edge.source) != self.parentNode(edge.target)
 
     def toData(self) -> dict:
         return {
             "nodes": {k: v.toData() for k, v in self.nodes.items()},
             "edges": {k: v.toData() for k, v in self.edges.items()},
+            "parent": self.parent,
         }
 
     def fromData(self, data: dict):
         nodes = data["nodes"]
         edges = data["edges"]
+        parent = data["parent"]
 
         for id, node in nodes.items():
             self.nodes[id] = NodeSchema.fromData(node)
@@ -198,8 +238,14 @@ class GraphModel(QObject):
         for id, edge in edges.items():
             schema = EdgeSchema.fromData(edge)
             self.edges[id] = schema
-            source = schema.source
-            self.adjacency[source].add(id)
+            self.adjacency[schema.source].add(id)
+            self.adjacencyC[schema.target].add(id)
+
+        self.parent = parent
+        self.children = defaultdict(set)
+        for child, parent in self.parent.items():
+            if parent is not None:
+                self.children[parent].add(child)
 
         self.modelLoaded.emit()
 
@@ -207,6 +253,9 @@ class GraphModel(QObject):
         self.nodes.clear()
         self.edges.clear()
         self.adjacency.clear()
+        self.adjacencyC.clear()
+        self.parent.clear()
+        self.children.clear()
 
         self.modelCleared.emit()
 
@@ -214,9 +263,11 @@ class GraphModel(QObject):
 class GraphViewState(QObject):
     nodeCreated = pyqtSignal(str)
     nodeUpdated = pyqtSignal(str)
+    nodeDeleted = pyqtSignal(str)
 
     edgeCreated = pyqtSignal(str)
     edgeUpdated = pyqtSignal(str)
+    edgeDeleted = pyqtSignal(str)
 
     modelCleared = pyqtSignal()
     modelLoaded = pyqtSignal()
@@ -248,6 +299,14 @@ class GraphViewState(QObject):
     def updateEdge(self, id, state):
         self.edges[id].update(state)
         self.edgeUpdated.emit(id)
+
+    def deleteNode(self, id):
+        self.nodes.pop(id)
+        self.nodeDeleted.emit(id)
+
+    def deleteEdge(self, id):
+        self.edges.pop(id)
+        self.edgeDeleted.emit(id)
 
     def toData(self) -> dict:
         return {

@@ -10,20 +10,21 @@ from PyQt5.QtWidgets import (
 )
 
 from src.app.components.workspace.model import WorkspaceModel
-from src.app.state import Context
+from src.app.state import Context, SelectionType
 
 from .controller import WorkspaceController
 from .view import WorkspaceView
 
 
 class WorkspaceEditor(QWidget):
-    requestCreate = pyqtSignal(str)
-    requestDelete = pyqtSignal()
+    requestCreate = pyqtSignal(str, str)
+    requestDelete = pyqtSignal(str)
 
     def __init__(self, context: Context, model: WorkspaceModel):
         super().__init__()
         self.layout = QVBoxLayout(self)
 
+        self.context = context
         self.view = WorkspaceView(model)
         self.controller = WorkspaceController(context, self.view, model)
 
@@ -38,14 +39,18 @@ class WorkspaceEditor(QWidget):
         self.deleteShortcut.setContext(Qt.ApplicationShortcut)
         key = self.deleteShortcut.key().toString(QKeySequence.NativeText)
         self.deleteBtn = QPushButton(f"Delete Workspace ({key})")
-        self.deleteBtn.clicked.connect(self.requestDelete.emit)
-        self.deleteShortcut.activated.connect(self.requestDelete.emit)
+        self.deleteBtn.clicked.connect(self.onWorkspaceDelete)
+        self.deleteShortcut.activated.connect(self.onWorkspaceDelete)
 
         self.layout.addWidget(self.createBtn)
         self.layout.addWidget(self.deleteBtn)
         self.layout.addStretch()
 
     def onWorkspaceCreate(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type is SelectionType.WORKSPACE):
+            return
+
         name, ok = QInputDialog.getText(
             None,
             "QInputDialog.getText()",
@@ -54,9 +59,16 @@ class WorkspaceEditor(QWidget):
             "WS Name",
         )
         if not ok:
-            return False
+            return
 
         if not name:
             return
 
-        self.requestCreate.emit(name)
+        self.requestCreate.emit(selection.id, name)
+
+    def onWorkspaceDelete(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type is SelectionType.WORKSPACE):
+            return
+
+        self.requestDelete.emit(selection.id)

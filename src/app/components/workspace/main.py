@@ -1,7 +1,7 @@
 import os
 
 from src.app.events import Node
-from src.app.state import Context, SelectionType
+from src.app.state import Context
 from src.router.routing import Dispatcher
 
 from .manager import WorkspaceManager
@@ -24,6 +24,8 @@ class WorkspaceComponent(Node):
         self.editor.requestCreate.connect(self.createWorkspace)
         self.editor.requestDelete.connect(self.deleteWorkspace)
 
+        self.model.modelDeleted.connect(self.onDelete)
+
         self.subscribe("/App/Loaded", self.createRootWorkspace)
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
@@ -33,28 +35,19 @@ class WorkspaceComponent(Node):
 
     def createRootWorkspace(self, data):
         id = self.manager.createWorkspace(name="Root", padding=15)
-        schema = self.model.getItem(id)
+        schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Root/Created", schema.toData())
 
-    def createWorkspace(self, name):
-        selection = self.context.selectionModel.getSelected()
-        if not (selection.id and selection.type is SelectionType.WORKSPACE):
-            return
-
-        id = self.manager.createWorkspace(name=name, parent=selection.id)
-        schema = self.model.getItem(id)
+    def createWorkspace(self, parent, name):
+        id = self.manager.createWorkspace(name=name, parent=parent)
+        schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Node/Created", schema.toData())
 
-    def deleteWorkspace(self):
-        selection = self.context.selectionModel.getSelected()
-        if not (selection.id and selection.type is SelectionType.WORKSPACE):
-            return
+    def deleteWorkspace(self, id):
+        self.manager.deleteWorkspace(id)
 
-        if selection.id == self.model.rootIndex():
-            return
-
-        self.model.removeItem(selection.id)
-        self.publish("/Workspace/Node/Deleted", {"id": selection.id})
+    def onDelete(self, id):
+        self.publish("/Workspace/Node/Deleted", {"id": id})
 
     def updateWorkspace(self, data):
         id = data["id"]

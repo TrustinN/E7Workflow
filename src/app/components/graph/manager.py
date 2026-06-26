@@ -12,22 +12,20 @@ class GraphManager:
         self.model = model
 
     def createNode(self, schema: WorkspaceSchema) -> str:
-        id = schema.id
-        schema = NodeSchema(
-            id=id,
-            name=schema.name,
-            group=schema.grouping,
-            parent=schema.parent,
+        self.model.addNode(
+            id=schema.id,
+            parentID=schema.parent,
+            schema=NodeSchema(
+                id=id,
+                name=schema.name,
+                group=schema.grouping,
+            ),
         )
-
-        self.model.addNode(id, schema)
-        return id
+        return schema.id
 
     def createEdge(self, source: str, target: str) -> str:
         id = generate()
-
-        schema = EdgeSchema(id=id, source=source, target=target)
-        self.model.addEdge(id, schema)
+        self.model.addEdge(id, EdgeSchema(id=id, source=source, target=target))
         return id
 
     def saveModel(self, file):

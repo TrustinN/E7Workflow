@@ -121,7 +121,6 @@ class WorkspaceModel(QObject):
             self.removeItem(schema.children[0])
 
         self.nodes.pop(id)
-
         self.modelDeleted.emit(id)
 
     def updateItem(self, id: str, patch: dict):

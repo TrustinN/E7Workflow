@@ -26,7 +26,7 @@ class GraphComponent(Node):
 
         self.subscribe("/Workspace/Root/Created", self.createNode)
         self.subscribe("/Workspace/Node/Created", self.createNode)
-        # self.subscribe("/Workspace/Node/Deleted")
+        self.subscribe("/Workspace/Node/Deleted", self.deleteNode)
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
@@ -58,6 +58,10 @@ class GraphComponent(Node):
         id = data["id"]
         patch = data["patch"]
         self.editor.updateEdge(id, patch)
+
+    def deleteNode(self, data):
+        id = data["id"]
+        self.model.deleteNode(id)
 
     def saveState(self, data):
         path = data["path"]
