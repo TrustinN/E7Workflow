@@ -17,7 +17,7 @@ from .components.graph import GraphComponent
 from .components.runner import RunnerComponent
 from .components.script import ScriptComponent
 from .components.workspace import WorkspaceComponent
-from .events import PubSubHandler
+from .events import EventBus
 from .serialization import SerializerNode
 from .state import Context, ContextManager
 
@@ -57,11 +57,11 @@ class App(QApplication):
         self.window.requestExport.connect(self.serializerNode.handleExport)
         self.window.requestImport.connect(self.serializerNode.handleImport)
 
-        self.pubSubHandler = PubSubHandler()
-        self.pubSubHandler.registerNode(self.contextManager)
-        self.pubSubHandler.registerNode(self.serializerNode)
-        self.pubSubHandler.registerNodes(self.components)
-        self.pubSubHandler.handlePublish("/App/Loaded")
+        self.eventBus = EventBus()
+        self.eventBus.registerNode(self.contextManager)
+        self.eventBus.registerNode(self.serializerNode)
+        self.eventBus.registerNodes(self.components)
+        self.eventBus.handlePublish("/App/Loaded")
 
     def _initState(self):
         self.context = Context()

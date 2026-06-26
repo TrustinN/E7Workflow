@@ -17,7 +17,7 @@ class Node(QObject):
         self.subscriptionList_[route] = cb
 
 
-class PubSubHandler:
+class EventBus:
     def __init__(self):
         self.nodes: list[Node] = []
 
