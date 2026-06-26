@@ -27,6 +27,7 @@ class RunnerComponent(Node):
         self.editor.requestActionSet.connect(self.setAction)
         self.editor.requestActionUnset.connect(self.unsetAction)
         self.editor.requestScriptSet.connect(self.setScript)
+        self.editor.requestScriptUnset.connect(self.unsetScript)
         self.editor.requestEntrySet.connect(self.setEntry)
         self.editor.requestExecute.connect(self.runner.execute)
 
@@ -81,6 +82,20 @@ class RunnerComponent(Node):
             {
                 "id": selection.id,
                 "patch": {"label": schema.name},
+            },
+        )
+
+    def unsetScript(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type == SelectionType.EDGE):
+            return
+
+        self.manager.unsetScript(selection.id)
+        self.publish(
+            "/Graph/UpdateEdge",
+            {
+                "id": selection.id,
+                "patch": {"label": ""},
             },
         )
 

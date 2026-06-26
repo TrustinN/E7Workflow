@@ -33,6 +33,12 @@ class RunnerModel(QObject):
     def getScript(self, edgeID: str) -> Optional[str]:
         return self.edges.get(edgeID)
 
+    def deleteScript(self, edgeID: str) -> str:
+        if edgeID in self.edges:
+            return self.edges.pop(edgeID)
+
+        return None
+
     def edgesFromScript(self, scriptID: str) -> list[str]:
         ret = []
         for edgeID, scrID in self.edges.items():

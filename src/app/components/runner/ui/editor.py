@@ -7,6 +7,7 @@ class RunnerEditor(QWidget):
     requestActionSet = pyqtSignal()
     requestActionUnset = pyqtSignal()
     requestScriptSet = pyqtSignal()
+    requestScriptUnset = pyqtSignal()
     requestEntrySet = pyqtSignal()
     requestExecute = pyqtSignal()
 
@@ -36,6 +37,13 @@ class RunnerEditor(QWidget):
         self.scriptBtn.clicked.connect(self.requestScriptSet.emit)
         self.scriptShortcut.setContext(Qt.ApplicationShortcut)
 
+        self.unsetScriptShortcut = QShortcut("6", self)
+        key = self.unsetScriptShortcut.key().toString(QKeySequence.NativeText)
+        self.unsetScriptBtn = QPushButton(f"Unset Script ({key})")
+        self.unsetScriptShortcut.activated.connect(self.requestScriptUnset.emit)
+        self.unsetScriptBtn.clicked.connect(self.requestScriptUnset.emit)
+        self.unsetScriptShortcut.setContext(Qt.ApplicationShortcut)
+
         self.entryShortcut = QShortcut("Return", self)
         key = self.entryShortcut.key().toString(QKeySequence.NativeText)
         self.entryBtn = QPushButton(f"Set Entry ({key})")
@@ -53,5 +61,6 @@ class RunnerEditor(QWidget):
         self.layout.addWidget(self.actionBtn)
         self.layout.addWidget(self.unsetActionBtn)
         self.layout.addWidget(self.scriptBtn)
+        self.layout.addWidget(self.unsetScriptBtn)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)

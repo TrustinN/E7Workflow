@@ -32,6 +32,11 @@ class RunnerManager:
         self.model.setAction(nodeID, actionID)
         return actionID
 
+    def getAction(self, actionID: str) -> ActionSchema:
+        link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)
+        resp = self.client.get(link)
+        return ActionSchema.fromData(resp)
+
     def unsetAction(self, nodeID: str):
         actionID = self.model.deleteAction(nodeID)
         if actionID is None:
@@ -39,11 +44,6 @@ class RunnerManager:
 
         link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)
         self.client.delete(link)
-
-    def getAction(self, actionID: str) -> ActionSchema:
-        link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)
-        resp = self.client.get(link)
-        return ActionSchema.fromData(resp)
 
     def setScript(self, edgeID: str) -> str:
         link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT)
@@ -56,6 +56,9 @@ class RunnerManager:
         link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT, scriptID)
         resp = self.client.get(link)
         return ScriptSchema.fromData(resp)
+
+    def unsetScript(self, edgeID: str):
+        self.model.deleteScript(edgeID)
 
     def setEntry(self, nodeID: str) -> str:
         prev = self.model.getEntry()
