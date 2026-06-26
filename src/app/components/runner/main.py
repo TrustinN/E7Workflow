@@ -1,7 +1,5 @@
 import os
 
-from src.app.components.script.model import ScriptSchema
-from src.app.components.utils.colors import Colors
 from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher
@@ -44,16 +42,8 @@ class RunnerComponent(Node):
             return
 
         actionID = self.manager.setAction(selection.id)
-        if actionID is None:
-            return
-
-        schema = self.manager.getAction(actionID)
         self.publish(
-            "/Workspace/UpdateNode",
-            {
-                "id": selection.id,
-                "patch": {"iconPath": schema.icon},
-            },
+            "/Runner/Action/Set", {"workspaceID": selection.id, "actionID": actionID}
         )
 
     def unsetAction(self):
@@ -62,13 +52,7 @@ class RunnerComponent(Node):
             return
 
         self.manager.unsetAction(selection.id)
-        self.publish(
-            "/Workspace/UpdateNode",
-            {
-                "id": selection.id,
-                "patch": {"iconPath": ""},
-            },
-        )
+        self.publish("/Runner/Action/Unset", {"workspaceID": selection.id})
 
     def setScript(self):
         selection = self.context.selectionModel.getSelected()
@@ -76,13 +60,8 @@ class RunnerComponent(Node):
             return
 
         scriptID = self.manager.setScript(selection.id)
-        schema = self.manager.getScript(scriptID)
         self.publish(
-            "/Graph/UpdateEdge",
-            {
-                "id": selection.id,
-                "patch": {"label": schema.name},
-            },
+            "/Runner/Script/Set", {"edgeID": selection.id, "scriptID": scriptID}
         )
 
     def unsetScript(self):
@@ -91,13 +70,7 @@ class RunnerComponent(Node):
             return
 
         self.manager.unsetScript(selection.id)
-        self.publish(
-            "/Graph/UpdateEdge",
-            {
-                "id": selection.id,
-                "patch": {"label": ""},
-            },
-        )
+        self.publish("/Runner/Script/Unset", {"edgeID": selection.id})
 
     def setEntry(self):
         selection = self.context.selectionModel.getSelected()
@@ -105,51 +78,17 @@ class RunnerComponent(Node):
             return
 
         prev = self.manager.setEntry(selection.id)
-        if prev:
-            self.publish(
-                "/Graph/UpdateNode",
-                {
-                    "id": prev,
-                    "patch": {
-                        "borderColor": {
-                            "r": Colors.WHITE.red(),
-                            "g": Colors.WHITE.green(),
-                            "b": Colors.WHITE.blue(),
-                            "a": Colors.WHITE.alpha(),
-                        }
-                    },
-                },
-            )
-
-        self.publish(
-            "/Graph/UpdateNode",
-            {
-                "id": selection.id,
-                "patch": {
-                    "borderColor": {
-                        "r": Colors.MINT.red(),
-                        "g": Colors.MINT.green(),
-                        "b": Colors.MINT.blue(),
-                        "a": Colors.MINT.alpha(),
-                    }
-                },
-            },
-        )
+        self.publish("/Runner/Entry/Set", {"prevID": prev, "currID": selection.id})
 
     def onWorkspaceCreate(self, data):
         self.unsetAction()
 
     def onScriptUpdate(self, data):
-        id = data["id"]
-        schema = ScriptSchema.fromData(data["schema"])
-        edges = self.model.edgesFromScript(id)
+        scriptID = data["id"]
+        edges = self.model.edgesFromScript(scriptID)
         for edge in edges:
             self.publish(
-                "/Graph/UpdateEdge",
-                {
-                    "id": edge,
-                    "patch": {"label": schema.name},
-                },
+                "/Runner/Script/Update", {"edgeID": edge, "scriptID": scriptID}
             )
 
     def saveState(self, data):

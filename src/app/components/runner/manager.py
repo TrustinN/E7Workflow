@@ -2,10 +2,10 @@ import json
 
 from src.app.components.action.model import ActionSchema
 from src.app.components.action.service import ActionRoute
-from src.app.components.graph.model import NodeSchema
-from src.app.components.graph.service import GraphRoute
 from src.app.components.script.model import ScriptSchema
 from src.app.components.script.service import ScriptRoute
+from src.app.components.workspace.model import WorkspaceSchema
+from src.app.components.workspace.service import WorkspaceRoute
 from src.router.routing import Client, Link
 
 from .model import RunnerModel
@@ -17,10 +17,10 @@ class RunnerManager:
         self.model = model
 
     def isActionAssignable(self, nodeID: str) -> bool:
-        link = Link(GraphRoute.NAME, GraphRoute.NODE, nodeID)
+        link = Link(WorkspaceRoute.NAME, WorkspaceRoute.WORKSPACE, nodeID)
         resp = self.client.get(link)
-        node = NodeSchema.fromData(resp)
-        return len(node.children) == 0
+        wks = WorkspaceSchema.fromData(resp)
+        return len(wks.children) == 0
 
     def setAction(self, nodeID: str) -> str:
         if not self.isActionAssignable(nodeID):

@@ -6,6 +6,8 @@ add node->action editor widget
 
 add edge->script visualization widget
 
-add workspace delete functionality
+move runner ui update logic to other components
 
 add script delete functionality
+
+propagate delete signal from workspace -> runner

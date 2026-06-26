@@ -1,8 +1,9 @@
 import os
 
+from src.app.components.action.service import ActionRoute
 from src.app.events import Node
 from src.app.state import Context
-from src.router.routing import Dispatcher
+from src.router.routing import Client, Dispatcher, Link
 
 from .manager import WorkspaceManager
 from .model import WorkspaceModel
@@ -18,6 +19,7 @@ class WorkspaceComponent(Node):
 
         self.model = WorkspaceModel()
         self.manager = WorkspaceManager(self.model)
+        self.client = Client("Workspace Client", dispatcher)
         self.service = WorkspaceService(self.model, dispatcher)
 
         self.editor = WorkspaceEditor(self.context, self.model)
@@ -31,7 +33,8 @@ class WorkspaceComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Workspace/UpdateNode", self.updateWorkspace)
+        self.subscribe("/Runner/Action/Set", self.onRunnerActionSet)
+        self.subscribe("/Runner/Action/Unset", self.onRunnerActionUnset)
 
     def createRootWorkspace(self, data):
         id = self.manager.createWorkspace(name="Root", padding=15)
@@ -49,10 +52,19 @@ class WorkspaceComponent(Node):
     def onDelete(self, id):
         self.publish("/Workspace/Node/Deleted", {"id": id})
 
-    def updateWorkspace(self, data):
-        id = data["id"]
-        patch = data["patch"]
-        self.model.updateItem(id, patch)
+    def onRunnerActionSet(self, data):
+        id = data["workspaceID"]
+        actionID = data["actionID"]
+
+        link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)
+        resp = self.client.get(link)
+
+        self.model.updateItem(id, {"iconPath": resp["icon"]})
+
+    def onRunnerActionUnset(self, data):
+        id = data["workspaceID"]
+
+        self.model.updateItem(id, {"iconPath": ""})
 
     def saveState(self, data):
         path = data["path"]

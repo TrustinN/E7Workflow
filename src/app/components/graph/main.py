@@ -1,9 +1,11 @@
 import os
 
+from src.app.components.script.service import ScriptRoute
+from src.app.components.utils.colors import Colors
 from src.app.components.workspace.model import WorkspaceSchema
 from src.app.events import Node
 from src.app.state import Context
-from src.router.routing import Dispatcher
+from src.router.routing import Client, Dispatcher, Link
 
 from .manager import GraphManager
 from .model import GraphModel
@@ -19,6 +21,7 @@ class GraphComponent(Node):
 
         self.model = GraphModel()
         self.manager = GraphManager(self.model)
+        self.client = Client("Graph Client", dispatcher)
         self.service = GraphService(self.model, dispatcher)
 
         self.editor = GraphEditor(self.context, self.model)
@@ -32,8 +35,10 @@ class GraphComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Graph/UpdateNode", self.updateNode)
-        self.subscribe("/Graph/UpdateEdge", self.updateEdge)
+        self.subscribe("/Runner/Entry/Set", self.onRunnerEntrySet)
+        self.subscribe("/Runner/Script/Set", self.onRunnerScriptUpdate)
+        self.subscribe("/Runner/Script/Update", self.onRunnerScriptUpdate)
+        self.subscribe("/Runner/Script/Unset", self.onRunnerScriptUnset)
 
     def createNode(self, data):
         wksSchema = WorkspaceSchema.fromData(data)
@@ -49,15 +54,46 @@ class GraphComponent(Node):
 
         self.publish("/Graph/Edge/Created", schema.toData())
 
-    def updateNode(self, data):
-        id = data["id"]
-        patch = data["patch"]
-        self.editor.updateNode(id, patch)
+    def onRunnerScriptUpdate(self, data):
+        edgeID = data["edgeID"]
+        scriptID = data["scriptID"]
 
-    def updateEdge(self, data):
-        id = data["id"]
-        patch = data["patch"]
-        self.editor.updateEdge(id, patch)
+        link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT, scriptID)
+        resp = self.client.get(link)
+        self.editor.updateEdge(edgeID, {"label": resp["name"]})
+
+    def onRunnerScriptUnset(self, data):
+        edgeID = data["edgeID"]
+        self.editor.updateEdge(edgeID, {"label": ""})
+
+    def onRunnerEntrySet(self, data):
+        prevID = data["prevID"]
+        currID = data["currID"]
+        if prevID:
+            self.editor.updateNode(
+                prevID,
+                {
+                    "borderColor": {
+                        "r": Colors.WHITE.red(),
+                        "g": Colors.WHITE.green(),
+                        "b": Colors.WHITE.blue(),
+                        "a": Colors.WHITE.alpha(),
+                    }
+                },
+            )
+
+        self.editor.updateNode(
+            currID,
+            {
+                "borderColor": {
+                    "r": Colors.MINT.red(),
+                    "g": Colors.MINT.green(),
+                    "b": Colors.MINT.blue(),
+                    "a": Colors.MINT.alpha(),
+                }
+            },
+        )
+        pass
 
     def deleteNode(self, data):
         id = data["id"]
