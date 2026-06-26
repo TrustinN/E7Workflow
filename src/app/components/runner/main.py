@@ -25,6 +25,7 @@ class RunnerComponent(Node):
 
         self.editor = RunnerEditor()
         self.editor.requestActionSet.connect(self.setAction)
+        self.editor.requestActionUnset.connect(self.unsetAction)
         self.editor.requestScriptSet.connect(self.setScript)
         self.editor.requestEntrySet.connect(self.setEntry)
         self.editor.requestExecute.connect(self.runner.execute)
@@ -33,7 +34,7 @@ class RunnerComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
+        self.subscribe("/Workspace/Node/Created", lambda data: self.unsetAction())
 
     def setAction(self):
         selection = self.context.selectionModel.getSelected()
@@ -53,21 +54,19 @@ class RunnerComponent(Node):
             },
         )
 
-    def unsetAction(self, id: str):
-        self.manager.unsetAction(id)
+    def unsetAction(self):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type == SelectionType.WORKSPACE):
+            return
+
+        self.manager.unsetAction(selection.id)
         self.publish(
             "/Workspace/UpdateNode",
             {
-                "id": id,
+                "id": selection.id,
                 "patch": {"iconPath": ""},
             },
         )
-
-    def onWorkspaceCreate(self, data):
-        schema = WorkspaceSchema.fromData(data)
-        parent = schema.parent
-        if parent:
-            self.unsetAction(parent)
 
     def setScript(self):
         selection = self.context.selectionModel.getSelected()

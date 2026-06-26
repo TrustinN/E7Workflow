@@ -1,7 +1,3 @@
-Add validation for setting actions
-
-remove action upon workspace create
-
 fix viewmodel signals in graph component
 
 add state widget

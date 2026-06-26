@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QPushButton, QShortcut, QVBoxLayout, QWidget
 
 class RunnerEditor(QWidget):
     requestActionSet = pyqtSignal()
+    requestActionUnset = pyqtSignal()
     requestScriptSet = pyqtSignal()
     requestEntrySet = pyqtSignal()
     requestExecute = pyqtSignal()
@@ -21,7 +22,14 @@ class RunnerEditor(QWidget):
         self.actionBtn.clicked.connect(self.requestActionSet.emit)
         self.actionShortcut.setContext(Qt.ApplicationShortcut)
 
-        self.scriptShortcut = QShortcut("4", self)
+        self.unsetActionShortcut = QShortcut("4", self)
+        key = self.unsetActionShortcut.key().toString(QKeySequence.NativeText)
+        self.unsetActionBtn = QPushButton(f"Unset Action ({key})")
+        self.unsetActionShortcut.activated.connect(self.requestActionUnset.emit)
+        self.unsetActionBtn.clicked.connect(self.requestActionUnset.emit)
+        self.unsetActionShortcut.setContext(Qt.ApplicationShortcut)
+
+        self.scriptShortcut = QShortcut("5", self)
         key = self.scriptShortcut.key().toString(QKeySequence.NativeText)
         self.scriptBtn = QPushButton(f"Set Script ({key})")
         self.scriptShortcut.activated.connect(self.requestScriptSet.emit)
@@ -43,6 +51,7 @@ class RunnerEditor(QWidget):
         self.executeShortcut.setContext(Qt.ApplicationShortcut)
 
         self.layout.addWidget(self.actionBtn)
+        self.layout.addWidget(self.unsetActionBtn)
         self.layout.addWidget(self.scriptBtn)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)
