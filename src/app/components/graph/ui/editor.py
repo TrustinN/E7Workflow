@@ -115,6 +115,10 @@ class GraphEditor(QWidget):
         self.miniViewState.updateNode(id, patch)
         self.fullViewState.updateNode(id, patch)
 
+    def updateEdge(self, id: str, patch: dict):
+        self.miniViewState.updateEdge(id, patch)
+        self.fullViewState.updateEdge(id, patch)
+
     def saveState(self, path):
         miniSaveFile = os.path.join(path, "miniview.json")
         miniState = self.miniViewState.toData()

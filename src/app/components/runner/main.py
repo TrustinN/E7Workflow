@@ -1,7 +1,7 @@
 import os
 
+from src.app.components.script.model import ScriptSchema
 from src.app.components.utils.colors import Colors
-from src.app.components.workspace.model import WorkspaceSchema
 from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher
@@ -34,7 +34,8 @@ class RunnerComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Workspace/Node/Created", lambda data: self.unsetAction())
+        self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
+        self.subscribe("/Script/Updated", self.onScriptUpdate)
 
     def setAction(self):
         selection = self.context.selectionModel.getSelected()
@@ -73,7 +74,15 @@ class RunnerComponent(Node):
         if not (selection.id and selection.type == SelectionType.EDGE):
             return
 
-        self.manager.setScript(selection.id)
+        scriptID = self.manager.setScript(selection.id)
+        schema = self.manager.getScript(scriptID)
+        self.publish(
+            "/Graph/UpdateEdge",
+            {
+                "id": selection.id,
+                "patch": {"label": schema.name},
+            },
+        )
 
     def setEntry(self):
         selection = self.context.selectionModel.getSelected()
@@ -111,6 +120,22 @@ class RunnerComponent(Node):
                 },
             },
         )
+
+    def onWorkspaceCreate(self, data):
+        self.unsetAction()
+
+    def onScriptUpdate(self, data):
+        id = data["id"]
+        schema = ScriptSchema.fromData(data["schema"])
+        edges = self.model.edgesFromScript(id)
+        for edge in edges:
+            self.publish(
+                "/Graph/UpdateEdge",
+                {
+                    "id": edge,
+                    "patch": {"label": schema.name},
+                },
+            )
 
     def saveState(self, data):
         path = data["path"]

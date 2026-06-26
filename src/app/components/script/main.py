@@ -23,12 +23,17 @@ class ScriptComponent(Node):
         self.controller = ScriptEditorController(
             self.editor, self.model, self.viewModel
         )
+        self.service = ScriptService(self.model, self.viewModel, dispatcher)
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.service = ScriptService(self.model, self.viewModel, dispatcher)
+        self.model.scriptUpdated.connect(self.onScriptUpdate)
+
+    def onScriptUpdate(self, id: str):
+        schema = self.model.getScript(id)
+        self.publish("/Script/Updated", {"id": id, "schema": schema.toData()})
 
     def saveState(self, data):
         path = data["path"]

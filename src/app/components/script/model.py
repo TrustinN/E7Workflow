@@ -24,6 +24,7 @@ class ScriptSchema:
 
 
 class ScriptModel(QObject):
+    scriptUpdated = pyqtSignal(str)
     modelCleared = pyqtSignal()
     modelLoaded = pyqtSignal()
 
@@ -40,6 +41,7 @@ class ScriptModel(QObject):
 
     def updateScript(self, id: str, patch: dict):
         self.scripts[id].update(patch)
+        self.scriptUpdated.emit(id)
 
     def getScripts(self) -> list[str]:
         return list(self.scripts.keys())

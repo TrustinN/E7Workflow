@@ -32,6 +32,7 @@ class GraphComponent(Node):
         self.subscribe("/App/Import", self.loadState)
 
         self.subscribe("/Graph/UpdateNode", self.updateNode)
+        self.subscribe("/Graph/UpdateEdge", self.updateEdge)
 
     def createNode(self, data):
         wksSchema = WorkspaceSchema.fromData(data)
@@ -51,6 +52,11 @@ class GraphComponent(Node):
         id = data["id"]
         patch = data["patch"]
         self.editor.updateNode(id, patch)
+
+    def updateEdge(self, data):
+        id = data["id"]
+        patch = data["patch"]
+        self.editor.updateEdge(id, patch)
 
     def saveState(self, data):
         path = data["path"]

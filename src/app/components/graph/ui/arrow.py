@@ -1,16 +1,17 @@
 import math
 
-from PyQt5.QtCore import QPointF, QRectF
+from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (
     QBrush,
     QColor,
+    QFontMetrics,
     QPainter,
     QPainterPath,
     QPainterPathStroker,
     QPen,
     QPolygonF,
 )
-from PyQt5.QtWidgets import QGraphicsItem
+from PyQt5.QtWidgets import QApplication, QGraphicsItem
 
 from .emitter import GraphicsEmitter
 from .node import GraphicsNode
@@ -21,6 +22,9 @@ class GraphicsArrowItem(QGraphicsItem):
         super().__init__()
         self.color = QColor(255, 255, 255)
         self.highlightColor = QColor(0, 163, 255)
+        self.label = ""
+        self.minLabelLength = 80
+
         self.emitter = GraphicsEmitter()
 
         self.start = start
@@ -32,16 +36,23 @@ class GraphicsArrowItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setZValue(-1)
 
-    def getData(self) -> dict:
+    def getData(self):
         return {
             "visible": self.isVisible(),
+            "label": self.label,
         }
 
-    def setData(self, data) -> dict:
+    def setData(self, data):
         visible = data.get("visible")
+        label = data.get("label")
 
         if visible is not None:
             self.setVisible(visible)
+
+        if label is not None:
+            self.label = label
+
+        self.update()
 
     def onNodeMove(self):
         self.prepareGeometryChange()
@@ -65,6 +76,7 @@ class GraphicsArrowItem(QGraphicsItem):
         painter.setBrush(QBrush(QColor(20, 20, 20)))
         painter.drawLine(p1, p2)
         self.drawArrowHead(painter, p1, p2)
+        self.drawLabel(painter, p1, p2)
 
     def drawArrowHead(self, painter, start, end):
         dx = end.x() - start.x()
@@ -113,17 +125,74 @@ class GraphicsArrowItem(QGraphicsItem):
 
         painter.drawPolygon(QPolygonF([tip, arrowPoint1, arrowPoint2]))
 
+    def labelRect(self):
+        if not self.label:
+            return None
+
+        p1 = self.start.center()
+        p2 = self.end.center()
+
+        dx = p2.x() - p1.x()
+        dy = p2.y() - p1.y()
+
+        length = math.hypot(dx, dy)
+        if length < self.minLabelLength:
+            return None
+
+        ux = dx / length
+        uy = dy / length
+
+        # Midpoint
+        mx = (p1.x() + p2.x()) * 0.5
+        my = (p1.y() + p2.y()) * 0.5
+
+        # Perpendicular offset
+        offset = 12
+        px = -uy
+        py = ux
+
+        pos = QPointF(
+            mx + px * offset,
+            my + py * offset,
+        )
+
+        metrics = QFontMetrics(QApplication.font())
+        rect = metrics.boundingRect(self.label)
+        rect.adjust(-4, -2, 4, 2)
+        rect.moveCenter(pos.toPoint())
+
+        return QRectF(rect)
+
+    def drawLabel(self, painter, start, end):
+        rect = self.labelRect()
+        if rect is None:
+            return
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(20, 20, 20, 220))
+        painter.drawRoundedRect(rect, 3, 3)
+
+        painter.setPen(self.color)
+        painter.drawText(rect, Qt.AlignCenter, self.label)
+
     def boundingRect(self):
         p1 = self.start.center()
         p2 = self.end.center()
 
-        extra = 10
-        xMin = min(p1.x(), p2.x()) - extra
-        yMin = min(p1.y(), p2.y()) - extra
-        xMax = max(p1.x(), p2.x()) + extra
-        yMax = max(p1.y(), p2.y()) + extra
+        extra = 16
 
-        return QRectF(xMin, yMin, xMax - xMin, yMax - yMin)
+        rect = QRectF(
+            min(p1.x(), p2.x()) - extra,
+            min(p1.y(), p2.y()) - extra,
+            abs(p2.x() - p1.x()) + 2 * extra,
+            abs(p2.y() - p1.y()) + 2 * extra,
+        )
+
+        labelRect = self.labelRect()
+        if labelRect is not None:
+            rect = rect.united(labelRect)
+
+        return rect
 
     def shape(self):
         p1 = self.start.center()

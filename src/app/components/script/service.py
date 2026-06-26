@@ -26,15 +26,18 @@ class ScriptService(EndpointService):
         self.model = model
         self.viewModel = viewModel
 
-        # Get data about action like user params
-        getRoute = route(ScriptRoute.SCRIPT)
-        self.addRoute(RequestType.GET, getRoute, self.getScript)
+        scriptRoute = route(ScriptRoute.SCRIPT)
+        self.addRoute(RequestType.GET, scriptRoute, self.getScript)
 
-        runRoute = route(ScriptRoute.SCRIPT, ":id")
-        self.addRoute(RequestType.POST, runRoute, self.runScript)
+        idRoute = route(ScriptRoute.SCRIPT, ":id")
+        self.addRoute(RequestType.GET, idRoute, self.getScriptByID)
+        self.addRoute(RequestType.POST, idRoute, self.runScript)
 
     def getScript(self, data):
         return {"id": self.viewModel.getActiveScript()}
+
+    def getScriptByID(self, id, data):
+        return self.model.getScript(id).toData()
 
     def runScript(self, id, data):
         schema = self.model.getScript(id)

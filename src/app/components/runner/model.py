@@ -33,6 +33,13 @@ class RunnerModel(QObject):
     def getScript(self, edgeID: str) -> Optional[str]:
         return self.edges.get(edgeID)
 
+    def edgesFromScript(self, scriptID: str) -> list[str]:
+        ret = []
+        for edgeID, scrID in self.edges.items():
+            if scrID == scriptID:
+                ret.append(edgeID)
+        return ret
+
     def setEntry(self, id: str):
         self.entry = id
 

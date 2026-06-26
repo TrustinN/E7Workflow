@@ -81,6 +81,7 @@ class EdgeSchema:
 @dataclass
 class EdgeViewState:
     visible: Optional[bool] = None
+    label: Optional[str] = None
 
     @classmethod
     def fromData(cls, data: dict):

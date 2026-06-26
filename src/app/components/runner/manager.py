@@ -4,6 +4,7 @@ from src.app.components.action.model import ActionSchema
 from src.app.components.action.service import ActionRoute
 from src.app.components.graph.model import NodeSchema
 from src.app.components.graph.service import GraphRoute
+from src.app.components.script.model import ScriptSchema
 from src.app.components.script.service import ScriptRoute
 from src.router.routing import Client, Link
 
@@ -49,6 +50,12 @@ class RunnerManager:
         resp = self.client.get(link)
         scriptID = resp["id"]
         self.model.setScript(edgeID, scriptID)
+        return scriptID
+
+    def getScript(self, scriptID: str) -> ScriptSchema:
+        link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT, scriptID)
+        resp = self.client.get(link)
+        return ScriptSchema.fromData(resp)
 
     def setEntry(self, nodeID: str) -> str:
         prev = self.model.getEntry()
