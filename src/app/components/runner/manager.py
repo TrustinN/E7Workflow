@@ -2,6 +2,8 @@ import json
 
 from src.app.components.action.model import ActionSchema
 from src.app.components.action.service import ActionRoute
+from src.app.components.graph.model import NodeSchema
+from src.app.components.graph.service import GraphRoute
 from src.app.components.script.service import ScriptRoute
 from src.router.routing import Client, Link
 
@@ -13,12 +15,29 @@ class RunnerManager:
         self.client = client
         self.model = model
 
+    def isActionAssignable(self, nodeID: str) -> bool:
+        link = Link(GraphRoute.NAME, GraphRoute.NODE, nodeID)
+        resp = self.client.get(link)
+        node = NodeSchema.fromData(resp)
+        return len(node.children) == 0
+
     def setAction(self, nodeID: str) -> str:
+        if not self.isActionAssignable(nodeID):
+            return None
+
         link = Link(ActionRoute.NAME, ActionRoute.CREATE)
         resp = self.client.post(link)
         actionID = resp["id"]
         self.model.setAction(nodeID, actionID)
         return actionID
+
+    def unsetAction(self, nodeID: str):
+        actionID = self.model.deleteAction(nodeID)
+        if actionID is None:
+            return
+
+        link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)
+        self.client.delete(link)
 
     def getAction(self, actionID: str) -> ActionSchema:
         link = Link(ActionRoute.NAME, ActionRoute.ACTION, actionID)

@@ -37,6 +37,7 @@ class ActionService(EndpointService):
 
         self.addRoute(RequestType.GET, actionRoute, self.getAction)
         self.addRoute(RequestType.POST, actionRoute, self.runAction)
+        self.addRoute(RequestType.DELETE, actionRoute, self.deleteAction)
 
     def createAction(self, data):
         schema = self.viewModel.getDraft()
@@ -46,6 +47,9 @@ class ActionService(EndpointService):
     def getAction(self, id, data):
         schema = self.model.getAction(id)
         return schema.toData()
+
+    def deleteAction(self, id, data):
+        self.model.deleteAction(id)
 
     def runAction(self, id, data):
         schema = self.model.getAction(id)

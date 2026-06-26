@@ -49,6 +49,10 @@ class ActionModel(QObject):
     def getAction(self, id: str) -> ActionSchema:
         return self.actions[id]
 
+    def deleteAction(self, id: str):
+        if id in self.actions:
+            self.actions.pop(id)
+
     def toData(self) -> dict:
         return {
             "actions": {k: v.toData() for k, v in self.actions.items()},

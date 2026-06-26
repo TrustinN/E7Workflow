@@ -15,6 +15,7 @@ class GraphService(EndpointService):
 
         self.model = model
 
+        self.addRoute(RequestType.GET, route(GraphRoute.NODE, ":id"), self.getNode)
         self.addRoute(RequestType.GET, route(GraphRoute.EDGE, ":id"), self.getEdge)
 
         self.addRoute(
@@ -22,6 +23,10 @@ class GraphService(EndpointService):
             route(GraphRoute.NODE, ":id", GraphRoute.EDGE),
             self.getNodeEdges,
         )
+
+    def getNode(self, id, data):
+        node = self.model.getNode(id)
+        return node.toData()
 
     def getEdge(self, id, data):
         edge = self.model.getEdge(id)

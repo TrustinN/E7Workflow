@@ -18,17 +18,23 @@ class RunnerModel(QObject):
     def setAction(self, nodeID: str, actionID: str):
         self.nodes[nodeID] = actionID
 
-    def setScript(self, edgeID: str, scriptID: str):
-        self.edges[edgeID] = scriptID
-
-    def setEntry(self, id: str):
-        self.entry = id
-
     def getAction(self, nodeID: str) -> Optional[str]:
         return self.nodes.get(nodeID)
 
+    def deleteAction(self, nodeID: str) -> str:
+        if nodeID in self.nodes:
+            return self.nodes.pop(nodeID)
+
+        return None
+
+    def setScript(self, edgeID: str, scriptID: str):
+        self.edges[edgeID] = scriptID
+
     def getScript(self, edgeID: str) -> Optional[str]:
         return self.edges.get(edgeID)
+
+    def setEntry(self, id: str):
+        self.entry = id
 
     def getEntry(self) -> Optional[str]:
         return self.entry

@@ -1,6 +1,7 @@
 import os
 
 from src.app.components.utils.colors import Colors
+from src.app.components.workspace.model import WorkspaceSchema
 from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher
@@ -32,12 +33,17 @@ class RunnerComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
+        self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
+
     def setAction(self):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
 
         actionID = self.manager.setAction(selection.id)
+        if actionID is None:
+            return
+
         schema = self.manager.getAction(actionID)
         self.publish(
             "/Workspace/UpdateNode",
@@ -46,6 +52,22 @@ class RunnerComponent(Node):
                 "patch": {"iconPath": schema.icon},
             },
         )
+
+    def unsetAction(self, id: str):
+        self.manager.unsetAction(id)
+        self.publish(
+            "/Workspace/UpdateNode",
+            {
+                "id": id,
+                "patch": {"iconPath": ""},
+            },
+        )
+
+    def onWorkspaceCreate(self, data):
+        schema = WorkspaceSchema.fromData(data)
+        parent = schema.parent
+        if parent:
+            self.unsetAction(parent)
 
     def setScript(self):
         selection = self.context.selectionModel.getSelected()

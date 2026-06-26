@@ -5,6 +5,7 @@ class RequestType:
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
+    DELETE = "DELETE"
 
 
 class Packet:
@@ -150,9 +151,6 @@ class Client:
             receiver=link.baseUrl,
         )
 
-    # def handleResponse(self, packet: Packet):
-    #     return packet.data
-
     def get(self, link: Link, data=None):
         return self._request(RequestType.GET, link, data=data)
 
@@ -161,3 +159,6 @@ class Client:
 
     def put(self, link: Link, data=None):
         return self._request(RequestType.PUT, link, data=data)
+
+    def delete(self, link: Link, data=None):
+        return self._request(RequestType.DELETE, link, data=data)
