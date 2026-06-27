@@ -8,16 +8,19 @@ from src.app.state import Color, Geometry
 
 @dataclass
 class WorkspaceSchema:
-    id: Optional[str] = None
-    name: Optional[str] = None
+    id: str = None
+    name: str = None
     grouping: Optional[str] = None
 
-    displayText: Optional[str] = None
-    geometry: Optional[Geometry] = None
-    iconPath: Optional[str] = None
-    padding: Optional[int] = None
-    color: Optional[Color] = None
-    borderColor: Optional[Color] = None
+    geometry: Geometry = field(
+        default_factory=lambda: Geometry(x=500, y=500, width=500, height=300)
+    )
+    iconPath: str = ""
+    padding: int = 0
+    color: Color = field(default_factory=lambda: Color(r=255, g=255, b=255, a=7))
+    borderColor: Color = field(
+        default_factory=lambda: Color(r=255, g=255, b=255, a=100)
+    )
 
     children: list[str] = field(default_factory=list)
     parent: Optional[str] = None
@@ -101,10 +104,6 @@ class WorkspaceModel(QObject):
         else:
             self.nodes[parentID].children.append(id)
             schema.grouping = self.assignGroup(id, parentID)
-
-        schema.displayText = schema.name
-        if schema.grouping:
-            schema.displayText = f"{schema.grouping} - {schema.name}"
 
         self.modelCreated.emit(id)
 

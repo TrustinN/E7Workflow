@@ -63,7 +63,7 @@ class App(QApplication):
             "Unset Action": ("4", "/Runner/Action/Unset/Request"),
             "Set Script": ("5", "/Runner/Script/Set/Request"),
             "Unset Script": ("6", "/Runner/Script/Unset/Request"),
-            "Set Entry": ("Return", "/Runner/Entry/Set/Request"),
+            "Set Entry": ("Ctrl+Return", "/Runner/Entry/Set/Request"),
             "Execute": ("Ctrl+R", "/Runner/Execute/Request"),
             "Save": (QKeySequence.Save, "/App/Export/Request"),
             "Open": (QKeySequence.Open, "/App/Import/Request"),

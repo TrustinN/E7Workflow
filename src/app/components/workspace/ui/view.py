@@ -31,12 +31,11 @@ class WorkspaceView(QObject):
     def handleModelCreate(self, id):
         schema = self.model.getItem(id)
         parentID = schema.parent
+        data = schema.toData()
         if parentID:
-            self.createChildWorkspace(id, schema.parent)
+            self.createChildWorkspace(id, schema.parent, data)
         else:
-            self.root = self.createRootWorkspace(id)
-
-        self.setData(id, schema.toData())
+            self.root = self.createRootWorkspace(id, data)
 
     def handleModelUpdate(self, id):
         schema = self.model.getItem(id)
@@ -53,7 +52,7 @@ class WorkspaceView(QObject):
         if id == self.prevSelected:
             self.prevSelected = None
 
-    def _createWorkspace(self, id):
+    def _createWorkspace(self, id, data):
         workspace = Workspace()
         workspace.show()
         workspace.unlock()
@@ -66,14 +65,15 @@ class WorkspaceView(QObject):
         workspace.resizeDone.connect(emitUpdated)
 
         self.workspaces[id] = workspace
+        workspace.setData(data)
 
         return workspace
 
-    def createRootWorkspace(self, id):
-        return self._createWorkspace(id)
+    def createRootWorkspace(self, id, data):
+        return self._createWorkspace(id, data)
 
-    def createChildWorkspace(self, id, parentID):
-        workspace = self._createWorkspace(id)
+    def createChildWorkspace(self, id, parentID, data):
+        workspace = self._createWorkspace(id, data)
         self.workspaces[parentID].addChild(id, workspace)
 
     def setSelected(self, id):
@@ -116,12 +116,11 @@ class WorkspaceView(QObject):
         while queue:
             cur = queue.popleft()
             schema = self.model.getItem(cur)
+            data = schema.toData()
             if cur == rootID:
-                self.root = self.createRootWorkspace(cur)
+                self.root = self.createRootWorkspace(cur, data)
             else:
-                self.createChildWorkspace(cur, schema.parent)
-
-            self.setData(cur, schema.toData())
+                self.createChildWorkspace(cur, schema.parent, data)
 
             for child in schema.children:
                 queue.append(child)

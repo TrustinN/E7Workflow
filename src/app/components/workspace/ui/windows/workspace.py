@@ -5,16 +5,31 @@ from PyQt5.QtSvg import QSvgRenderer
 from .hierarchy import WindowHierarchy
 
 
+def formatDisplayText(group, name) -> str:
+    text = name
+    if group is not None:
+        text = f"{group} - {name}"
+    return text
+
+
 class Workspace(WindowHierarchy):
-    def __init__(self, name=None):
+    def __init__(self):
         super().__init__()
-        self.name = name
+        self.name = None
+        self.grouping = None
+        self.displayText = None
 
         self.icon = None
         self.iconPath = None
 
     def setName(self, name: str):
         self.name = name
+        self.displayText = formatDisplayText(self.grouping, self.name)
+        self.repaint()
+
+    def setGrouping(self, group: str):
+        self.grouping = group
+        self.displayText = formatDisplayText(self.grouping, self.name)
         self.repaint()
 
     def setIcon(self, svgPath):
@@ -30,7 +45,8 @@ class Workspace(WindowHierarchy):
     def getData(self) -> dict:
         rect = self.geometry()
         return {
-            "displayText": self.name,
+            "name": self.name,
+            "grouping": self.grouping,
             "geometry": {
                 "x": rect.x(),
                 "y": rect.y(),
@@ -54,15 +70,19 @@ class Workspace(WindowHierarchy):
         }
 
     def setData(self, data: dict):
-        displayText = data.get("displayText")
+        name = data.get("name")
+        grouping = data.get("grouping")
         rect = data.get("geometry")
         iconPath = data.get("iconPath")
         padding = data.get("padding")
         color = data.get("color")
         borderColor = data.get("borderColor")
 
-        if displayText is not None:
-            self.setName(displayText)
+        if name is not None:
+            self.setName(name)
+
+        if grouping is not None:
+            self.setGrouping(grouping)
 
         if padding is not None:
             self.setPadding(padding)
