@@ -2,10 +2,8 @@ fix viewmodel signals in graph component
 
 add state widget
 
-add node->action editor widget
+move actions declaration back into components
 
-add edge->script visualization widget
+add dedicated editor for serialization
 
-move runner ui update logic to other components
-
-add script delete functionality
+add parameter tree to toggle workspace visiblility
