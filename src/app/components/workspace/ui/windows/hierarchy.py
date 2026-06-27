@@ -224,26 +224,6 @@ class WindowHierarchy(Window):
         super().setGeometry(rect)
         self.geometryUpdated.emit()
 
-    def hide(self):
-        super().hide()
-        for window in self.windows.values():
-            window.hide()
-
-    def show(self):
-        super().show()
-        for window in self.windows.values():
-            window.show()
-
-    def lock(self):
-        super().lock()
-        for window in self.windows.values():
-            window.lock()
-
-    def unlock(self):
-        super().unlock()
-        for window in self.windows.values():
-            window.unlock()
-
     def isChild(self):
         return len(self.windows) == 0
 

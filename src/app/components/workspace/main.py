@@ -9,7 +9,7 @@ from src.router.routing import Client, Dispatcher, Link
 from .manager import WorkspaceManager
 from .model import WorkspaceModel
 from .service import WorkspaceService
-from .ui import WorkspaceEditor
+from .ui import WorkspaceEditor, WorkspaceItemModel, WorkspaceTreeView
 
 
 class WorkspaceComponent(Node):
@@ -29,6 +29,9 @@ class WorkspaceComponent(Node):
 
         self.model.modelDeleted.connect(self.onDelete)
         self.model.modelUpdated.connect(self.onUpdate)
+
+        self.itemModel = WorkspaceItemModel(self.model)
+        self.display = WorkspaceTreeView(self.itemModel, self.context)
 
         self.subscribe("/App/Loaded", self.createRootWorkspace)
         self.subscribe("/App/Export", self.saveState)

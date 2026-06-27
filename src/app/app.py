@@ -65,8 +65,6 @@ class App(QApplication):
             "Unset Script": ("6", "/Runner/Script/Unset/Request"),
             "Set Entry": ("Ctrl+Return", "/Runner/Entry/Set/Request"),
             "Execute": ("Ctrl+R", "/Runner/Execute/Request"),
-            "Save": (QKeySequence.Save, "/App/Export/Request"),
-            "Open": (QKeySequence.Open, "/App/Import/Request"),
         }
 
         for name, (shortcut, event) in actionMap.items():
@@ -110,7 +108,11 @@ class App(QApplication):
 
         self.layoutLeft.addStretch()
 
-        self.layoutMid.addWidget(self.graphCpt.display)
+        self.views = QTabWidget()
+        self.views.addTab(self.graphCpt.display, "Graph View")
+        self.views.addTab(self.wkCpt.display, "Workspace View")
+
+        self.layoutMid.addWidget(self.views)
         self.layoutMid.addStretch()
 
         self.tabs = QTabWidget()

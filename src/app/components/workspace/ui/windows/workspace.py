@@ -67,6 +67,8 @@ class Workspace(WindowHierarchy):
                 "b": self.borderColor.blue(),
                 "a": self.borderColor.alpha(),
             },
+            "visible": self.isVisible(),
+            "locked": self.fixed,
         }
 
     def setData(self, data: dict):
@@ -77,6 +79,8 @@ class Workspace(WindowHierarchy):
         padding = data.get("padding")
         color = data.get("color")
         borderColor = data.get("borderColor")
+        visible = data.get("visible")
+        locked = data.get("locked")
 
         if name is not None:
             self.setName(name)
@@ -107,6 +111,12 @@ class Workspace(WindowHierarchy):
 
         if color and borderColor:
             self.setColor(color, borderColor)
+
+        if visible is not None:
+            self.setVisible(visible)
+
+        if locked is not None:
+            self.fixed = locked
 
         self.update()
 

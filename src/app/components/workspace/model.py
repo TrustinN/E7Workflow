@@ -21,6 +21,8 @@ class WorkspaceSchema:
     borderColor: Color = field(
         default_factory=lambda: Color(r=255, g=255, b=255, a=100)
     )
+    visible: bool = True
+    locked: bool = False
 
     children: list[str] = field(default_factory=list)
     parent: Optional[str] = None
@@ -117,22 +119,25 @@ class WorkspaceModel(QObject):
             return
 
         schema = self.getItem(id)
+        while schema.children:
+            self.removeItem(schema.children[0])
+        self.modelDeleted.emit(id)
+
         if schema.parent:
             parent = self.getItem(schema.parent)
             parent.children.remove(id)
-
-        while schema.children:
-            self.removeItem(schema.children[0])
 
         if schema.parent == self.rootIndex():
             self.releaseGroup(id)
 
         self.groupAssignments.pop(id, None)
-
         self.nodes.pop(id)
-        self.modelDeleted.emit(id)
 
     def updateItem(self, id: str, patch: dict):
+        if "visible" in patch:
+            if not patch["visible"]:
+                patch["locked"] = True
+
         self.nodes[id].update(patch)
         self.modelUpdated.emit(id)
 
