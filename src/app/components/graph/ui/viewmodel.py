@@ -30,8 +30,6 @@ class GraphViewModel:
         self.viewState.edgeUpdated.connect(self.updateEdge)
         self.viewState.modelLoaded.connect(self.rerender)
 
-        self.scene.nodeCreated.connect(self.updateModelNode)
-        self.scene.edgeCreated.connect(self.updateModelEdge)
         self.scene.nodeUpdated.connect(self.updateModelNode)
         self.scene.edgeUpdated.connect(self.updateModelEdge)
 
@@ -52,14 +50,16 @@ class GraphViewModel:
         self.viewState.deleteEdge(id)
 
     def createNode(self, id):
-        self.scene.createNode(id)
+        schema = self.viewState.getNode(id)
+        self.scene.createNode(id, schema.toData())
 
     def createEdge(self, id):
         edge = self.model.getEdge(id)
         source = edge.source
         target = edge.target
+        schema = self.viewState.getEdge(id)
 
-        self.scene.createEdge(id, source, target)
+        self.scene.createEdge(id, source, target, schema.toData())
 
     def updateNode(self, id):
         state = self.viewState.getNode(id)
@@ -92,11 +92,11 @@ class GraphViewModel:
     def rebuild(self):
         self._loading = True
         for id in self.model.nodeList():
-            self.scene._createNode(id)
+            self.scene._createNode(id, {})
 
         for id in self.model.edgeList():
             schema = self.model.getEdge(id)
-            self.scene._createEdge(id, schema.source, schema.target)
+            self.scene._createEdge(id, schema.source, schema.target, {})
         self._loading = False
 
     def rerender(self):

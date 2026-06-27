@@ -1,4 +1,4 @@
-from src.app.components.graph.model import GraphModel, GraphViewState
+from src.app.components.graph.model import GraphModel, GraphViewState, NodeType
 from src.app.components.graph.ui.scene import GraphScene
 from src.app.state import Context, Selection, SelectionType
 
@@ -30,7 +30,7 @@ class FullViewController:
         schema = self.model.getNode(id)
         self.viewModel.updateNode(
             id,
-            {"displayText": schema.group, "shape": "Circle"},
+            {"displayText": schema.group, "shape": NodeType.CIRCLE},
         )
 
     def onNodeSelected(self, id):

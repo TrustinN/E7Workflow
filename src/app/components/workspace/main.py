@@ -47,11 +47,16 @@ class WorkspaceComponent(Node):
         self.publish("/Workspace/Root/Created", schema.toData())
 
     def handleCreateRequest(self, data):
-        parent, name, ok = self.editor.draftWorkspace()
+        parentID, name, ok = self.editor.draftWorkspace()
         if not ok:
             return
 
-        id = self.manager.createWorkspace(name=name, parent=parent)
+        parent = self.model.getItem(parentID)
+        id = self.manager.createWorkspace(
+            name=name,
+            parent=parentID,
+            geometry=parent.geometry.adjusted(15, 15, -15, -15),
+        )
         schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Node/Created", schema.toData())
 

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Optional, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -7,18 +7,21 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from src.app.state import Color
 
 
+class NodeType:
+    RECTANGLE = "Rectangle"
+    CIRCLE = "Circle"
+
+
 @dataclass
 class NodeSchema:
-    id: Optional[str] = None
+    id: str
+    name: str
 
-    name: Optional[str] = None
     group: Optional[str] = None
 
     @classmethod
     def fromData(cls, data: dict):
-        schema = cls()
-        schema.update(data)
-        return schema
+        return cls(**data)
 
     def update(self, data: dict):
         for k, v in data.items():
@@ -30,12 +33,12 @@ class NodeSchema:
 
 @dataclass
 class NodeViewState:
-    displayText: Optional[str] = None
-    shape: Optional[str] = None
-    position: Optional[tuple[float, float]] = None
-    color: Optional[Color] = None
-    borderColor: Optional[Color] = None
-    visible: Optional[bool] = None
+    displayText: str = ""
+    shape: str = "Rectangle"
+    position: tuple[float, float] = (0.0, 0.0)
+    color: Color = field(default_factory=lambda: Color(r=20, g=20, b=20))
+    borderColor: Color = field(default_factory=lambda: Color(r=255, b=255, g=255))
+    visible: bool = True
 
     @classmethod
     def fromData(cls, data: dict):
@@ -56,16 +59,14 @@ class NodeViewState:
 
 @dataclass
 class EdgeSchema:
-    id: Optional[str] = None
+    id: str
 
-    source: Optional[str] = None
-    target: Optional[str] = None
+    source: str
+    target: str
 
     @classmethod
     def fromData(cls, data: dict):
-        schema = cls()
-        schema.update(data)
-        return schema
+        return cls(**data)
 
     def update(self, data: dict):
         for k, v in data.items():
@@ -77,14 +78,12 @@ class EdgeSchema:
 
 @dataclass
 class EdgeViewState:
-    visible: Optional[bool] = None
-    label: Optional[str] = None
+    visible: bool = True
+    label: str = ""
 
     @classmethod
     def fromData(cls, data: dict):
-        schema = cls()
-        schema.update(data)
-        return schema
+        return cls(**data)
 
     def update(self, data: dict):
         for k, v in data.items():

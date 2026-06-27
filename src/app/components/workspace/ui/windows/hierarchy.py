@@ -55,9 +55,6 @@ class WindowHierarchy(Window):
         window.onDelete.connect(lambda: self.deleteChild(id))
         window.focusParent.connect(self.mousePressEvent)
 
-        self.updateGeometry()
-        self.childAdded.emit()
-
     def resize(self, newRect):
         oldRect = self.geometry()
 

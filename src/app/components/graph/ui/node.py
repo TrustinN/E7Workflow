@@ -2,10 +2,7 @@ from PyQt5.QtCore import QPointF, QRectF, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QFont, QFontMetrics, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsObject
 
-
-class NodeType:
-    RECTANGLE = "Rectangle"
-    CIRCLE = "Circle"
+from src.app.components.graph.model import NodeType
 
 
 class GraphicsNode(QGraphicsObject):
