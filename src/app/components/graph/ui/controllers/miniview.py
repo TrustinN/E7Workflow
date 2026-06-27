@@ -17,6 +17,9 @@ class MiniViewController:
         self.viewModel = viewModel
 
         self.activeParent = None
+
+        self.model.nodeUpdated.connect(self.hydrateViewModel)
+
         self.scene.nodeCreated.connect(self.onNodeCreate)
         self.scene.edgeCreated.connect(self.onEdgeCreate)
 
@@ -28,15 +31,17 @@ class MiniViewController:
 
         self._updatingSelection = False
 
+    def hydrateViewModel(self, id):
+        schema = self.model.getNode(id)
+        self.viewModel.updateNode(id, {"displayText": schema.name})
+
     def onNodeCreate(self, id):
         if self.model.parentNode(id) != self.activeParent:
             self.scene.setNodeVisible(id, False)
             return
 
         self.scene.setNodeVisible(id, True)
-
-        schema = self.model.getNode(id)
-        self.viewModel.updateNode(id, {"displayText": schema.name})
+        self.hydrateViewModel(id)
 
     def onEdgeCreate(self, id):
         if self.model.isCrossEdge(id):

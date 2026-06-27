@@ -77,6 +77,11 @@ class WorkspaceModel(QObject):
 
         return group
 
+    def releaseGroup(self, id):
+        group = self.groupAssignments.pop(id, None)
+        if group:
+            self.availableGroups.add(group)
+
     def rootIndex(self) -> str:
         return self.root
 
@@ -118,6 +123,11 @@ class WorkspaceModel(QObject):
 
         while schema.children:
             self.removeItem(schema.children[0])
+
+        if schema.parent == self.rootIndex():
+            self.releaseGroup(id)
+
+        self.groupAssignments.pop(id, None)
 
         self.nodes.pop(id)
         self.modelDeleted.emit(id)

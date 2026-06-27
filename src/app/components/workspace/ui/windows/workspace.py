@@ -114,7 +114,7 @@ class Workspace(WindowHierarchy):
         painter = QPainter(self)
 
         rect = self.rect()
-        if self.name is not None:
+        if self.displayText is not None:
             painter.setPen(QPen(QColor(255, 255, 255), 1))
             font = painter.font()
             font.setPointSize(12)
@@ -123,7 +123,7 @@ class Workspace(WindowHierarchy):
 
             paddingTop = 10
             textRect = rect.adjusted(0, paddingTop, 0, 0)
-            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.name)
+            painter.drawText(textRect, Qt.AlignTop | Qt.AlignHCenter, self.displayText)
 
         if self.icon:
             painter.setRenderHint(QPainter.Antialiasing)

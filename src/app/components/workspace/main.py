@@ -28,6 +28,7 @@ class WorkspaceComponent(Node):
         self.editor = WorkspaceEditor(self.context, self.model, actions)
 
         self.model.modelDeleted.connect(self.onDelete)
+        self.model.modelUpdated.connect(self.onUpdate)
 
         self.subscribe("/App/Loaded", self.createRootWorkspace)
         self.subscribe("/App/Export", self.saveState)
@@ -61,9 +62,6 @@ class WorkspaceComponent(Node):
 
         self.manager.deleteWorkspace(selection.id)
 
-    def onDelete(self, id):
-        self.publish("/Workspace/Node/Deleted", {"id": id})
-
     def onRunnerActionSet(self, data):
         id = data["workspaceID"]
         actionID = data["actionID"]
@@ -77,6 +75,13 @@ class WorkspaceComponent(Node):
         id = data["workspaceID"]
 
         self.model.updateItem(id, {"iconPath": ""})
+
+    def onDelete(self, id):
+        self.publish("/Workspace/Node/Deleted", {"id": id})
+
+    def onUpdate(self, id):
+        schema = self.model.getItem(id)
+        self.publish("/Workspace/Node/Updated", schema.toData())
 
     def saveState(self, data):
         path = data["path"]

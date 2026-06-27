@@ -46,6 +46,7 @@ class GraphComponent(Node):
         self.subscribe("/Workspace/Root/Created", self.onWorkspaceCreated)
         self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreated)
         self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDeleted)
+        self.subscribe("/Workspace/Node/Updated", self.onWorkspaceUpdated)
 
         self.subscribe("/Runner/Entry/Set", self.onRunnerEntrySet)
         self.subscribe("/Runner/Script/Set", self.onRunnerScriptUpdate)
@@ -63,6 +64,12 @@ class GraphComponent(Node):
     def onWorkspaceDeleted(self, data):
         id = data["id"]
         self.model.deleteNode(id)
+
+    def onWorkspaceUpdated(self, data):
+        wksSchema = WorkspaceSchema.fromData(data)
+        self.model.updateNode(
+            wksSchema.id, {"name": wksSchema.name, "group": wksSchema.grouping}
+        )
 
     def handleCreateEdgeRequest(self, data):
         source, target = self.editor.draftEdge()
