@@ -1,5 +1,3 @@
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QInputDialog,
     QLineEdit,
@@ -9,6 +7,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from src.app.actions import ActionRegistry
 from src.app.components.workspace.model import WorkspaceModel
 from src.app.state import Context, SelectionType
 
@@ -17,10 +16,9 @@ from .view import WorkspaceView
 
 
 class WorkspaceEditor(QWidget):
-    requestCreate = pyqtSignal(str, str)
-    requestDelete = pyqtSignal(str)
-
-    def __init__(self, context: Context, model: WorkspaceModel):
+    def __init__(
+        self, context: Context, model: WorkspaceModel, actions: ActionRegistry
+    ):
         super().__init__()
         self.layout = QVBoxLayout(self)
 
@@ -28,28 +26,22 @@ class WorkspaceEditor(QWidget):
         self.view = WorkspaceView(model)
         self.controller = WorkspaceController(context, self.view, model)
 
-        self.createShortcut = QShortcut(QKeySequence.New, self)
-        self.createShortcut.setContext(Qt.ApplicationShortcut)
-        key = self.createShortcut.key().toString(QKeySequence.NativeText)
-        self.createBtn = QPushButton(f"Add Workspace ({key})")
-        self.createBtn.clicked.connect(self.onWorkspaceCreate)
-        self.createShortcut.activated.connect(self.onWorkspaceCreate)
+        action = actions.get("Create Workspace")
+        self.createBtn = QPushButton(actions.displayText("Create Workspace"))
+        self.createBtn.addAction(action)
 
-        self.deleteShortcut = QShortcut(QKeySequence("Meta+Backspace"), self)
-        self.deleteShortcut.setContext(Qt.ApplicationShortcut)
-        key = self.deleteShortcut.key().toString(QKeySequence.NativeText)
-        self.deleteBtn = QPushButton(f"Delete Workspace ({key})")
-        self.deleteBtn.clicked.connect(self.onWorkspaceDelete)
-        self.deleteShortcut.activated.connect(self.onWorkspaceDelete)
+        action = actions.get("Delete Workspace")
+        self.deleteBtn = QPushButton(actions.displayText("Delete Workspace"))
+        self.deleteBtn.addAction(action)
 
         self.layout.addWidget(self.createBtn)
         self.layout.addWidget(self.deleteBtn)
         self.layout.addStretch()
 
-    def onWorkspaceCreate(self):
+    def createWorkspace(self):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type is SelectionType.WORKSPACE):
-            return
+            return selection.id, "", False
 
         name, ok = QInputDialog.getText(
             None,
@@ -58,17 +50,7 @@ class WorkspaceEditor(QWidget):
             QLineEdit.Normal,
             "WS Name",
         )
-        if not ok:
-            return
+        if not (ok and name):
+            return selection.id, name, False
 
-        if not name:
-            return
-
-        self.requestCreate.emit(selection.id, name)
-
-    def onWorkspaceDelete(self):
-        selection = self.context.selectionModel.getSelected()
-        if not (selection.id and selection.type is SelectionType.WORKSPACE):
-            return
-
-        self.requestDelete.emit(selection.id)
+        return selection.id, name, True

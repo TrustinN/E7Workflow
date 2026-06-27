@@ -1,5 +1,6 @@
 import os
 
+from src.app.actions import ActionRegistry
 from src.app.components.script.service import ScriptRoute
 from src.app.components.utils.colors import Colors
 from src.app.components.workspace.model import WorkspaceSchema
@@ -10,12 +11,14 @@ from src.router.routing import Client, Dispatcher, Link
 from .manager import GraphManager
 from .model import GraphModel
 from .service import GraphService
-from .ui import GraphEditor
+from .ui import GraphDisplay, GraphEditor
 
 
 class GraphComponent(Node):
 
-    def __init__(self, context: Context, dispatcher: Dispatcher):
+    def __init__(
+        self, context: Context, actions: ActionRegistry, dispatcher: Dispatcher
+    ):
         super().__init__()
         self.context = context
 
@@ -24,24 +27,28 @@ class GraphComponent(Node):
         self.client = Client("Graph Client", dispatcher)
         self.service = GraphService(self.model, dispatcher)
 
-        self.editor = GraphEditor(self.context, self.model)
-        self.editor.requestEdge.connect(self.createEdge)
+        self.editor = GraphEditor(self.context, actions)
+        self.display = GraphDisplay(self.context, self.model)
 
         self.model.edgeDeleted.connect(
             lambda id: self.publish("/Graph/Edge/Deleted", {"edgeID": id})
         )
 
-        self.subscribe("/Workspace/Root/Created", self.createNode)
-        self.subscribe("/Workspace/Node/Created", self.createNode)
-        self.subscribe("/Workspace/Node/Deleted", self.deleteNode)
-
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
+        self.subscribe("/Graph/Edge/Create/Request", self.createEdge)
+        self.subscribe("/Graph/Edge/SetStart/Request", lambda _: self.editor.setE1())
+        self.subscribe("/Graph/Edge/SetEnd/Request", lambda _: self.editor.setE2())
+
+        self.subscribe("/Workspace/Root/Created", self.createNode)
+        self.subscribe("/Workspace/Node/Created", self.createNode)
+        self.subscribe("/Workspace/Node/Deleted", self.deleteNode)
+
         self.subscribe("/Runner/Entry/Set", self.onRunnerEntrySet)
         self.subscribe("/Runner/Script/Set", self.onRunnerScriptUpdate)
-        self.subscribe("/Runner/Script/Update", self.onRunnerScriptUpdate)
+        self.subscribe("/Runner/Script/Updated", self.onRunnerScriptUpdate)
         self.subscribe("/Runner/Script/Unset", self.onRunnerScriptUnset)
 
     def createNode(self, data):
@@ -52,7 +59,10 @@ class GraphComponent(Node):
 
         self.publish("/Graph/Node/Created", schema.toData())
 
-    def createEdge(self, source: str, target: str):
+    def createEdge(self, data):
+        source, target = self.editor.draftEdge()
+        if source is None or target is None:
+            return
         edgeID = self.manager.createEdge(source, target)
         schema = self.model.getEdge(edgeID)
 
@@ -64,17 +74,17 @@ class GraphComponent(Node):
 
         link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT, scriptID)
         resp = self.client.get(link)
-        self.editor.updateEdge(edgeID, {"label": resp["name"]})
+        self.display.updateEdge(edgeID, {"label": resp["name"]})
 
     def onRunnerScriptUnset(self, data):
         edgeID = data["edgeID"]
-        self.editor.updateEdge(edgeID, {"label": ""})
+        self.display.updateEdge(edgeID, {"label": ""})
 
     def onRunnerEntrySet(self, data):
         prevID = data["prevID"]
         currID = data["currID"]
         if prevID:
-            self.editor.updateNode(
+            self.display.updateNode(
                 prevID,
                 {
                     "borderColor": {
@@ -86,7 +96,7 @@ class GraphComponent(Node):
                 },
             )
 
-        self.editor.updateNode(
+        self.display.updateNode(
             currID,
             {
                 "borderColor": {
@@ -97,7 +107,6 @@ class GraphComponent(Node):
                 }
             },
         )
-        pass
 
     def deleteNode(self, data):
         id = data["id"]
@@ -107,7 +116,7 @@ class GraphComponent(Node):
         path = data["path"]
         saveFile = os.path.join(path, "graph.json")
         self.manager.saveModel(saveFile)
-        self.editor.saveState(path)
+        self.display.saveState(path)
 
     def resetState(self, data):
         self.manager.resetModel()
@@ -116,4 +125,4 @@ class GraphComponent(Node):
         path = data["path"]
         saveFile = os.path.join(path, "graph.json")
         self.manager.loadModel(saveFile)
-        self.editor.loadState(path)
+        self.display.loadState(path)

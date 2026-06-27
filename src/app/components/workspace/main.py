@@ -1,8 +1,9 @@
 import os
 
+from src.app.actions import ActionRegistry
 from src.app.components.action.service import ActionRoute
 from src.app.events import Node
-from src.app.state import Context
+from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher, Link
 
 from .manager import WorkspaceManager
@@ -12,7 +13,9 @@ from .ui import WorkspaceEditor
 
 
 class WorkspaceComponent(Node):
-    def __init__(self, context: Context, dispatcher: Dispatcher):
+    def __init__(
+        self, context: Context, actions: ActionRegistry, dispatcher: Dispatcher
+    ):
         super().__init__()
 
         self.context = context
@@ -22,9 +25,7 @@ class WorkspaceComponent(Node):
         self.client = Client("Workspace Client", dispatcher)
         self.service = WorkspaceService(self.model, dispatcher)
 
-        self.editor = WorkspaceEditor(self.context, self.model)
-        self.editor.requestCreate.connect(self.createWorkspace)
-        self.editor.requestDelete.connect(self.deleteWorkspace)
+        self.editor = WorkspaceEditor(self.context, self.model, actions)
 
         self.model.modelDeleted.connect(self.onDelete)
 
@@ -32,6 +33,9 @@ class WorkspaceComponent(Node):
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
+
+        self.subscribe("/Workspace/Create/Request", self.createWorkspace)
+        self.subscribe("/Workspace/Delete/Request", self.deleteWorkspace)
 
         self.subscribe("/Runner/Action/Set", self.onRunnerActionSet)
         self.subscribe("/Runner/Action/Unset", self.onRunnerActionUnset)
@@ -41,13 +45,21 @@ class WorkspaceComponent(Node):
         schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Root/Created", schema.toData())
 
-    def createWorkspace(self, parent, name):
+    def createWorkspace(self, data):
+        parent, name, ok = self.editor.createWorkspace()
+        if not ok:
+            return
+
         id = self.manager.createWorkspace(name=name, parent=parent)
         schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Node/Created", schema.toData())
 
-    def deleteWorkspace(self, id):
-        self.manager.deleteWorkspace(id)
+    def deleteWorkspace(self, data):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type is SelectionType.WORKSPACE):
+            return
+
+        self.manager.deleteWorkspace(selection.id)
 
     def onDelete(self, id):
         self.publish("/Workspace/Node/Deleted", {"id": id})

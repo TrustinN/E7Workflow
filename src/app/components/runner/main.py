@@ -1,5 +1,6 @@
 import os
 
+from src.app.actions import ActionRegistry
 from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher
@@ -11,7 +12,9 @@ from .ui import RunnerEditor
 
 
 class RunnerComponent(Node):
-    def __init__(self, context: Context, dispatcher: Dispatcher):
+    def __init__(
+        self, context: Context, actions: ActionRegistry, dispatcher: Dispatcher
+    ):
         super().__init__()
 
         self.context = context
@@ -21,24 +24,25 @@ class RunnerComponent(Node):
         self.runner = Runner(self.model, self.client)
         self.manager = RunnerManager(self.model, self.client)
 
-        self.editor = RunnerEditor()
-        self.editor.requestActionSet.connect(self.setAction)
-        self.editor.requestActionUnset.connect(self.unsetAction)
-        self.editor.requestScriptSet.connect(self.setScript)
-        self.editor.requestScriptUnset.connect(self.unsetScript)
-        self.editor.requestEntrySet.connect(self.setEntry)
-        self.editor.requestExecute.connect(self.runner.execute)
+        self.editor = RunnerEditor(actions)
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
+
+        self.subscribe("/Runner/Action/Set/Request", self.setAction)
+        self.subscribe("/Runner/Action/Unset/Request", self.unsetAction)
+        self.subscribe("/Runner/Script/Set/Request", self.setScript)
+        self.subscribe("/Runner/Script/Unset/Request", self.unsetScript)
+        self.subscribe("/Runner/Entry/Set/Request", self.setEntry)
+        self.subscribe("/Runner/Execute/Request", self.execute)
 
         self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
         self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDelete)
         self.subscribe("/Graph/Edge/Deleted", self.onEdgeDelete)
         self.subscribe("/Script/Updated", self.onScriptUpdate)
 
-    def setAction(self):
+    def setAction(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
@@ -48,7 +52,7 @@ class RunnerComponent(Node):
             "/Runner/Action/Set", {"workspaceID": selection.id, "actionID": actionID}
         )
 
-    def unsetAction(self):
+    def unsetAction(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
@@ -56,7 +60,7 @@ class RunnerComponent(Node):
         self.manager.unsetAction(selection.id)
         self.publish("/Runner/Action/Unset", {"workspaceID": selection.id})
 
-    def setScript(self):
+    def setScript(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.EDGE):
             return
@@ -66,7 +70,7 @@ class RunnerComponent(Node):
             "/Runner/Script/Set", {"edgeID": selection.id, "scriptID": scriptID}
         )
 
-    def unsetScript(self):
+    def unsetScript(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.EDGE):
             return
@@ -79,10 +83,10 @@ class RunnerComponent(Node):
         edges = self.model.edgesFromScript(scriptID)
         for edge in edges:
             self.publish(
-                "/Runner/Script/Update", {"edgeID": edge, "scriptID": scriptID}
+                "/Runner/Script/Updated", {"edgeID": edge, "scriptID": scriptID}
             )
 
-    def setEntry(self):
+    def setEntry(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
@@ -90,8 +94,11 @@ class RunnerComponent(Node):
         prev = self.manager.setEntry(selection.id)
         self.publish("/Runner/Entry/Set", {"prevID": prev, "currID": selection.id})
 
+    def execute(self, data):
+        self.runner.execute()
+
     def onWorkspaceCreate(self, data):
-        self.unsetAction()
+        self.unsetAction(data)
 
     def onWorkspaceDelete(self, data):
         id = data["id"]

@@ -1,10 +1,9 @@
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QAction,
     QApplication,
     QHBoxLayout,
-    QMainWindow,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -12,6 +11,7 @@ from PyQt5.QtWidgets import (
 
 from src.router.routing import Dispatcher
 
+from .actions import ActionRegistry
 from .components.action import ActionComponent
 from .components.graph import GraphComponent
 from .components.runner import RunnerComponent
@@ -20,61 +20,72 @@ from .components.workspace import WorkspaceComponent
 from .events import EventBus
 from .serialization import SerializerNode
 from .state import Context, ContextManager
+from .window import MainWindow
 
 
-class MainWindow(QMainWindow):
-    requestExport = pyqtSignal()
-    requestImport = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        fileMenu = self.menuBar().addMenu("&File")
-
-        saveAction = QAction("Save", self)
-        saveAction.setShortcut(QKeySequence.Save)
-        saveAction.triggered.connect(self.requestExport.emit)
-
-        loadAction = QAction("Open...", self)
-        loadAction.setShortcut(QKeySequence.Open)
-        loadAction.triggered.connect(self.requestImport.emit)
-
-        fileMenu.addAction(loadAction)
-        fileMenu.addAction(saveAction)
-
-    def closeEvent(self, event):
-        QApplication.quit()
+def createAction(name, shortcut, parent) -> QAction:
+    action = QAction(name, parent)
+    action.setShortcut(shortcut)
+    action.setShortcutContext(Qt.ApplicationShortcut)
+    return action
 
 
 class App(QApplication):
     def __init__(self, dispatcher: Dispatcher):
         super().__init__([])
 
-        self._initState()
-        self._initComponents(self.context, dispatcher)
+        self.window = MainWindow()
+        self.eventBus = EventBus()
+
+        self.context = self._initState()
+        self.actions = ActionRegistry()
+        self._initActions(self.actions)
+        self.components = self._initComponents(self.context, self.actions, dispatcher)
         self._initLayout()
 
         self.serializerNode = SerializerNode(self.context)
         self.window.requestExport.connect(self.serializerNode.handleExport)
         self.window.requestImport.connect(self.serializerNode.handleImport)
 
-        self.eventBus = EventBus()
-        self.eventBus.registerNode(self.contextManager)
-        self.eventBus.registerNode(self.serializerNode)
-        self.eventBus.registerNodes(self.components)
+        self._initEvents(self.eventBus)
         self.eventBus.handlePublish("/App/Loaded")
 
-    def _initState(self):
-        self.context = Context()
-        self.contextManager = ContextManager(self.context)
+    def _initState(self) -> Context:
+        context = Context()
+        self.contextManager = ContextManager(context)
+        return context
 
-    def _initComponents(self, context, dispatcher):
-        self.wkCpt = WorkspaceComponent(context, dispatcher)
-        self.graphCpt = GraphComponent(context, dispatcher)
+    def _initActions(self, actions: ActionRegistry):
+        actionMap = {
+            "Create Workspace": (QKeySequence.New, "/Workspace/Create/Request"),
+            "Delete Workspace": ("Meta+Backspace", "/Workspace/Delete/Request"),
+            "Set Edge Start": ("1", "/Graph/Edge/SetStart/Request"),
+            "Set Edge End": ("2", "/Graph/Edge/SetEnd/Request"),
+            "Create Edge": ("E", "/Graph/Edge/Create/Request"),
+            "Set Action": ("3", "/Runner/Action/Set/Request"),
+            "Unset Action": ("4", "/Runner/Action/Unset/Request"),
+            "Set Script": ("5", "/Runner/Script/Set/Request"),
+            "Unset Script": ("6", "/Runner/Script/Unset/Request"),
+            "Set Entry": ("Return", "/Runner/Entry/Set/Request"),
+            "Execute": ("Ctrl+R", "/Runner/Execute/Request"),
+        }
+
+        for name, (shortcut, event) in actionMap.items():
+            action = createAction(name, shortcut, self.window)
+            self.window.addAction(action)
+            action.triggered.connect(lambda _, e=event: self.eventBus.handlePublish(e))
+            actions.register(name, action)
+
+    def _initComponents(
+        self, context: Context, actions: ActionRegistry, dispatcher: Dispatcher
+    ):
+        self.wkCpt = WorkspaceComponent(context, actions, dispatcher)
+        self.graphCpt = GraphComponent(context, actions, dispatcher)
         self.actionCpt = ActionComponent(context, dispatcher)
         self.scriptCpt = ScriptComponent(context, dispatcher)
-        self.runnerCpt = RunnerComponent(context, dispatcher)
+        self.runnerCpt = RunnerComponent(context, actions, dispatcher)
 
-        self.components = [
+        return [
             self.wkCpt,
             self.graphCpt,
             self.actionCpt,
@@ -83,7 +94,6 @@ class App(QApplication):
         ]
 
     def _initLayout(self):
-        self.window = MainWindow()
         self.widget = QWidget()
 
         self.layout = QHBoxLayout(self.widget)
@@ -99,15 +109,20 @@ class App(QApplication):
 
         self.layoutLeft.addStretch()
 
-        self.layoutMid.addWidget(self.wkCpt.editor)
-        self.layoutMid.addWidget(self.graphCpt.editor)
+        self.layoutMid.addWidget(self.graphCpt.display)
         self.layoutMid.addStretch()
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self.wkCpt.editor, "Workspaces")
+        self.tabs.addTab(self.graphCpt.editor, "Graphs")
         self.tabs.addTab(self.actionCpt.editor, "Actions")
         self.tabs.addTab(self.scriptCpt.editor, "Scripts")
 
         self.layoutRight.addWidget(self.runnerCpt.editor)
         self.layoutRight.addWidget(self.tabs)
         self.layoutRight.addStretch()
+
+    def _initEvents(self, eventBus: EventBus):
+        self.eventBus.registerNode(self.contextManager)
+        self.eventBus.registerNode(self.serializerNode)
+        self.eventBus.registerNodes(self.components)

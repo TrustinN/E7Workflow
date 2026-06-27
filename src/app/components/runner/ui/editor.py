@@ -1,66 +1,42 @@
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QPushButton, QShortcut, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
+from src.app.actions import ActionRegistry
 
 
 class RunnerEditor(QWidget):
-    requestActionSet = pyqtSignal()
-    requestActionUnset = pyqtSignal()
-    requestScriptSet = pyqtSignal()
-    requestScriptUnset = pyqtSignal()
-    requestEntrySet = pyqtSignal()
-    requestExecute = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, actions: ActionRegistry):
         super().__init__()
 
         self.layout = QVBoxLayout(self)
 
-        self.actionShortcut = QShortcut("3", self)
-        key = self.actionShortcut.key().toString(QKeySequence.NativeText)
-        self.actionBtn = QPushButton(f"Set Action ({key})")
-        self.actionShortcut.activated.connect(self.requestActionSet.emit)
-        self.actionBtn.clicked.connect(self.requestActionSet.emit)
-        self.actionShortcut.setContext(Qt.ApplicationShortcut)
+        action = actions.get("Set Action")
+        self.setActionBtn = QPushButton(actions.displayText("Set Action"))
+        self.setActionBtn.addAction(action)
 
-        self.unsetActionShortcut = QShortcut("4", self)
-        key = self.unsetActionShortcut.key().toString(QKeySequence.NativeText)
-        self.unsetActionBtn = QPushButton(f"Unset Action ({key})")
-        self.unsetActionShortcut.activated.connect(self.requestActionUnset.emit)
-        self.unsetActionBtn.clicked.connect(self.requestActionUnset.emit)
-        self.unsetActionShortcut.setContext(Qt.ApplicationShortcut)
+        action = actions.get("Unset Action")
+        self.unsetActionBtn = QPushButton(actions.displayText("Unset Action"))
+        self.unsetActionBtn.addAction(action)
 
-        self.scriptShortcut = QShortcut("5", self)
-        key = self.scriptShortcut.key().toString(QKeySequence.NativeText)
-        self.scriptBtn = QPushButton(f"Set Script ({key})")
-        self.scriptShortcut.activated.connect(self.requestScriptSet.emit)
-        self.scriptBtn.clicked.connect(self.requestScriptSet.emit)
-        self.scriptShortcut.setContext(Qt.ApplicationShortcut)
+        action = actions.get("Set Script")
+        self.setScriptBtn = QPushButton(actions.displayText("Set Script"))
+        self.setScriptBtn.addAction(action)
 
-        self.unsetScriptShortcut = QShortcut("6", self)
-        key = self.unsetScriptShortcut.key().toString(QKeySequence.NativeText)
-        self.unsetScriptBtn = QPushButton(f"Unset Script ({key})")
-        self.unsetScriptShortcut.activated.connect(self.requestScriptUnset.emit)
-        self.unsetScriptBtn.clicked.connect(self.requestScriptUnset.emit)
-        self.unsetScriptShortcut.setContext(Qt.ApplicationShortcut)
+        action = actions.get("Unset Script")
+        self.unsetScriptBtn = QPushButton(actions.displayText("Unset Script"))
+        self.unsetScriptBtn.addAction(action)
 
-        self.entryShortcut = QShortcut("Return", self)
-        key = self.entryShortcut.key().toString(QKeySequence.NativeText)
-        self.entryBtn = QPushButton(f"Set Entry ({key})")
-        self.entryShortcut.activated.connect(self.requestEntrySet.emit)
-        self.entryBtn.clicked.connect(self.requestEntrySet.emit)
-        self.entryShortcut.setContext(Qt.ApplicationShortcut)
+        action = actions.get("Set Entry")
+        self.entryBtn = QPushButton(actions.displayText("Set Entry"))
+        self.entryBtn.addAction(action)
 
-        self.executeShortcut = QShortcut("Ctrl+R", self)
-        key = self.executeShortcut.key().toString(QKeySequence.NativeText)
-        self.executeBtn = QPushButton(f"Execute ({key})")
-        self.executeShortcut.activated.connect(self.requestExecute.emit)
-        self.executeBtn.clicked.connect(self.requestExecute.emit)
-        self.executeShortcut.setContext(Qt.ApplicationShortcut)
+        action = actions.get("Execute")
+        self.executeBtn = QPushButton(actions.displayText("Execute"))
+        self.executeBtn.addAction(action)
 
-        self.layout.addWidget(self.actionBtn)
+        self.layout.addWidget(self.setActionBtn)
         self.layout.addWidget(self.unsetActionBtn)
-        self.layout.addWidget(self.scriptBtn)
+        self.layout.addWidget(self.setScriptBtn)
         self.layout.addWidget(self.unsetScriptBtn)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)
