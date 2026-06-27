@@ -16,9 +16,9 @@ from .components.action import ActionComponent
 from .components.graph import GraphComponent
 from .components.runner import RunnerComponent
 from .components.script import ScriptComponent
+from .components.serialization import SerializerComponent
 from .components.workspace import WorkspaceComponent
 from .events import EventBus
-from .serialization import SerializerNode
 from .state import Context, ContextManager
 from .window import MainWindow
 
@@ -83,7 +83,7 @@ class App(QApplication):
         self.actionCpt = ActionComponent(context, dispatcher)
         self.scriptCpt = ScriptComponent(context, dispatcher)
         self.runnerCpt = RunnerComponent(context, actions, dispatcher)
-        self.serialCpt = SerializerNode(context)
+        self.serialCpt = SerializerComponent()
 
         return [
             self.wkCpt,
@@ -118,6 +118,7 @@ class App(QApplication):
         self.tabs.addTab(self.graphCpt.editor, "Graph")
         self.tabs.addTab(self.actionCpt.editor, "Actions")
         self.tabs.addTab(self.scriptCpt.editor, "Scripts")
+        self.tabs.addTab(self.serialCpt.editor, "Save/Load")
 
         self.layoutRight.addWidget(self.runnerCpt.editor)
         self.layoutRight.addWidget(self.tabs)

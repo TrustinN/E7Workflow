@@ -5,3 +5,5 @@ move actions declaration back into components
 add dedicated editor for serialization
 
 add parameter tree to toggle workspace visiblility
+
+fix children workspaces not resizing/moving from editor updates
