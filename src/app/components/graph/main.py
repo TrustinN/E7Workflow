@@ -5,7 +5,7 @@ from src.app.components.script.service import ScriptRoute
 from src.app.components.utils.colors import Colors
 from src.app.components.workspace.model import WorkspaceSchema
 from src.app.events import Node
-from src.app.state import Context
+from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher, Link
 
 from .manager import GraphManager
@@ -38,20 +38,21 @@ class GraphComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Graph/Edge/Create/Request", self.createEdge)
+        self.subscribe("/Graph/Edge/Create/Request", self.handleCreateEdgeRequest)
         self.subscribe("/Graph/Edge/SetStart/Request", lambda _: self.editor.setE1())
         self.subscribe("/Graph/Edge/SetEnd/Request", lambda _: self.editor.setE2())
+        self.subscribe("/Graph/Edge/Delete/Request", self.handleDeleteEdgeRequest)
 
-        self.subscribe("/Workspace/Root/Created", self.createNode)
-        self.subscribe("/Workspace/Node/Created", self.createNode)
-        self.subscribe("/Workspace/Node/Deleted", self.deleteNode)
+        self.subscribe("/Workspace/Root/Created", self.onWorkspaceCreated)
+        self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreated)
+        self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDeleted)
 
         self.subscribe("/Runner/Entry/Set", self.onRunnerEntrySet)
         self.subscribe("/Runner/Script/Set", self.onRunnerScriptUpdate)
         self.subscribe("/Runner/Script/Updated", self.onRunnerScriptUpdate)
         self.subscribe("/Runner/Script/Unset", self.onRunnerScriptUnset)
 
-    def createNode(self, data):
+    def onWorkspaceCreated(self, data):
         wksSchema = WorkspaceSchema.fromData(data)
 
         nodeID = self.manager.createNode(wksSchema)
@@ -59,7 +60,11 @@ class GraphComponent(Node):
 
         self.publish("/Graph/Node/Created", schema.toData())
 
-    def createEdge(self, data):
+    def onWorkspaceDeleted(self, data):
+        id = data["id"]
+        self.model.deleteNode(id)
+
+    def handleCreateEdgeRequest(self, data):
         source, target = self.editor.draftEdge()
         if source is None or target is None:
             return
@@ -67,6 +72,13 @@ class GraphComponent(Node):
         schema = self.model.getEdge(edgeID)
 
         self.publish("/Graph/Edge/Created", schema.toData())
+
+    def handleDeleteEdgeRequest(self, data):
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type == SelectionType.EDGE):
+            return
+
+        self.model.deleteEdge(selection.id)
 
     def onRunnerScriptUpdate(self, data):
         edgeID = data["edgeID"]
@@ -107,10 +119,6 @@ class GraphComponent(Node):
                 }
             },
         )
-
-    def deleteNode(self, data):
-        id = data["id"]
-        self.model.deleteNode(id)
 
     def saveState(self, data):
         path = data["path"]

@@ -34,8 +34,8 @@ class WorkspaceComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Workspace/Create/Request", self.createWorkspace)
-        self.subscribe("/Workspace/Delete/Request", self.deleteWorkspace)
+        self.subscribe("/Workspace/Create/Request", self.handleCreateRequest)
+        self.subscribe("/Workspace/Delete/Request", self.handleDeleteRequest)
 
         self.subscribe("/Runner/Action/Set", self.onRunnerActionSet)
         self.subscribe("/Runner/Action/Unset", self.onRunnerActionUnset)
@@ -45,8 +45,8 @@ class WorkspaceComponent(Node):
         schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Root/Created", schema.toData())
 
-    def createWorkspace(self, data):
-        parent, name, ok = self.editor.createWorkspace()
+    def handleCreateRequest(self, data):
+        parent, name, ok = self.editor.draftWorkspace()
         if not ok:
             return
 
@@ -54,7 +54,7 @@ class WorkspaceComponent(Node):
         schema = self.manager.getWorkspace(id)
         self.publish("/Workspace/Node/Created", schema.toData())
 
-    def deleteWorkspace(self, data):
+    def handleDeleteRequest(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type is SelectionType.WORKSPACE):
             return

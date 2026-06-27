@@ -1,16 +1,8 @@
 import json
 import os
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import (
-    QGraphicsView,
-    QHBoxLayout,
-    QPushButton,
-    QShortcut,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QWidget
 
 from src.app.components.graph.model import GraphDocument, GraphModel, GraphViewState
 from src.app.state import Context
@@ -20,11 +12,41 @@ from .scene import GraphScene
 from .viewmodel import GraphViewModel
 
 
+class GraphViewport:
+    def __init__(
+        self,
+        context: Context,
+        model: GraphModel,
+        viewState: GraphViewState,
+        controllerType,
+    ):
+        self.scene = GraphScene()
+        self.scene.setSceneRect(0, 0, 450, 275)
+
+        self.controller = controllerType(
+            context,
+            self.scene,
+            model,
+            viewState,
+        )
+
+        self.viewModel = GraphViewModel(
+            self.scene,
+            model,
+            viewState,
+        )
+
+        self.view = QGraphicsView(self.scene)
+        self.view.setFixedSize(450, 275)
+        self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+
 class GraphDisplay(QWidget):
+
     def __init__(self, context: Context, model: GraphModel):
         super().__init__()
 
-        self.context = context
         self.layout = QVBoxLayout(self)
         self.document = GraphDocument(model)
 
@@ -34,30 +56,22 @@ class GraphDisplay(QWidget):
         self.document.addViewState("miniView", self.miniViewState)
         self.document.addViewState("fullView", self.fullViewState)
 
-        self.miniScene = GraphScene()
-        self.miniScene.setSceneRect(0, 0, 450, 275)
-        self.miniController = MiniViewController(
-            context, self.miniScene, model, self.miniViewState
+        self.mini = GraphViewport(
+            context,
+            model,
+            self.miniViewState,
+            MiniViewController,
         )
-        self.miniViewModel = GraphViewModel(self.miniScene, model, self.miniViewState)
-        self.miniView = QGraphicsView(self.miniScene)
-        self.miniView.setFixedSize(450, 275)
-        self.miniView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.miniView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.fullScene = GraphScene()
-        self.fullScene.setSceneRect(0, 0, 450, 275)
-        self.fullController = FullViewController(
-            context, self.fullScene, model, self.fullViewState
+        self.full = GraphViewport(
+            context,
+            model,
+            self.fullViewState,
+            FullViewController,
         )
-        self.fullViewModel = GraphViewModel(self.fullScene, model, self.fullViewState)
-        self.fullView = QGraphicsView(self.fullScene)
-        self.fullView.setFixedSize(450, 275)
-        self.fullView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.fullView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.layout.addWidget(self.miniView)
-        self.layout.addWidget(self.fullView)
+        self.layout.addWidget(self.mini.view)
+        self.layout.addWidget(self.full.view)
 
     def updateNode(self, id: str, patch: dict):
         self.miniViewState.updateNode(id, patch)

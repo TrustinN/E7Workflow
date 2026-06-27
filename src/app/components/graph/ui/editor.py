@@ -23,9 +23,14 @@ class GraphEditor(QWidget):
         self.edgeBtn = QPushButton(actions.displayText("Create Edge"))
         self.edgeBtn.clicked.connect(action.trigger)
 
+        action = actions.get("Delete Edge")
+        self.deleteBtn = QPushButton(actions.displayText("Delete Edge"))
+        self.deleteBtn.clicked.connect(action.trigger)
+
         self.layout.addWidget(self.e1Btn)
         self.layout.addWidget(self.e2Btn)
         self.layout.addWidget(self.edgeBtn)
+        self.layout.addWidget(self.deleteBtn)
         self.layout.addStretch()
 
         self.e1 = None

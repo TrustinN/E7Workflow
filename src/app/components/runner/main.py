@@ -30,19 +30,19 @@ class RunnerComponent(Node):
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
-        self.subscribe("/Runner/Action/Set/Request", self.setAction)
-        self.subscribe("/Runner/Action/Unset/Request", self.unsetAction)
-        self.subscribe("/Runner/Script/Set/Request", self.setScript)
-        self.subscribe("/Runner/Script/Unset/Request", self.unsetScript)
-        self.subscribe("/Runner/Entry/Set/Request", self.setEntry)
-        self.subscribe("/Runner/Execute/Request", self.execute)
+        self.subscribe("/Runner/Action/Set/Request", self.handleSetActionRequest)
+        self.subscribe("/Runner/Action/Unset/Request", self.handleUnsetActionRequest)
+        self.subscribe("/Runner/Script/Set/Request", self.handleSetScriptRequest)
+        self.subscribe("/Runner/Script/Unset/Request", self.handleUnsetScriptRequest)
+        self.subscribe("/Runner/Entry/Set/Request", self.handleSetEntryRequest)
+        self.subscribe("/Runner/Execute/Request", self.handleExecuteRequest)
 
         self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
         self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDelete)
         self.subscribe("/Graph/Edge/Deleted", self.onEdgeDelete)
         self.subscribe("/Script/Updated", self.onScriptUpdate)
 
-    def setAction(self, data):
+    def handleSetActionRequest(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
@@ -52,15 +52,18 @@ class RunnerComponent(Node):
             "/Runner/Action/Set", {"workspaceID": selection.id, "actionID": actionID}
         )
 
-    def unsetAction(self, data):
+    def clearAction(self, workspaceID):
+        self.manager.unsetAction(workspaceID)
+        self.publish("/Runner/Action/Unset", {"workspaceID": workspaceID})
+
+    def handleUnsetActionRequest(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
 
-        self.manager.unsetAction(selection.id)
-        self.publish("/Runner/Action/Unset", {"workspaceID": selection.id})
+        self.clearAction(selection.id)
 
-    def setScript(self, data):
+    def handleSetScriptRequest(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.EDGE):
             return
@@ -70,7 +73,7 @@ class RunnerComponent(Node):
             "/Runner/Script/Set", {"edgeID": selection.id, "scriptID": scriptID}
         )
 
-    def unsetScript(self, data):
+    def handleUnsetScriptRequest(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.EDGE):
             return
@@ -86,7 +89,7 @@ class RunnerComponent(Node):
                 "/Runner/Script/Updated", {"edgeID": edge, "scriptID": scriptID}
             )
 
-    def setEntry(self, data):
+    def handleSetEntryRequest(self, data):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
             return
@@ -94,11 +97,12 @@ class RunnerComponent(Node):
         prev = self.manager.setEntry(selection.id)
         self.publish("/Runner/Entry/Set", {"prevID": prev, "currID": selection.id})
 
-    def execute(self, data):
+    def handleExecuteRequest(self, data):
         self.runner.execute()
 
     def onWorkspaceCreate(self, data):
-        self.unsetAction(data)
+        if data["parent"]:
+            self.clearAction(data["parent"])
 
     def onWorkspaceDelete(self, data):
         id = data["id"]

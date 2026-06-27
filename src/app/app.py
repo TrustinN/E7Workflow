@@ -58,6 +58,7 @@ class App(QApplication):
             "Set Edge Start": ("1", "/Graph/Edge/SetStart/Request"),
             "Set Edge End": ("2", "/Graph/Edge/SetEnd/Request"),
             "Create Edge": ("E", "/Graph/Edge/Create/Request"),
+            "Delete Edge": ("Backspace", "/Graph/Edge/Delete/Request"),
             "Set Action": ("3", "/Runner/Action/Set/Request"),
             "Unset Action": ("4", "/Runner/Action/Unset/Request"),
             "Set Script": ("5", "/Runner/Script/Set/Request"),
@@ -113,8 +114,8 @@ class App(QApplication):
         self.layoutMid.addStretch()
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.wkCpt.editor, "Workspaces")
-        self.tabs.addTab(self.graphCpt.editor, "Graphs")
+        self.tabs.addTab(self.wkCpt.editor, "Workspace")
+        self.tabs.addTab(self.graphCpt.editor, "Graph")
         self.tabs.addTab(self.actionCpt.editor, "Actions")
         self.tabs.addTab(self.scriptCpt.editor, "Scripts")
 

@@ -1,11 +1,4 @@
-from PyQt5.QtWidgets import (
-    QInputDialog,
-    QLineEdit,
-    QPushButton,
-    QShortcut,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from src.app.actions import ActionRegistry
 from src.app.components.workspace.model import WorkspaceModel
@@ -38,7 +31,7 @@ class WorkspaceEditor(QWidget):
         self.layout.addWidget(self.deleteBtn)
         self.layout.addStretch()
 
-    def createWorkspace(self):
+    def draftWorkspace(self):
         selection = self.context.selectionModel.getSelected()
         if not (selection.id and selection.type is SelectionType.WORKSPACE):
             return selection.id, "", False
