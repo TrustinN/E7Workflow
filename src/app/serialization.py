@@ -21,6 +21,9 @@ class SerializerNode(Node):
         self.context = context
         os.makedirs(SAVE_DIR, exist_ok=True)
 
+        self.subscribe("/App/Export/Request", self.handleExport)
+        self.subscribe("/App/Import/Request", self.handleImport)
+
     def requestReset(self):
         self.context.clear()
         self.publish("/App/Reset")
@@ -34,7 +37,7 @@ class SerializerNode(Node):
         path = os.path.join(SAVE_DIR, id)
         self.publish("/App/Import", {"path": path})
 
-    def handleExport(self):
+    def handleExport(self, data):
         dialog = QDialog()
         dialog.setWindowTitle("Export Config")
         dialog.setMinimumSize(350, 180)
@@ -74,7 +77,7 @@ class SerializerNode(Node):
             if name:
                 self.requestExport(name)
 
-    def handleImport(self):
+    def handleImport(self, data):
         dialog = QDialog()
         dialog.setWindowTitle("Select Config")
         dialog.resize(300, 150)

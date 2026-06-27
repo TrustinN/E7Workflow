@@ -43,10 +43,6 @@ class App(QApplication):
         self.components = self._initComponents(self.context, self.actions, dispatcher)
         self._initLayout()
 
-        self.serializerNode = SerializerNode(self.context)
-        self.window.requestExport.connect(self.serializerNode.handleExport)
-        self.window.requestImport.connect(self.serializerNode.handleImport)
-
         self._initEvents(self.eventBus)
         self.eventBus.handlePublish("/App/Loaded")
 
@@ -68,6 +64,8 @@ class App(QApplication):
             "Unset Script": ("6", "/Runner/Script/Unset/Request"),
             "Set Entry": ("Return", "/Runner/Entry/Set/Request"),
             "Execute": ("Ctrl+R", "/Runner/Execute/Request"),
+            "Save": (QKeySequence.Save, "/App/Export/Request"),
+            "Open": (QKeySequence.Open, "/App/Import/Request"),
         }
 
         for name, (shortcut, event) in actionMap.items():
@@ -84,6 +82,7 @@ class App(QApplication):
         self.actionCpt = ActionComponent(context, dispatcher)
         self.scriptCpt = ScriptComponent(context, dispatcher)
         self.runnerCpt = RunnerComponent(context, actions, dispatcher)
+        self.serialCpt = SerializerNode(context)
 
         return [
             self.wkCpt,
@@ -91,6 +90,7 @@ class App(QApplication):
             self.actionCpt,
             self.scriptCpt,
             self.runnerCpt,
+            self.serialCpt,
         ]
 
     def _initLayout(self):
@@ -124,5 +124,4 @@ class App(QApplication):
 
     def _initEvents(self, eventBus: EventBus):
         self.eventBus.registerNode(self.contextManager)
-        self.eventBus.registerNode(self.serializerNode)
         self.eventBus.registerNodes(self.components)
