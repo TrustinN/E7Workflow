@@ -9,6 +9,7 @@ from .window import Window
 
 
 class WindowHierarchy(Window):
+    childAdded = pyqtSignal()
     geometryUpdated = pyqtSignal()
     focusParent = pyqtSignal(QMouseEvent)
     onDelete = pyqtSignal()
@@ -32,7 +33,6 @@ class WindowHierarchy(Window):
         self.resizeFromChild()
 
     def addChild(self, id, window):
-        self.fitChildToCenter(window)
 
         self.windows[id] = window
         self.geometryTracker.addGeometry(id, window.geometry())
@@ -55,27 +55,8 @@ class WindowHierarchy(Window):
         window.onDelete.connect(lambda: self.deleteChild(id))
         window.focusParent.connect(self.mousePressEvent)
 
-    def fitChildToCenter(self, window, scale=0.7):
-        tl = self.geometry().topLeft()
-        br = self.geometry().bottomRight()
-
-        parentW = br.x() - tl.x()
-        parentH = br.y() - tl.y()
-
-        margin = 10
-        parentW -= 2 * margin
-        parentH -= 2 * margin
-
-        childW = parentW * scale
-        childH = parentH * scale
-
-        cx = tl.x() + margin + parentW / 2
-        cy = tl.y() + margin + parentH / 2
-
-        newTl = QPoint(int(cx - childW / 2), int(cy - childH / 2))
-        newBr = QPoint(int(cx + childW / 2), int(cy + childH / 2))
-
-        window.setGeometry(QRect(newTl, newBr))
+        self.updateGeometry()
+        self.childAdded.emit()
 
     def resize(self, newRect):
         oldRect = self.geometry()

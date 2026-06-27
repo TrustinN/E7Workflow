@@ -63,6 +63,7 @@ class WorkspaceView(QObject):
         workspace.mousePress.connect(emitPressed)
         workspace.moveDone.connect(emitUpdated)
         workspace.resizeDone.connect(emitUpdated)
+        workspace.childAdded.connect(emitUpdated)
 
         self.workspaces[id] = workspace
         workspace.setData(data)
