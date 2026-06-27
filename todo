@@ -1,5 +1,3 @@
-fix viewmodel signals in graph component
-
 add state widget
 
 move actions declaration back into components

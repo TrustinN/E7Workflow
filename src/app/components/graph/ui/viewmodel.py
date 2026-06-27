@@ -14,98 +14,71 @@ class GraphViewModel:
         self.model = model
         self.viewState = viewState
 
-        self.model.nodeCreated.connect(self.createModelNode)
-        self.model.nodeCreated.connect(self.createNode)
-        self.model.edgeCreated.connect(self.createModelEdge)
-        self.model.edgeCreated.connect(self.createEdge)
-        self.model.nodeDeleted.connect(self.deleteModelNode)
-        self.model.nodeDeleted.connect(self.deleteNode)
-        self.model.edgeDeleted.connect(self.deleteModelEdge)
-        self.model.edgeDeleted.connect(self.deleteEdge)
-        self.model.modelCleared.connect(self.viewState.clear)
-        self.model.modelCleared.connect(self.scene.clear)
-        self.model.modelLoaded.connect(self.rebuild)
+        self.model.nodeCreated.connect(self.onNodeCreated)
+        self.model.nodeDeleted.connect(self.onNodeDeleted)
 
-        self.viewState.nodeUpdated.connect(self.updateNode)
-        self.viewState.edgeUpdated.connect(self.updateEdge)
-        self.viewState.modelLoaded.connect(self.rerender)
+        self.model.edgeCreated.connect(self.onEdgeCreated)
+        self.model.edgeDeleted.connect(self.onEdgeDeleted)
 
-        self.scene.nodeUpdated.connect(self.updateModelNode)
-        self.scene.edgeUpdated.connect(self.updateModelEdge)
+        self.model.modelCleared.connect(self.onModelCleared)
 
-        self._loading = False
+        self.viewState.nodeUpdated.connect(self.onNodeStateChanged)
+        self.viewState.edgeUpdated.connect(self.onEdgeStateChanged)
+        self.viewState.modelLoaded.connect(self.rebuild)
 
-    def createModelNode(self, id):
+        self.scene.nodeUpdated.connect(self.onSceneNodeChanged)
+        self.scene.edgeUpdated.connect(self.onSceneEdgeChanged)
+
+    def onNodeCreated(self, id):
         state = NodeViewState()
         self.viewState.addNode(id, state)
+        self.scene.createNode(id, state.toData())
 
-    def createModelEdge(self, id):
+    def onEdgeCreated(self, id):
+        edge = self.model.getEdge(id)
         state = EdgeViewState()
         self.viewState.addEdge(id, state)
+        self.scene.createEdge(
+            id,
+            edge.source,
+            edge.target,
+            state.toData(),
+        )
 
-    def deleteModelNode(self, id):
+    def onNodeDeleted(self, id):
         self.viewState.deleteNode(id)
+        self.scene.deleteNode(id)
 
-    def deleteModelEdge(self, id):
+    def onEdgeDeleted(self, id):
         self.viewState.deleteEdge(id)
+        self.scene.deleteEdge(id)
 
-    def createNode(self, id):
-        schema = self.viewState.getNode(id)
-        self.scene.createNode(id, schema.toData())
+    def onModelCleared(self):
+        self.viewState.clear()
+        self.scene.clear()
 
-    def createEdge(self, id):
-        edge = self.model.getEdge(id)
-        source = edge.source
-        target = edge.target
-        schema = self.viewState.getEdge(id)
-
-        self.scene.createEdge(id, source, target, schema.toData())
-
-    def updateNode(self, id):
+    def onNodeStateChanged(self, id):
         state = self.viewState.getNode(id)
         self.scene.updateNode(id, state.toData())
 
-    def updateEdge(self, id):
+    def onEdgeStateChanged(self, id):
         state = self.viewState.getEdge(id)
         self.scene.updateEdge(id, state.toData())
 
-    def deleteNode(self, id):
-        self.scene.deleteNode(id)
-
-    def deleteEdge(self, id):
-        self.scene.deleteEdge(id)
-
-    def updateModelNode(self, id):
-        if self._loading:
-            return
-
+    def onSceneNodeChanged(self, id):
         data = self.scene.readNode(id)
         self.viewState.updateNode(id, data)
 
-    def updateModelEdge(self, id):
-        if self._loading:
-            return
-
+    def onSceneEdgeChanged(self, id):
         data = self.scene.readEdge(id)
         self.viewState.updateEdge(id, data)
 
     def rebuild(self):
-        self._loading = True
         for id in self.model.nodeList():
-            self.scene._createNode(id, {})
+            state = self.viewState.getNode(id)
+            self.scene._createNode(id, state.toData())
 
         for id in self.model.edgeList():
-            schema = self.model.getEdge(id)
-            self.scene._createEdge(id, schema.source, schema.target, {})
-        self._loading = False
-
-    def rerender(self):
-        self._loading = True
-        for id in self.model.nodeList():
-            schema = self.viewState.getNode(id)
-            self.scene.updateNode(id, schema.toData())
-
-        for id in self.model.edgeList():
-            schema = self.viewState.getEdge(id)
-            self.scene.updateEdge(id, schema.toData())
-        self._loading = False
+            edge = self.model.getEdge(id)
+            state = self.viewState.getEdge(id)
+            self.scene._createEdge(id, edge.source, edge.target, state.toData())
