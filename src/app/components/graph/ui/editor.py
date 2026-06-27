@@ -13,15 +13,15 @@ class GraphEditor(QWidget):
 
         action = actions.get("Set Edge Start")
         self.e1Btn = QPushButton(actions.displayText("Set Edge Start"))
-        self.e1Btn.addAction(action)
+        self.e1Btn.clicked.connect(action.trigger)
 
         action = actions.get("Set Edge End")
         self.e2Btn = QPushButton(actions.displayText("Set Edge End"))
-        self.e2Btn.addAction(action)
+        self.e2Btn.clicked.connect(action.trigger)
 
         action = actions.get("Create Edge")
         self.edgeBtn = QPushButton(actions.displayText("Create Edge"))
-        self.edgeBtn.addAction(action)
+        self.edgeBtn.clicked.connect(action.trigger)
 
         self.layout.addWidget(self.e1Btn)
         self.layout.addWidget(self.e2Btn)

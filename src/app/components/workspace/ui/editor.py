@@ -28,11 +28,11 @@ class WorkspaceEditor(QWidget):
 
         action = actions.get("Create Workspace")
         self.createBtn = QPushButton(actions.displayText("Create Workspace"))
-        self.createBtn.addAction(action)
+        self.createBtn.clicked.connect(action.trigger)
 
         action = actions.get("Delete Workspace")
         self.deleteBtn = QPushButton(actions.displayText("Delete Workspace"))
-        self.deleteBtn.addAction(action)
+        self.deleteBtn.clicked.connect(action.trigger)
 
         self.layout.addWidget(self.createBtn)
         self.layout.addWidget(self.deleteBtn)
