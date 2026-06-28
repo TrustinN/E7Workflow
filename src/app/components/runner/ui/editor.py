@@ -46,3 +46,4 @@ class RunnerEditor(QWidget):
         self.layout.addLayout(scriptRow)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)
+        self.layout.addStretch()

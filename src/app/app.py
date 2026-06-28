@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QAction,
     QApplication,
     QHBoxLayout,
+    QPushButton,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -97,14 +98,15 @@ class App(QApplication):
 
     def _initLayout(self):
         self.widget = QWidget()
+        self.widget.setMinimumHeight(600)
 
         self.layout = QHBoxLayout(self.widget)
         self.layoutLeft = QVBoxLayout()
         self.layoutMid = QVBoxLayout()
         self.layoutRight = QVBoxLayout()
-        self.layout.addLayout(self.layoutLeft)
-        self.layout.addLayout(self.layoutMid)
-        self.layout.addLayout(self.layoutRight)
+        self.layout.addLayout(self.layoutLeft, 1)
+        self.layout.addLayout(self.layoutMid, 0)
+        self.layout.addLayout(self.layoutRight, 0)
 
         self.window.setCentralWidget(self.widget)
         self.window.show()
@@ -119,11 +121,13 @@ class App(QApplication):
         self.tabs.addTab(self.graphCpt.editor, "Graph")
         self.tabs.addTab(self.actionCpt.editor, "Actions")
         self.tabs.addTab(self.scriptCpt.editor, "Scripts")
+        self.tabs.addTab(self.runnerCpt.editor, "Runner")
         self.tabs.addTab(self.serialCpt.editor, "Save/Load")
-        self.layoutMid.addWidget(self.runnerCpt.editor)
         self.layoutMid.addWidget(self.tabs)
 
-        self.layoutRight.addWidget(self.runtimeCpt.editor)
+        self.console = QTabWidget()
+        self.console.addTab(self.runtimeCpt.editor, "State")
+        self.layoutRight.addWidget(self.console)
 
     def _initEvents(self, eventBus: EventBus):
         self.eventBus.registerNode(self.contextManager)

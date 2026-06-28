@@ -81,7 +81,7 @@ class RuntimeEditor(QWidget):
 
         self.layout.addWidget(self.table)
         self.layout.addLayout(controls)
-        self.setFixedWidth(300)
+        self.setMinimumWidth(300)
 
     def handleVariableAdd(self):
         runtimeType = self.combo.currentData()
