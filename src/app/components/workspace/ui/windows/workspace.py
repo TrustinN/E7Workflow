@@ -7,6 +7,9 @@ from .hierarchy import WindowHierarchy
 
 def formatDisplayText(group, name) -> str:
     text = name
+    if not name:
+        return group
+
     if group is not None:
         text = f"{group} - {name}"
     return text

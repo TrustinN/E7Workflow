@@ -50,13 +50,13 @@ class WorkspaceComponent(Node):
         self.publish("/Workspace/Root/Created", schema.toData())
 
     def handleCreateRequest(self, data):
-        parentID, name, ok = self.editor.draftWorkspace()
-        if not ok:
+        selection = self.context.selectionModel.getSelected()
+        if not (selection.id and selection.type is SelectionType.WORKSPACE):
             return
+        parentID = selection.id
 
         parent = self.model.getItem(parentID)
         id = self.manager.createWorkspace(
-            name=name,
             parent=parentID,
             geometry=parent.geometry.adjusted(15, 15, -15, -15),
         )

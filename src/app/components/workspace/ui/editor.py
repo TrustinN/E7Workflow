@@ -157,20 +157,3 @@ class WorkspaceEditor(QWidget):
         self.layout.addWidget(self.deleteBtn)
         self.layout.addWidget(self.inspector)
         self.layout.addStretch()
-
-    def draftWorkspace(self):
-        selection = self.context.selectionModel.getSelected()
-        if not (selection.id and selection.type is SelectionType.WORKSPACE):
-            return selection.id, "", False
-
-        name, ok = QInputDialog.getText(
-            None,
-            "QInputDialog.getText()",
-            "Workspace Name:",
-            QLineEdit.Normal,
-            "WS Name",
-        )
-        if not (ok and name):
-            return selection.id, name, False
-
-        return selection.id, name, True

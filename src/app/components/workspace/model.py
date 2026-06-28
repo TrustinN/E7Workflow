@@ -9,7 +9,7 @@ from src.app.state import Color, Geometry
 @dataclass
 class WorkspaceSchema:
     id: str = None
-    name: str = None
+    name: str = ""
     grouping: Optional[str] = None
 
     geometry: Geometry = field(
