@@ -1,6 +1,6 @@
 from src.router.routing import Dispatcher, EndpointService, RequestType, route
 
-from .actions import ActionType, ClickAction, DragAction
+from .actions import ActionType, CaptureAction, ClickAction, DragAction
 from .model import ActionModel, ActionViewModel
 
 
@@ -13,6 +13,7 @@ class ActionRoute:
 ACTIONS = {
     ActionType.CLICK: ClickAction,
     ActionType.DRAG: DragAction,
+    ActionType.CAPTURE: CaptureAction,
 }
 
 
@@ -55,4 +56,5 @@ class ActionService(EndpointService):
         schema = self.model.getAction(id)
         schema.update(data)
         actionCls = ACTIONS.get(schema.name)
-        return actionCls().execute(schema.toData())
+        result = actionCls().execute(schema.toData())
+        return result

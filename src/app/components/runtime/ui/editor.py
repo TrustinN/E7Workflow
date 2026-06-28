@@ -1,11 +1,14 @@
 import numpy as np
 from PIL import Image
 from PyQt5.QtCore import QModelIndex, QSize, Qt
+from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (
     QComboBox,
+    QDialog,
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
+    QLabel,
     QLineEdit,
     QPushButton,
     QTableView,
@@ -43,6 +46,7 @@ class RuntimeEditor(QWidget):
         self.table.verticalHeader().setDefaultSectionSize(40)
         self.table.setIconSize(QSize(32, 32))
 
+        self.table.clicked.connect(self.onClick)
         self.table.doubleClicked.connect(self.onDoubleClick)
 
         header = self.table.horizontalHeader()
@@ -102,3 +106,42 @@ class RuntimeEditor(QWidget):
             if path:
                 image = np.array(Image.open(path).convert("RGB"))
                 self.model.updateItem(item.name, {"value": image})
+
+    def onClick(self, index: QModelIndex):
+        item = index.data(Qt.UserRole)
+
+        if item.type != RuntimeType.IMAGE or item.value is None:
+            return
+
+        img = item.value  # numpy array HxWx3
+
+        h, w, _ = img.shape
+        qimg = QImage(
+            img.data,
+            w,
+            h,
+            img.strides[0],
+            QImage.Format_RGB888,
+        )
+
+        pixmap = QPixmap.fromImage(qimg)
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(item.name)
+
+        label = QLabel()
+        label.setAlignment(Qt.AlignCenter)
+        label.setPixmap(
+            pixmap.scaled(
+                800,
+                600,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation,
+            )
+        )
+
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(label)
+
+        dialog.resize(800, 600)
+        dialog.exec_()

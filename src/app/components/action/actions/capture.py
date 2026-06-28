@@ -17,7 +17,12 @@ class CaptureAction(Action):
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
             },
-            "userParams": {},
+            "userParams": {
+                "dest": {
+                    "type": "str",
+                    "value": "cap",
+                }
+            },
         }
 
     def action(self, data):
@@ -38,5 +43,7 @@ class CaptureAction(Action):
         with mss.mss() as sct:
             screenshot = sct.grab(monitor)
             img = np.array(screenshot)
+            img = img[:, :, [2, 1, 0]]
+            img = np.ascontiguousarray(img)
 
-        return img[:, :, ::-1].astype(np.uint8)
+        return img.astype(np.uint8)

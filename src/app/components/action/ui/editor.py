@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -73,6 +74,15 @@ class ActionEditor(QWidget):
                 self.editors[name][key] = editor
                 editor.currentTextChanged.connect(self.actionChanged.emit)
 
+            elif param["type"] == "str":
+                value = param.get("value")
+                editor = QLineEdit()
+                editor.setText(value)
+                rowLayout.addWidget(editor)
+
+                self.editors[name][key] = editor
+                editor.textChanged.connect(self.actionChanged.emit)
+
             layout.addWidget(row)
 
         layout.addStretch()
@@ -88,6 +98,8 @@ class ActionEditor(QWidget):
             editor = self.editors[name][key]
             if param["type"] == "enum":
                 schema[key]["value"] = editor.currentText()
+            elif param["type"] == "str":
+                schema[key]["value"] = editor.text()
 
         return {
             "name": name,

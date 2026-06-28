@@ -19,5 +19,6 @@ class Action:
         pass
 
     def execute(self, data):
-        self.action(data)
+        result = self.action(data)
         time.sleep(self.sleep)
+        return result

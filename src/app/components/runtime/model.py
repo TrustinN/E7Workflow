@@ -32,8 +32,10 @@ class RuntimeSchema:
         )
 
     def update(self, data: dict):
-        for k, v in data.items():
-            setattr(self, k, v)
+        self.value = data["value"]
+        self.type = RuntimeType[data["type"]]
+        if self.type == RuntimeType.IMAGE and self.value is not None:
+            self.value = np.array(self.value, dtype=np.uint8)
 
     def toData(self):
         value = self.value

@@ -1,4 +1,3 @@
-from PIL import Image
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 
