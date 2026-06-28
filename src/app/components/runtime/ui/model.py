@@ -1,3 +1,4 @@
+from PIL import Image
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 
@@ -6,7 +7,7 @@ from src.app.components.runtime.model import RuntimeModel, RuntimeType
 
 def array_to_icon(arr):
     h, w, c = arr.shape
-    qimg = QImage(arr.data, w, h, w * c, QImage.Format_RGBA8888).copy()
+    qimg = QImage(arr.data, w, h, w * c, QImage.Format_RGB888).copy()
     return QIcon(QPixmap.fromImage(qimg))
 
 

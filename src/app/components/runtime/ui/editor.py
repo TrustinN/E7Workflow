@@ -1,13 +1,11 @@
 import numpy as np
 from PIL import Image
 from PyQt5.QtCore import QModelIndex, QSize, Qt
-from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (
     QComboBox,
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
-    QLabel,
     QLineEdit,
     QPushButton,
     QTableView,
@@ -81,7 +79,7 @@ class RuntimeEditor(QWidget):
         name = self.line.text()
 
         if name:
-            self.model.addItem(name, RuntimeSchema(type=runtimeType))
+            self.model.addItem(name, RuntimeSchema(name=name, type=runtimeType))
 
     def handleVariableDelete(self):
         indexes = self.table.selectionModel().selectedRows()
@@ -102,5 +100,5 @@ class RuntimeEditor(QWidget):
             )
 
             if path:
-                image = np.array(Image.open(path).convert("RGBA"))
+                image = np.array(Image.open(path).convert("RGB"))
                 self.model.updateItem(item.name, {"value": image})

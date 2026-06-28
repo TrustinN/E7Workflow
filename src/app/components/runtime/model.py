@@ -23,7 +23,7 @@ class RuntimeSchema:
         value = data["value"]
         rtype = RuntimeType[data["type"]]
         if rtype == RuntimeType.IMAGE and value is not None:
-            value = np.array(value)
+            value = np.array(value, dtype=np.uint8)
 
         return cls(
             name=data["name"],
@@ -65,7 +65,6 @@ class RuntimeModel(QObject):
         if name in self.variables:
             return
 
-        schema.name = name
         self.variables[name] = schema
         self.itemCreated.emit(name)
 

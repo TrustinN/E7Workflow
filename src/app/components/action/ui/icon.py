@@ -15,5 +15,7 @@ class ActionIconResolver:
                 "right": ":/action/icons/move-right.svg",
             }
             return icons[direction]
+        elif name == ActionType.CAPTURE:
+            return ":/action/icons/focus.svg"
 
         raise RuntimeError()

@@ -1,4 +1,4 @@
-from src.app.components.action.actions import ClickAction, DragAction
+from src.app.components.action.actions import CaptureAction, ClickAction, DragAction
 from src.app.components.action.model import ActionModel, ActionSchema, ActionViewModel
 
 from .editor import ActionEditor
@@ -20,6 +20,7 @@ class ActionEditorController:
 
         self.editor.addAction(ClickAction.info())
         self.editor.addAction(DragAction.info())
+        self.editor.addAction(CaptureAction.info())
 
     def onActionChanged(self):
         data = self.editor.getActionData()

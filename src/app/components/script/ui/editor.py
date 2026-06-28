@@ -57,8 +57,9 @@ class ScriptManager(QWidget):
 
         self.editors = {}
 
-    def addCodeTab(self, id, name):
+    def addCodeTab(self, id, name, code):
         editor = CodeEditor()
+        editor.setText(code)
         editor.textChanged.connect(lambda: self.editorUpdated.emit(id))
         self.editors[id] = editor
 
@@ -115,6 +116,4 @@ class ScriptManager(QWidget):
         name = data["name"]
         text = data["code"]
 
-        self.addCodeTab(id, name)
-        editor = self.editors[id]
-        editor.setText(text)
+        self.addCodeTab(id, name, text)

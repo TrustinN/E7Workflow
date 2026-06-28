@@ -6,5 +6,6 @@
         <file>icons/move-left.svg</file>
         <file>icons/move-right.svg</file>
         <file>icons/move-up.svg</file>
+        <file>icons/focus.svg</file>
     </qresource>
 </RCC>
