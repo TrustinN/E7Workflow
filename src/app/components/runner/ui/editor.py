@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from src.app.actions import ActionRegistry
 
@@ -34,9 +34,15 @@ class RunnerEditor(QWidget):
         self.executeBtn = QPushButton(actions.displayText("Execute"))
         self.executeBtn.clicked.connect(action.trigger)
 
-        self.layout.addWidget(self.setActionBtn)
-        self.layout.addWidget(self.unsetActionBtn)
-        self.layout.addWidget(self.setScriptBtn)
-        self.layout.addWidget(self.unsetScriptBtn)
+        actionRow = QHBoxLayout()
+        actionRow.addWidget(self.setActionBtn)
+        actionRow.addWidget(self.unsetActionBtn)
+
+        scriptRow = QHBoxLayout()
+        scriptRow.addWidget(self.setScriptBtn)
+        scriptRow.addWidget(self.unsetScriptBtn)
+
+        self.layout.addLayout(actionRow)
+        self.layout.addLayout(scriptRow)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)

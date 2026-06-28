@@ -72,7 +72,6 @@ class CodeEditor(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout(self)
-        self.setFixedSize(400, 300)
 
         self.editor = QsciScintilla()
         lexer = QsciLexerPython()
