@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QRect, QRectF, Qt
-from PyQt5.QtGui import QColor, QPainter, QPen
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtSvg import QSvgRenderer
 
 from .hierarchy import WindowHierarchy
@@ -126,6 +126,7 @@ class Workspace(WindowHierarchy):
         rect = self.rect()
         if self.displayText is not None:
             painter.setPen(QPen(QColor(255, 255, 255), 1))
+            painter.setBrush(QBrush(QColor(0, 0, 255), 2))
             font = painter.font()
             font.setPointSize(12)
             font.setBold(False)
@@ -151,4 +152,5 @@ class Workspace(WindowHierarchy):
             painter.setOpacity(0.3)
             self.icon.render(painter, target)
             painter.restore()
+
         super().paintEvent(event)

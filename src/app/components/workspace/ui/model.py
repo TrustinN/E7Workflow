@@ -11,6 +11,7 @@ class WorkspaceItemModel(QAbstractItemModel):
         self.model.modelUpdated.connect(self.onUpdated)
         self.model.modelDeleted.connect(self.onDeleted)
         self.model.modelCleared.connect(self.onClear)
+        self.model.modelLoaded.connect(self.onLoad)
 
     def onCreated(self, id: str):
         item = self.model.getItem(id)
@@ -51,6 +52,10 @@ class WorkspaceItemModel(QAbstractItemModel):
         self.endRemoveRows()
 
     def onClear(self):
+        self.beginResetModel()
+        self.endResetModel()
+
+    def onLoad(self):
         self.beginResetModel()
         self.endResetModel()
 

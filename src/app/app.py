@@ -15,6 +15,7 @@ from .actions import ActionRegistry
 from .components.action import ActionComponent
 from .components.graph import GraphComponent
 from .components.runner import RunnerComponent
+from .components.runtime import RuntimeComponent
 from .components.script import ScriptComponent
 from .components.serialization import SerializerComponent
 from .components.workspace import WorkspaceComponent
@@ -81,6 +82,7 @@ class App(QApplication):
         self.actionCpt = ActionComponent(context, dispatcher)
         self.scriptCpt = ScriptComponent(context, dispatcher)
         self.runnerCpt = RunnerComponent(context, actions, dispatcher)
+        self.runtimeCpt = RuntimeComponent(dispatcher)
         self.serialCpt = SerializerComponent()
 
         return [
@@ -89,6 +91,7 @@ class App(QApplication):
             self.actionCpt,
             self.scriptCpt,
             self.runnerCpt,
+            self.runtimeCpt,
             self.serialCpt,
         ]
 
@@ -111,6 +114,7 @@ class App(QApplication):
         self.views = QTabWidget()
         self.views.addTab(self.graphCpt.display, "Graph View")
         self.views.addTab(self.wkCpt.display, "Workspace View")
+        self.views.addTab(self.runtimeCpt.editor, "State View")
 
         self.layoutMid.addWidget(self.views)
         self.layoutMid.addStretch()
