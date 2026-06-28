@@ -2,13 +2,14 @@ import json
 import os
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QGraphicsView, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 from src.app.components.graph.model import GraphDocument, GraphModel, GraphViewState
 from src.app.state import Context
 
 from .controllers import FullViewController, MiniViewController
 from .scene import GraphScene
+from .view import GraphView
 from .viewmodel import GraphViewModel
 
 
@@ -36,8 +37,7 @@ class GraphViewport:
             viewState,
         )
 
-        self.view = QGraphicsView(self.scene)
-        self.view.setFixedSize(450, 275)
+        self.view = GraphView(self.scene)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 

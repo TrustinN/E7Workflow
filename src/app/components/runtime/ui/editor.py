@@ -64,8 +64,11 @@ class RuntimeEditor(QWidget):
         for rt in RuntimeType:
             self.combo.addItem(rt.name, rt)
 
-        self.addBtn = QPushButton("+ Add")
-        self.deleteBtn = QPushButton("− Delete")
+        self.addBtn = QPushButton("+")
+        self.deleteBtn = QPushButton("−")
+
+        self.addBtn.setFixedWidth(45)
+        self.deleteBtn.setFixedWidth(45)
 
         self.addBtn.clicked.connect(self.handleVariableAdd)
         self.deleteBtn.clicked.connect(self.handleVariableDelete)
@@ -74,9 +77,11 @@ class RuntimeEditor(QWidget):
         controls.addWidget(self.combo)
         controls.addWidget(self.addBtn)
         controls.addWidget(self.deleteBtn)
+        controls.setSpacing(2)
 
         self.layout.addWidget(self.table)
         self.layout.addLayout(controls)
+        self.setFixedWidth(300)
 
     def handleVariableAdd(self):
         runtimeType = self.combo.currentData()

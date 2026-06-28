@@ -109,15 +109,10 @@ class App(QApplication):
         self.window.setCentralWidget(self.widget)
         self.window.show()
 
-        self.layoutLeft.addStretch()
-
         self.views = QTabWidget()
         self.views.addTab(self.graphCpt.display, "Graph View")
         self.views.addTab(self.wkCpt.display, "Workspace View")
-        self.views.addTab(self.runtimeCpt.editor, "State View")
-
-        self.layoutMid.addWidget(self.views)
-        self.layoutMid.addStretch()
+        self.layoutLeft.addWidget(self.views)
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self.wkCpt.editor, "Workspace")
@@ -125,10 +120,10 @@ class App(QApplication):
         self.tabs.addTab(self.actionCpt.editor, "Actions")
         self.tabs.addTab(self.scriptCpt.editor, "Scripts")
         self.tabs.addTab(self.serialCpt.editor, "Save/Load")
+        self.layoutMid.addWidget(self.runnerCpt.editor)
+        self.layoutMid.addWidget(self.tabs)
 
-        self.layoutRight.addWidget(self.runnerCpt.editor)
-        self.layoutRight.addWidget(self.tabs)
-        self.layoutRight.addStretch()
+        self.layoutRight.addWidget(self.runtimeCpt.editor)
 
     def _initEvents(self, eventBus: EventBus):
         self.eventBus.registerNode(self.contextManager)
