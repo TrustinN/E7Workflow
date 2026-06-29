@@ -47,7 +47,7 @@ class WorkspaceComponent(Node):
     def createRootWorkspace(self, data):
         id = self.manager.createWorkspace(name="Root", padding=15)
         schema = self.manager.getWorkspace(id)
-        self.publish("/Workspace/Root/Created", schema.toData())
+        self.publish("/Workspace/Node/Created", schema.toData())
 
     def handleCreateRequest(self, data):
         selection = self.context.selectionModel.getSelected()

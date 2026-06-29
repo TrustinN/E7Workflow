@@ -20,6 +20,9 @@ class RunnerManager:
         wks = WorkspaceSchema.fromData(resp)
         return len(wks.children) == 0
 
+    def createNode(self, nodeID: str) -> str:
+        self.model.setNode(nodeID, RunnerNodeSchema())
+
     def setAction(self, nodeID: str) -> str:
         if not self.isActionAssignable(nodeID):
             return None
@@ -28,35 +31,32 @@ class RunnerManager:
         resp = self.client.post(link)
         actionID = resp["id"]
 
-        self.model.setNode(
-            nodeID,
-            RunnerNodeSchema(
-                actionID=actionID,
-            ),
-        )
+        self.model.updateNode(nodeID, {"actionID": actionID})
         return actionID
 
     def unsetAction(self, nodeID: str):
-        action = self.model.deleteNode(nodeID)
-        if action is None:
+        node = self.model.getNode(nodeID)
+        if not node.actionID:
             return
 
-        link = Link(ActionRoute.NAME, ActionRoute.ACTION, action.actionID)
+        link = Link(ActionRoute.NAME, ActionRoute.ACTION, node.actionID)
         self.client.delete(link)
+        node.actionID = None
 
     def createScript(self, edgeID: str) -> str:
-        self.model.setEdge(edgeID, RunnerEdgeSchema(scriptID=None))
+        self.model.setEdge(edgeID, RunnerEdgeSchema())
 
     def setScript(self, edgeID: str) -> str:
         link = Link(ScriptRoute.NAME, ScriptRoute.SCRIPT)
         resp = self.client.get(link)
         scriptID = resp["id"]
 
-        self.model.setEdge(edgeID, RunnerEdgeSchema(scriptID=scriptID))
+        self.model.updateEdge(edgeID, {"scriptID": scriptID})
         return scriptID
 
     def unsetScript(self, edgeID: str):
-        self.model.deleteEdge(edgeID)
+        edge = self.model.getEdge(edgeID)
+        edge.scriptID = None
 
     def setEntry(self, nodeID: str) -> str:
         prev = self.model.getEntry()

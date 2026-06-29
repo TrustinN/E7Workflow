@@ -54,6 +54,9 @@ class RunnerModel(QObject):
     def setNode(self, nodeID: str, schema: RunnerNodeSchema):
         self.nodes[nodeID] = schema
 
+    def updateNode(self, nodeID: str, patch: dict):
+        self.nodes[nodeID].update(patch)
+
     def getNode(self, nodeID: str) -> RunnerNodeSchema:
         return self.nodes.get(nodeID)
 
@@ -68,6 +71,9 @@ class RunnerModel(QObject):
 
     def getEdge(self, edgeID: str) -> RunnerEdgeSchema:
         return self.edges.get(edgeID)
+
+    def updateEdge(self, edgeID: str, patch: dict):
+        self.edges[edgeID].update(patch)
 
     def deleteEdge(self, edgeID: str) -> RunnerEdgeSchema:
         if edgeID in self.edges:

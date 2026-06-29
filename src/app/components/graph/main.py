@@ -43,7 +43,6 @@ class GraphComponent(Node):
         self.subscribe("/Graph/Edge/SetEnd/Request", lambda _: self.editor.setE2())
         self.subscribe("/Graph/Edge/Delete/Request", self.handleDeleteEdgeRequest)
 
-        self.subscribe("/Workspace/Root/Created", self.onWorkspaceCreated)
         self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreated)
         self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDeleted)
         self.subscribe("/Workspace/Node/Updated", self.onWorkspaceUpdated)

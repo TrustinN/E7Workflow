@@ -24,7 +24,7 @@ class RunnerComponent(Node):
         self.builder = ExecutionBuilder(self.model, self.client)
         self.manager = RunnerManager(self.model, self.client)
 
-        self.editor = RunnerEditor(actions)
+        self.editor = RunnerEditor(self.context, self.model, actions)
 
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
@@ -70,6 +70,8 @@ class RunnerComponent(Node):
             return
 
         scriptID = self.manager.setScript(selection.id)
+        if scriptID is None:
+            return
         self.publish(
             "/Runner/Script/Set", {"edgeID": selection.id, "scriptID": scriptID}
         )
@@ -105,6 +107,7 @@ class RunnerComponent(Node):
     def onWorkspaceCreate(self, data):
         if data["parent"]:
             self.clearAction(data["parent"])
+        self.manager.createNode(data["id"])
 
     def onWorkspaceDelete(self, data):
         id = data["id"]

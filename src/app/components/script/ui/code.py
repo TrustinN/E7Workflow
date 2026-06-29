@@ -66,36 +66,26 @@ def apply_catppuccin_mocha(editor: QsciScintilla, lexer: QsciLexerPython):
     lexer.setColor(q(c.lavender), QsciLexerPython.HighlightedIdentifier)
 
 
-class CodeEditor(QWidget):
-    textChanged = pyqtSignal()
+class CodeEditor(QsciScintilla):
 
-    def __init__(self):
-        super().__init__()
-        self.layout = QVBoxLayout(self)
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        self.editor = QsciScintilla()
         lexer = QsciLexerPython()
+        self.setLexer(lexer)
 
-        self.editor.setLexer(lexer)
-        self.editor.setUtf8(True)
-        self.editor.setMarginType(0, QsciScintilla.NumberMargin)
-        self.editor.setMarginWidth(0, "000")
-        self.editor.setMarginWidth(1, 0)
-        self.editor.setAutoIndent(True)
-        self.editor.setBraceMatching(QsciScintilla.SloppyBraceMatch)
-        self.editor.setFolding(QsciScintilla.NoFoldStyle)
-        self.editor.setIndentationGuides(True)
-        self.editor.setIndentationsUseTabs(False)
-        self.editor.setIndentationWidth(4)
-        self.editor.setTabWidth(4)
-        self.editor.textChanged.connect(self.textChanged.emit)
+        self.setUtf8(True)
+        self.setMarginType(0, QsciScintilla.NumberMargin)
+        self.setMarginWidth(0, "000")
+        self.setMarginWidth(1, 0)
 
-        apply_catppuccin_mocha(self.editor, lexer)
+        self.setAutoIndent(True)
+        self.setBraceMatching(QsciScintilla.SloppyBraceMatch)
+        self.setFolding(QsciScintilla.NoFoldStyle)
+        self.setIndentationGuides(True)
 
-        self.layout.addWidget(self.editor)
+        self.setIndentationsUseTabs(False)
+        self.setIndentationWidth(4)
+        self.setTabWidth(4)
 
-    def text(self):
-        return self.editor.text()
-
-    def setText(self, text):
-        self.editor.setText(text)
+        apply_catppuccin_mocha(self, lexer)

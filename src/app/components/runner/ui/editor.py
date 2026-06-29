@@ -1,11 +1,15 @@
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from src.app.actions import ActionRegistry
+from src.app.components.runner.model import RunnerModel
+from src.app.state import Context
+
+from .code import ActionEditor
 
 
 class RunnerEditor(QWidget):
 
-    def __init__(self, actions: ActionRegistry):
+    def __init__(self, context: Context, model: RunnerModel, actions: ActionRegistry):
         super().__init__()
 
         self.layout = QVBoxLayout(self)
@@ -42,8 +46,10 @@ class RunnerEditor(QWidget):
         scriptRow.addWidget(self.setScriptBtn)
         scriptRow.addWidget(self.unsetScriptBtn)
 
+        actionEditor = ActionEditor(context, model)
+
         self.layout.addLayout(actionRow)
         self.layout.addLayout(scriptRow)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)
-        self.layout.addStretch()
+        self.layout.addWidget(actionEditor)
