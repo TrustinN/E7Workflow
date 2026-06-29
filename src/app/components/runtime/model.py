@@ -12,6 +12,32 @@ class RuntimeType(Enum):
     IMAGE = auto()
 
 
+def inferType(value):
+    if value is None:
+        return RuntimeType.NONE
+
+    if isinstance(value, (int, float)):
+        return RuntimeType.NUM
+
+    if isinstance(value, str):
+        return RuntimeType.STR
+
+    if isinstance(value, np.ndarray) or isinstance(value, list):
+        return RuntimeType.IMAGE
+
+    return RuntimeType.NONE
+
+
+def valuesEqual(a, b) -> bool:
+    if type(a) != type(b):
+        return False
+
+    if isinstance(a, np.ndarray):
+        return np.array_equal(a, b)
+
+    return a == b
+
+
 @dataclass
 class RuntimeSchema:
     name: str
@@ -32,8 +58,10 @@ class RuntimeSchema:
         )
 
     def update(self, data: dict):
-        self.value = data["value"]
-        self.type = RuntimeType[data["type"]]
+        if "value" in data:
+            self.value = data["value"]
+        if "type" in data:
+            self.type = RuntimeType[data["type"]]
         if self.type == RuntimeType.IMAGE and self.value is not None:
             self.value = np.array(self.value, dtype=np.uint8)
 
@@ -73,6 +101,33 @@ class RuntimeModel(QObject):
     def updateItem(self, name: str, patch: dict):
         self.variables[name].update(patch)
         self.itemUpdated.emit(name)
+
+    def update(self, patch: dict):
+        for key, value in patch.items():
+            if key in self.variables:
+
+                schema = self.variables[key]
+                if isinstance(value, dict):
+                    schema.update(value)
+
+                elif valuesEqual(schema.value, value):
+                    continue
+                else:
+                    schema.value = value
+                    schema.type = inferType(value)
+
+                self.itemUpdated.emit(key)
+                continue
+
+            inferredType = inferType(value)
+            schema = RuntimeSchema(
+                name=key,
+                type=inferredType,
+                value=value,
+            )
+
+            self.variables[key] = schema
+            self.itemCreated.emit(key)
 
     def deleteItem(self, name: str):
         if name in self.variables:

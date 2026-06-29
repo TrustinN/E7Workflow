@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 from src.app.components.action.service import ActionRoute
+from src.app.components.runtime.service import RuntimeRoute
 from src.app.components.script.service import ScriptRoute
 from src.app.components.workspace.model import WorkspaceSchema
 from src.app.components.workspace.service import WorkspaceRoute
@@ -53,6 +54,9 @@ class ExecutionNode:
         self.postAction = postAction
         self.context = context
         self.client = client
+
+    def notifyContextUpdate(self):
+        self.client.put(Link(RuntimeRoute.NAME, RuntimeRoute.ITEM), self.context)
 
     def createActionParams(self):
         resp = self.client.get(
@@ -107,8 +111,10 @@ class ExecutionNode:
 
     def run(self):
         self.executePreAction()
+        self.notifyContextUpdate()
         result = self.executeAction()
         self.executePostAction(result)
+        self.notifyContextUpdate()
         return result
 
 

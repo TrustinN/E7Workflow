@@ -1,14 +1,27 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def loadPreAction():
+    path = Path(__file__).resolve().parent / "pre.py"
+    return path.read_text(encoding="utf-8")
+
+
+def loadPostAction():
+    path = Path(__file__).resolve().parent / "post.py"
+    return path.read_text(encoding="utf-8")
 
 
 @dataclass
 class RunnerNodeSchema:
     actionID: Optional[str] = None
-    preAction: str = ""
-    postAction: str = ""
+    preAction: str = field(default_factory=lambda: loadPreAction())
+    postAction: str = field(default_factory=lambda: loadPostAction())
 
     @classmethod
     def fromData(cls, data: dict):

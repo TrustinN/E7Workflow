@@ -23,6 +23,7 @@ class RuntimeService(EndpointService):
 
         self.addRoute(RequestType.POST, route(RuntimeRoute.ITEM, ":id"), self.addItem)
         self.addRoute(RequestType.PUT, route(RuntimeRoute.ITEM, ":id"), self.updateItem)
+        self.addRoute(RequestType.PUT, route(RuntimeRoute.ITEM), self.updateModel)
 
     def getItem(self, id, data):
         return self.model.getItem(id).toData()
@@ -35,3 +36,6 @@ class RuntimeService(EndpointService):
 
     def updateItem(self, id, data):
         self.model.updateItem(id, data)
+
+    def updateModel(self, data):
+        self.model.update(data)

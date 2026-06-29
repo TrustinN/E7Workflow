@@ -18,7 +18,7 @@ class CaptureAction(Action):
                 "br": {"type": "point"},
             },
             "userParams": {},
-            "result": {"capture": {"type": "np.ndarray"}},
+            "result": {"capture": None},
         }
 
     def execute(self, data):
