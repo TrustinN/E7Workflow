@@ -1,5 +1,7 @@
 import os
 
+from PyQt5.QtWidgets import QApplication
+
 from src.app.actions import ActionRegistry
 from src.app.components.action.service import ActionRoute
 from src.app.events import Node
@@ -43,6 +45,8 @@ class WorkspaceComponent(Node):
 
         self.subscribe("/Runner/Action/Set", self.onRunnerActionSet)
         self.subscribe("/Runner/Action/Unset", self.onRunnerActionUnset)
+        self.subscribe("/Runner/Execute/Prepare", self.hideAllWorkspaces)
+        self.subscribe("/Runner/Execute/Finished", self.showAllWorkspaces)
 
     def createRootWorkspace(self, data):
         id = self.manager.createWorkspace(name="Root", padding=15)
@@ -90,6 +94,18 @@ class WorkspaceComponent(Node):
     def onUpdate(self, id):
         schema = self.model.getItem(id)
         self.publish("/Workspace/Node/Updated", schema.toData())
+
+    def hideAllWorkspaces(self, data):
+        QApplication.processEvents()
+        ids = self.model.workspaces()
+        for id in ids:
+            self.model.updateItem(id, {"visible": False, "locked": True})
+        QApplication.processEvents()
+
+    def showAllWorkspaces(self, data):
+        ids = self.model.workspaces()
+        for id in ids:
+            self.model.updateItem(id, {"visible": True, "locked": False})
 
     def saveState(self, data):
         path = data["path"]

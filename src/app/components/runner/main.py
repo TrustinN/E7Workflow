@@ -101,8 +101,12 @@ class RunnerComponent(Node):
         self.publish("/Runner/Entry/Set", {"prevID": prev, "currID": selection.id})
 
     def handleExecuteRequest(self, data):
+        self.publish("/Runner/Execute/Prepare")
+
         graph = self.builder.createGraph()
         graph.execute()
+
+        self.publish("/Runner/Execute/Finished")
 
     def onWorkspaceCreate(self, data):
         if data["parent"]:
