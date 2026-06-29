@@ -1,8 +1,6 @@
 from catppuccin import PALETTE
 from PyQt5.Qsci import QsciLexerPython, QsciScintilla
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 
 def apply_catppuccin_mocha(editor: QsciScintilla, lexer: QsciLexerPython):
@@ -39,6 +37,7 @@ def apply_catppuccin_mocha(editor: QsciScintilla, lexer: QsciLexerPython):
     lexer.setColor(q(c.peach), QsciLexerPython.Number)
 
     # Strings
+    lexer.setColor(q(c.green), QsciLexerPython.UnclosedString)
     lexer.setColor(q(c.green), QsciLexerPython.SingleQuotedString)
     lexer.setColor(q(c.green), QsciLexerPython.DoubleQuotedString)
     lexer.setColor(q(c.green), QsciLexerPython.TripleSingleQuotedString)

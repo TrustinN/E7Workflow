@@ -1,6 +1,6 @@
 import os
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QEventLoop, QTimer
 
 from src.app.actions import ActionRegistry
 from src.app.components.action.service import ActionRoute
@@ -96,11 +96,12 @@ class WorkspaceComponent(Node):
         self.publish("/Workspace/Node/Updated", schema.toData())
 
     def hideAllWorkspaces(self, data):
-        QApplication.processEvents()
         ids = self.model.workspaces()
         for id in ids:
             self.model.updateItem(id, {"visible": False, "locked": True})
-        QApplication.processEvents()
+        loop = QEventLoop()
+        QTimer.singleShot(0, loop.quit)
+        loop.exec()
 
     def showAllWorkspaces(self, data):
         ids = self.model.workspaces()
