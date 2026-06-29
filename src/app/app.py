@@ -126,7 +126,7 @@ class App(QApplication):
         self.layoutMid.addWidget(self.tabs)
 
         self.console = QTabWidget()
-        self.console.addTab(self.runtimeCpt.editor, "State")
+        self.console.addTab(self.runtimeCpt.editor, "Context")
         self.layoutRight.addWidget(self.console)
 
     def _initEvents(self, eventBus: EventBus):

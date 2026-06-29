@@ -33,8 +33,6 @@ class ActionEditor(QWidget):
         self.stack = QStackedWidget()
         self.layout.addWidget(self.stack)
 
-        self.layout.addStretch()
-
         self.widgets = {}
         self.editors = {}
         self.actionSchemas = {}
