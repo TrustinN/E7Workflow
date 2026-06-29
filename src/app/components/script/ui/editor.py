@@ -35,6 +35,7 @@ class ScriptManager(QWidget):
         layout.addWidget(note)
 
         self.codeTabs = QTabWidget()
+        self.codeTabs.tabBar().setUsesScrollButtons(True)
         self.codeTabs.tabBarDoubleClicked.connect(self.renameTab)
         self.codeTabs.currentChanged.connect(self.editorSwitched.emit)
 

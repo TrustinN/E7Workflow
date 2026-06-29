@@ -44,13 +44,15 @@ class ScriptComponent(Node):
                 continue
 
             content = file.read_text(encoding="utf-8")
+            id = generate()
             self.model.addScript(
-                id=generate(),
+                id=id,
                 schema=ScriptSchema(
                     name=file.stem,
                     code=content,
                 ),
             )
+            self.editor.addCodeTab(id, file.stem, content)
 
     def onScriptUpdate(self, id: str):
         schema = self.model.getScript(id)

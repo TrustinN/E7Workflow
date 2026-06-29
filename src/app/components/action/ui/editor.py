@@ -89,7 +89,7 @@ class ActionEditor(QWidget):
 
         view = QTextEdit()
         view.setReadOnly(True)
-        view.setPlainText(json.dumps(result, indent=2, ensure_ascii=False))
+        view.setPlainText(json.dumps({"result": result}, indent=2, ensure_ascii=False))
         layout.addWidget(view)
         layout.addStretch()
 
