@@ -5,6 +5,7 @@ from .model import GraphModel
 
 class GraphRoute:
     NAME = "GraphService"
+    GRAPH = "GRAPH"
     NODE = "NODE"
     EDGE = "EDGE"
 
@@ -16,6 +17,7 @@ class GraphService(EndpointService):
         self.model = model
 
         self.addRoute(RequestType.GET, route(GraphRoute.NODE, ":id"), self.getNode)
+        self.addRoute(RequestType.GET, route(GraphRoute.NODE), self.getNodes)
         self.addRoute(RequestType.GET, route(GraphRoute.EDGE, ":id"), self.getEdge)
 
         self.addRoute(
@@ -27,6 +29,9 @@ class GraphService(EndpointService):
     def getNode(self, id, data):
         node = self.model.getNode(id)
         return node.toData()
+
+    def getNodes(self, data):
+        return {"nodes": self.model.nodeList()}
 
     def getEdge(self, id, data):
         edge = self.model.getEdge(id)

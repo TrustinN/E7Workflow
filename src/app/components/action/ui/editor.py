@@ -1,3 +1,5 @@
+import json
+
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
@@ -5,6 +7,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QLineEdit,
     QStackedWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -39,11 +42,12 @@ class ActionEditor(QWidget):
     def addAction(self, info):
         name = info["name"]
         userParams = info["userParams"]
+        result = info["result"]
         self.actionSchemas[name] = userParams
 
         self.combo.addItem(name)
 
-        widget = self.createWidgetFromParams(name, userParams)
+        widget = self.createWidgetFromParams(name, userParams, result)
 
         self.widgets[name] = widget
         self.stack.addWidget(widget)
@@ -51,7 +55,7 @@ class ActionEditor(QWidget):
         if self.combo.count() == 1:
             self.combo.setCurrentText(name)
 
-    def createWidgetFromParams(self, name, params):
+    def createWidgetFromParams(self, name, params, result):
         widget = QWidget()
 
         layout = QVBoxLayout(widget)
@@ -85,6 +89,10 @@ class ActionEditor(QWidget):
 
             layout.addWidget(row)
 
+        view = QTextEdit()
+        view.setReadOnly(True)
+        view.setPlainText(json.dumps(result, indent=2, ensure_ascii=False))
+        layout.addWidget(view)
         layout.addStretch()
 
         return widget

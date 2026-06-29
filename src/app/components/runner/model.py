@@ -1,6 +1,42 @@
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
+
+@dataclass
+class RunnerNodeSchema:
+    actionID: Optional[str] = None
+    preAction: str = ""
+    postAction: str = ""
+
+    @classmethod
+    def fromData(cls, data: dict):
+        return cls(**data)
+
+    def update(self, data: dict):
+        for k, v in data.items():
+            setattr(self, k, v)
+
+    def toData(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class RunnerEdgeSchema:
+    scriptID: Optional[str] = None
+    priority: int = 0
+
+    @classmethod
+    def fromData(cls, data: dict):
+        return cls(**data)
+
+    def update(self, data: dict):
+        for k, v in data.items():
+            setattr(self, k, v)
+
+    def toData(self) -> dict:
+        return asdict(self)
 
 
 class RunnerModel(QObject):
@@ -10,30 +46,30 @@ class RunnerModel(QObject):
     def __init__(self):
         super().__init__()
 
-        self.nodes: dict[str, str] = {}
-        self.edges: dict[str, str] = {}
+        self.nodes: dict[str, RunnerNodeSchema] = {}
+        self.edges: dict[str, RunnerEdgeSchema] = {}
 
-        self.entry: str = None
+        self.entry: Optional[str] = None
 
-    def setAction(self, nodeID: str, actionID: str):
-        self.nodes[nodeID] = actionID
+    def setNode(self, nodeID: str, schema: RunnerNodeSchema):
+        self.nodes[nodeID] = schema
 
-    def getAction(self, nodeID: str) -> Optional[str]:
+    def getNode(self, nodeID: str) -> RunnerNodeSchema:
         return self.nodes.get(nodeID)
 
-    def deleteAction(self, nodeID: str) -> str:
+    def deleteNode(self, nodeID: str) -> RunnerNodeSchema:
         if nodeID in self.nodes:
             return self.nodes.pop(nodeID)
 
         return None
 
-    def setScript(self, edgeID: str, scriptID: str):
-        self.edges[edgeID] = scriptID
+    def setEdge(self, edgeID: str, schema: RunnerEdgeSchema):
+        self.edges[edgeID] = schema
 
-    def getScript(self, edgeID: str) -> Optional[str]:
+    def getEdge(self, edgeID: str) -> RunnerEdgeSchema:
         return self.edges.get(edgeID)
 
-    def deleteScript(self, edgeID: str) -> str:
+    def deleteEdge(self, edgeID: str) -> RunnerEdgeSchema:
         if edgeID in self.edges:
             return self.edges.pop(edgeID)
 
@@ -41,8 +77,8 @@ class RunnerModel(QObject):
 
     def edgesFromScript(self, scriptID: str) -> list[str]:
         ret = []
-        for edgeID, scrID in self.edges.items():
-            if scrID == scriptID:
+        for edgeID, schema in self.edges.items():
+            if schema.scriptID == scriptID:
                 ret.append(edgeID)
         return ret
 
@@ -52,25 +88,17 @@ class RunnerModel(QObject):
     def getEntry(self) -> Optional[str]:
         return self.entry
 
-    def toData(self) -> dict:
+    def toData(self):
         return {
-            "nodes": self.nodes,
-            "edges": self.edges,
+            "nodes": {k: v.toData() for k, v in self.nodes.items()},
+            "edges": {k: v.toData() for k, v in self.edges.items()},
             "entry": self.entry,
         }
 
-    def fromData(self, data: dict):
-        nodes = data["nodes"]
-        edges = data["edges"]
-        entry = data["entry"]
-
-        for id, val in nodes.items():
-            self.nodes[id] = val
-
-        for id, val in edges.items():
-            self.edges[id] = val
-
-        self.entry = entry
+    def fromData(self, data):
+        self.nodes = {k: RunnerNodeSchema.fromData(v) for k, v in data["nodes"].items()}
+        self.edges = {k: RunnerEdgeSchema.fromData(v) for k, v in data["edges"].items()}
+        self.entry = data["entry"]
 
         self.modelLoaded.emit()
 

@@ -5,9 +5,9 @@ from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher
 
+from .execution import ExecutionBuilder
 from .manager import RunnerManager
 from .model import RunnerModel
-from .runner import Runner
 from .ui import RunnerEditor
 
 
@@ -21,7 +21,7 @@ class RunnerComponent(Node):
         self.client = Client("RunnerClient", dispatcher)
 
         self.model = RunnerModel()
-        self.runner = Runner(self.model, self.client)
+        self.builder = ExecutionBuilder(self.model, self.client)
         self.manager = RunnerManager(self.model, self.client)
 
         self.editor = RunnerEditor(actions)
@@ -40,6 +40,7 @@ class RunnerComponent(Node):
         self.subscribe("/Workspace/Node/Created", self.onWorkspaceCreate)
         self.subscribe("/Workspace/Node/Deleted", self.onWorkspaceDelete)
         self.subscribe("/Graph/Edge/Deleted", self.onEdgeDelete)
+        self.subscribe("/Graph/Edge/Created", self.onEdgeCreate)
         self.subscribe("/Script/Updated", self.onScriptUpdate)
 
     def handleSetActionRequest(self, data):
@@ -98,7 +99,8 @@ class RunnerComponent(Node):
         self.publish("/Runner/Entry/Set", {"prevID": prev, "currID": selection.id})
 
     def handleExecuteRequest(self, data):
-        self.runner.execute()
+        graph = self.builder.createGraph()
+        graph.execute()
 
     def onWorkspaceCreate(self, data):
         if data["parent"]:
@@ -114,6 +116,10 @@ class RunnerComponent(Node):
     def onEdgeDelete(self, data):
         edgeID = data["edgeID"]
         self.manager.unsetScript(edgeID)
+
+    def onEdgeCreate(self, data):
+        edgeID = data["id"]
+        self.manager.createScript(edgeID)
 
     def saveState(self, data):
         path = data["path"]

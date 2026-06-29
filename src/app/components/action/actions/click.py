@@ -18,11 +18,14 @@ class ClickAction(Action):
                 "br": {"type": "point"},
             },
             "userParams": {},
+            "result": {},
         }
 
-    def action(self, data):
+    def execute(self, data):
         systemParams = data["systemParams"]
         tl = systemParams["tl"]
         br = systemParams["br"]
         mid = (np.array(tl) + np.array(br)) / 2
         pyautogui.click(int(mid[0]), int(mid[1]))
+
+        return {}

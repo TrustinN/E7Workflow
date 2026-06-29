@@ -17,15 +17,11 @@ class CaptureAction(Action):
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
             },
-            "userParams": {
-                "dest": {
-                    "type": "str",
-                    "value": "cap",
-                }
-            },
+            "userParams": {},
+            "result": {"capture": {"type": "np.ndarray"}},
         }
 
-    def action(self, data):
+    def execute(self, data):
         systemParams = data["systemParams"]
         tl = systemParams["tl"]
         br = systemParams["br"]
@@ -46,4 +42,4 @@ class CaptureAction(Action):
             img = img[:, :, [2, 1, 0]]
             img = np.ascontiguousarray(img)
 
-        return img.astype(np.uint8)
+            return {"capture": img.astype(np.uint8)}

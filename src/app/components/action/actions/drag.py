@@ -23,22 +23,10 @@ class DragAction(Action):
                     "value": "up",
                 }
             },
+            "result": {},
         }
 
-    @classmethod
-    def icon(cls, data):
-        value = data["userParams"]["dir"]["value"]
-
-        icons = {
-            "up": ":/icon/move-up.svg",
-            "down": ":/icon/move-down.svg",
-            "left": ":/icon/move-left.svg",
-            "right": ":/icon/move-right.svg",
-        }
-
-        return icons[value]
-
-    def action(self, data):
+    def execute(self, data):
         userParams = data["userParams"]
         systemParams = data["systemParams"]
 
@@ -75,3 +63,5 @@ class DragAction(Action):
 
         pyautogui.moveTo(*start)
         pyautogui.dragTo(*end, scrollTime, scrollAnim, button=scrollClick)
+
+        return {}
