@@ -1,11 +1,15 @@
 import json
 import os
+from pathlib import Path
 
+from nanoid import generate
+
+from src.app.config import CUSTOM_SCRIPTS_DIR
 from src.app.events import Node
 from src.app.state import Context
 from src.router.routing import Dispatcher
 
-from .model import ScriptModel, ScriptViewModel
+from .model import ScriptModel, ScriptSchema, ScriptViewModel
 from .service import ScriptService
 from .ui import ScriptEditorController, ScriptManager
 
@@ -25,11 +29,28 @@ class ScriptComponent(Node):
         )
         self.service = ScriptService(self.model, self.viewModel, dispatcher)
 
+        self.subscribe("/App/Loaded", self.loadCustomScripts)
         self.subscribe("/App/Export", self.saveState)
         self.subscribe("/App/Reset", self.resetState)
         self.subscribe("/App/Import", self.loadState)
 
         self.model.scriptUpdated.connect(self.onScriptUpdate)
+
+    def loadCustomScripts(self, data):
+        p = Path(CUSTOM_SCRIPTS_DIR)
+        for file in p.iterdir():
+
+            if not file.is_file():
+                continue
+
+            content = file.read_text(encoding="utf-8")
+            self.model.addScript(
+                id=generate(),
+                schema=ScriptSchema(
+                    name=file.stem,
+                    code=content,
+                ),
+            )
 
     def onScriptUpdate(self, id: str):
         schema = self.model.getScript(id)
