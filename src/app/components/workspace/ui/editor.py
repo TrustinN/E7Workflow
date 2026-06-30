@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import (
     QFormLayout,
     QGroupBox,
-    QInputDialog,
     QLineEdit,
     QPushButton,
     QSpinBox,
@@ -63,6 +62,7 @@ class WorkspaceInspector(QWidget):
 
         self.model.modelUpdated.connect(self.onModelUpdated)
         self.model.modelDeleted.connect(self.onModelDeleted)
+        self.model.modelCleared.connect(self.clear)
 
     def onItemSelection(self, selection: Selection):
         if not (selection.id and selection.type == SelectionType.WORKSPACE):
@@ -130,6 +130,10 @@ class WorkspaceInspector(QWidget):
     def onModelDeleted(self, workspaceID):
         if workspaceID == self.currentID:
             self.setWorkspace(None)
+
+    def clear(self):
+        self.currentID = None
+        self.refresh()
 
 
 class WorkspaceEditor(QWidget):
