@@ -21,7 +21,8 @@ class DragAction(Action):
                     "type": "enum",
                     "values": ["up", "down", "left", "right"],
                     "value": "up",
-                }
+                },
+                "sleep": {"type": "float"},
             },
             "result": {},
         }
@@ -63,5 +64,7 @@ class DragAction(Action):
 
         pyautogui.moveTo(*start)
         pyautogui.dragTo(*end, scrollTime, scrollAnim, button=scrollClick)
+
+        time.sleep(userParams["sleep"])
 
         return {}

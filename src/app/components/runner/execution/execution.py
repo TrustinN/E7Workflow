@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import cv2
 import numpy as np
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from src.app.components.action.service import ActionRoute
 from src.app.components.runtime.service import RuntimeRoute
@@ -18,22 +19,20 @@ class ExecutionEdge:
         edgeID: str,
         priority: int,
         scriptID: str,
-        context: dict,
         client: Client,
     ):
         self.edgeID = edgeID
         self.priority = priority
         self.scriptID = scriptID
-        self.context = context
         self.client = client
 
-    def execute(self):
+    def execute(self, context: dict):
         if self.scriptID is None:
             return True  # default always runs the edge
 
         resp = self.client.post(
             Link(ScriptRoute.NAME, ScriptRoute.SCRIPT, self.scriptID),
-            self.context,
+            context,
         )
         return resp["result"]
 
@@ -45,18 +44,13 @@ class ExecutionNode:
         actionID: str,
         preAction: str,
         postAction: str,
-        context: dict,
         client: Client,
     ):
         self.nodeID = nodeID
         self.actionID = actionID
         self.preAction = preAction
         self.postAction = postAction
-        self.context = context
         self.client = client
-
-    def notifyContextUpdate(self):
-        self.client.put(Link(RuntimeRoute.NAME, RuntimeRoute.ITEM), self.context)
 
     def createActionParams(self):
         resp = self.client.get(
@@ -81,7 +75,7 @@ class ExecutionNode:
             self.createActionParams(),
         )
 
-    def executePreAction(self):
+    def executePreAction(self, context: dict):
         if not self.preAction:
             return
 
@@ -93,9 +87,9 @@ class ExecutionNode:
         }
 
         exec(self.preAction, namespace)
-        namespace["preAction"](self.context)
+        namespace["preAction"](context)
 
-    def executePostAction(self, actionResult: dict):
+    def executePostAction(self, actionResult: dict, context: dict):
         if not self.postAction:
             return
 
@@ -107,14 +101,12 @@ class ExecutionNode:
         }
 
         exec(self.postAction, namespace)
-        namespace["postAction"](self.context, actionResult)
+        namespace["postAction"](context, actionResult)
 
-    def run(self):
-        self.executePreAction()
-        self.notifyContextUpdate()
+    def run(self, context: dict):
+        self.executePreAction(context)
         result = self.executeAction()
-        self.executePostAction(result)
-        self.notifyContextUpdate()
+        self.executePostAction(result, context)
         return result
 
 
@@ -136,13 +128,13 @@ class ExecutionGraph:
         self.adjacency[source].add(edgeID)
         self.targets[edgeID] = target
 
-    def getTraversalOrder(self, nodeID: str) -> list[ExecutionEdge]:
+    def getTraversalOrder(self, nodeID: str, context: dict) -> list[ExecutionEdge]:
         edges = self.adjacency[nodeID]
         executionEdges = [self.edges[edgeID] for edgeID in edges]
         executionEdges = sorted(executionEdges, key=lambda edge: edge.priority)
         filteredEdges = []
         for edge in executionEdges:
-            if edge.execute():
+            if edge.execute(context):
                 filteredEdges.append(edge)
 
         return filteredEdges
@@ -154,7 +146,7 @@ class ExecutionGraph:
     def setEntry(self, entryID: str):
         self.entry = entryID
 
-    def execute(self, maxIterations=10):
+    def execute(self, context: dict, maxIterations=10):
         if self.entry is None:
             return
 
@@ -167,11 +159,61 @@ class ExecutionGraph:
                 break
 
             node = stack.pop()
-            node.run()
+            node.run(context)
 
-            edges = self.getTraversalOrder(node.nodeID)
+            edges = self.getTraversalOrder(node.nodeID, context)
             for edge in edges[::-1]:
                 target = self.getTarget(edge.edgeID)
                 stack.append(target)
 
             maxIterations -= 1
+
+
+class ExecutionWorker(QObject):
+    contextUpdate = pyqtSignal(dict)
+    finished = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def run(self, graph: ExecutionGraph, context: dict):
+        if graph.entry is None:
+            return
+
+        root = graph.nodes[graph.entry]
+        stack = [root]
+
+        while stack:
+
+            node = stack.pop()
+            node.run(context)
+            self.contextUpdate.emit(context)
+
+            edges = graph.getTraversalOrder(node.nodeID, context)
+            for edge in edges[::-1]:
+                target = graph.getTarget(edge.edgeID)
+                stack.append(target)
+
+        self.finished.emit()
+
+
+class ExecutionController(QObject):
+    executeGraph = pyqtSignal(object, dict)
+    executionFinished = pyqtSignal()
+
+    def __init__(self, client: Client, parent=None):
+        super().__init__(parent)
+        self.client = client
+
+        self.workerThread = QThread()
+        self.worker = ExecutionWorker()
+        self.worker.moveToThread(self.workerThread)
+
+        self.workerThread.finished.connect(self.worker.deleteLater)
+        self.executeGraph.connect(self.worker.run)
+        self.worker.contextUpdate.connect(self.notifyContextUpdate)
+        self.worker.finished.connect(self.executionFinished.emit)
+        self.workerThread.start()
+
+    def notifyContextUpdate(self, context: dict):
+        self.client.put(Link(RuntimeRoute.NAME, RuntimeRoute.ITEM), context)

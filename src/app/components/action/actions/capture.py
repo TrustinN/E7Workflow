@@ -1,3 +1,5 @@
+import time
+
 import mss
 import numpy as np
 
@@ -17,12 +19,15 @@ class CaptureAction(Action):
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
             },
-            "userParams": {},
+            "userParams": {
+                "sleep": {"type": "float"},
+            },
             "result": {"capture": None},
         }
 
     def execute(self, data):
         systemParams = data["systemParams"]
+        userParams = data["userParams"]
         tl = systemParams["tl"]
         br = systemParams["br"]
 
@@ -42,4 +47,5 @@ class CaptureAction(Action):
             img = img[:, :, [2, 1, 0]]
             img = np.ascontiguousarray(img)
 
+            time.sleep(userParams["sleep"])
             return {"capture": img.astype(np.uint8)}

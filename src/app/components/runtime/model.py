@@ -88,6 +88,9 @@ class RuntimeModel(QObject):
         super().__init__()
         self.variables: dict[str, RuntimeSchema] = {}
 
+    def getKeys(self) -> list[str]:
+        return list(self.variables.keys())
+
     def getItem(self, name: str) -> RuntimeSchema:
         return self.variables[name]
 

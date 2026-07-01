@@ -91,7 +91,7 @@ class RuntimeTableModel(QAbstractTableModel):
 
         return None
 
-    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+    def setData(self, index: QModelIndex, value, role=Qt.ItemDataRole.EditRole):
         if role != Qt.EditRole:
             return False
 
@@ -107,17 +107,15 @@ class RuntimeTableModel(QAbstractTableModel):
 
         return False
 
-    def flags(self, index):
+    def flags(self, index: QModelIndex):
         flags = super().flags(index)
         if not index.isValid():
             return flags
 
-        if index.column() == 2:
-            flags |= Qt.ItemIsEditable
-
+        flags |= Qt.ItemIsEditable
         return flags
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section, orientation: Qt.Orientation, role: Qt.ItemDataRole):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
 

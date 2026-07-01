@@ -1,5 +1,3 @@
-add state widget
-
 move actions declaration back into components
 
 fix children workspaces not resizing/moving from editor updates

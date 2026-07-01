@@ -1,7 +1,13 @@
 from typing import cast
 
 from PyQt5.QtCore import QModelIndex, Qt
-from PyQt5.QtWidgets import QDoubleSpinBox, QLineEdit, QStyledItemDelegate, QWidget
+from PyQt5.QtWidgets import (
+    QComboBox,
+    QDoubleSpinBox,
+    QLineEdit,
+    QStyledItemDelegate,
+    QWidget,
+)
 
 from src.app.components.runtime.model import RuntimeType
 
@@ -11,21 +17,25 @@ class RuntimeDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent: QWidget, option, index: QModelIndex):
         item = index.data(Qt.ItemDataRole.UserRole)
+        col = index.column()
 
-        match item.type:
-            case RuntimeType.NUM:
-                editor = QDoubleSpinBox(parent)
-                editor.setRange(-1e12, 1e12)
-                editor.setDecimals(6)
-                return editor
+        if col == 0:
+            return QLineEdit(parent)
+        elif col == 2:
+            match item.type:
+                case RuntimeType.NUM:
+                    editor = QDoubleSpinBox(parent)
+                    editor.setRange(-1e12, 1e12)
+                    editor.setDecimals(6)
+                    return editor
 
-            case RuntimeType.STR:
-                return QLineEdit(parent)
+                case RuntimeType.STR:
+                    return QLineEdit(parent)
 
-            case RuntimeType.IMAGE:
-                return None
+                case RuntimeType.IMAGE:
+                    return None
 
     def setEditorData(self, editor: QWidget, index: QModelIndex):
         item = index.data(Qt.ItemDataRole.UserRole)

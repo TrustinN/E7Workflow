@@ -13,7 +13,7 @@ class ExecutionBuilder:
         self.model = model
         self.client = client
 
-    def createNode(self, nodeID: str, context: dict) -> ExecutionNode:
+    def createNode(self, nodeID: str) -> ExecutionNode:
         node = self.model.getNode(nodeID)
         if node is None:
             return None
@@ -23,18 +23,16 @@ class ExecutionBuilder:
             actionID=node.actionID,
             preAction=node.preAction,
             postAction=node.postAction,
-            context=context,
             client=self.client,
         )
 
-    def createEdge(self, edgeID: str, context: dict) -> ExecutionEdge:
+    def createEdge(self, edgeID: str) -> ExecutionEdge:
         runnerEdge = self.model.getEdge(edgeID)
 
         return ExecutionEdge(
             edgeID=edgeID,
             priority=runnerEdge.priority,
             scriptID=runnerEdge.scriptID,
-            context=context,
             client=self.client,
         )
 
@@ -62,21 +60,20 @@ class ExecutionBuilder:
         return EdgeSchema.fromData(resp)
 
     def createGraph(self):
-        context = self.getContext()
         nodeList = self.getNodes()
 
         graph = ExecutionGraph()
         graph.setEntry(self.model.getEntry())
 
         for nodeID in nodeList:
-            executionNode = self.createNode(nodeID, context)
+            executionNode = self.createNode(nodeID)
             if executionNode is None:
                 continue
 
             graph.addNode(nodeID, executionNode)
 
             for edgeID in self.getNodeEdges(nodeID):
-                executionEdge = self.createEdge(edgeID, context)
+                executionEdge = self.createEdge(edgeID)
                 edge = self.getEdge(edgeID)
 
                 graph.addEdge(edgeID, edge.source, edge.target, executionEdge)

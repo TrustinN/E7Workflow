@@ -16,11 +16,11 @@ class ActionEditorController:
         self.model = model
         self.viewModel = viewModel
 
-        self.editor.actionChanged.connect(self.onActionChanged)
-
         self.editor.addAction(ClickAction.info())
         self.editor.addAction(DragAction.info())
         self.editor.addAction(CaptureAction.info())
+
+        self.editor.actionChanged.connect(self.onActionChanged)
 
     def onActionChanged(self):
         data = self.editor.getActionData()

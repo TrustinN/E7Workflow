@@ -3,6 +3,7 @@ import json
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
+    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -68,6 +69,7 @@ class ActionEditor(QWidget):
             rowLayout.setContentsMargins(0, 0, 0, 0)
             rowLayout.addWidget(QLabel(key))
 
+            editor = None
             if param["type"] == "enum":
                 editor = QComboBox()
                 editor.addItems(param["values"])
@@ -84,6 +86,13 @@ class ActionEditor(QWidget):
 
                 self.editors[name][key] = editor
                 editor.textChanged.connect(self.actionChanged.emit)
+
+            elif param["type"] == "float":
+                editor = QDoubleSpinBox()
+                rowLayout.addWidget(editor)
+
+                editor.valueChanged.connect(self.actionChanged.emit)
+                self.editors[name][key] = editor
 
             layout.addWidget(row)
 
@@ -106,6 +115,8 @@ class ActionEditor(QWidget):
                 schema[key]["value"] = editor.currentText()
             elif param["type"] == "str":
                 schema[key]["value"] = editor.text()
+            elif param["type"] == "float":
+                schema[key] = editor.value()
 
         return {
             "name": name,

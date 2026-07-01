@@ -53,12 +53,26 @@ class RuntimeEditor(QWidget):
         self.layout.addLayout(controls)
         self.setMinimumWidth(300)
 
+    def uniqueVariableName(self, name="var"):
+        keys = set(self.model.getKeys())
+
+        if name not in keys:
+            return name
+
+        i = 2
+        while f"{name}{i}" in keys:
+            i += 1
+
+        return f"{name}{i}"
+
     def handleVariableAdd(self):
         runtimeType = self.combo.currentData()
         name = self.line.text()
 
-        if name:
-            self.model.addItem(name, RuntimeSchema(name=name, type=runtimeType))
+        if not name:
+            name = self.uniqueVariableName()
+
+        self.model.addItem(name, RuntimeSchema(name=name, type=runtimeType))
 
     def handleVariableDelete(self):
         indexes = self.table.selectionModel().selectedRows()

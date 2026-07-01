@@ -5,7 +5,7 @@ from src.app.events import Node
 from src.app.state import Context, SelectionType
 from src.router.routing import Client, Dispatcher
 
-from .execution import ExecutionBuilder
+from .execution import ExecutionBuilder, ExecutionController
 from .manager import RunnerManager
 from .model import RunnerModel
 from .ui import RunnerEditor
@@ -22,6 +22,10 @@ class RunnerComponent(Node):
 
         self.model = RunnerModel()
         self.builder = ExecutionBuilder(self.model, self.client)
+        self.executionController = ExecutionController(self.client)
+        self.executionController.executionFinished.connect(
+            lambda: self.publish("/Runner/Execute/Finished")
+        )
         self.manager = RunnerManager(self.model, self.client)
 
         self.editor = RunnerEditor(self.context, self.model, actions)
@@ -103,10 +107,9 @@ class RunnerComponent(Node):
     def handleExecuteRequest(self, data):
         self.publish("/Runner/Execute/Prepare")
 
+        context = self.builder.getContext()
         graph = self.builder.createGraph()
-        graph.execute()
-
-        self.publish("/Runner/Execute/Finished")
+        self.executionController.executeGraph.emit(graph, context)
 
     def onWorkspaceCreate(self, data):
         if data["parent"]:

@@ -4,7 +4,8 @@ from src.app.actions import ActionRegistry
 from src.app.components.runner.model import RunnerModel
 from src.app.state import Context
 
-from .code import ActionEditor
+from .edge import EdgeEditor
+from .node import ActionEditor
 
 
 class RunnerEditor(QWidget):
@@ -47,9 +48,11 @@ class RunnerEditor(QWidget):
         scriptRow.addWidget(self.unsetScriptBtn)
 
         actionEditor = ActionEditor(context, model)
+        edgeEditor = EdgeEditor(context, model)
 
         self.layout.addLayout(actionRow)
         self.layout.addLayout(scriptRow)
         self.layout.addWidget(self.entryBtn)
         self.layout.addWidget(self.executeBtn)
         self.layout.addWidget(actionEditor)
+        self.layout.addWidget(edgeEditor)
