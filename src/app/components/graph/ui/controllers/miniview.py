@@ -1,5 +1,5 @@
 from src.app.components.graph.model import GraphModel, GraphViewState
-from src.app.components.graph.ui.scene import GraphScene
+from src.app.components.graph.ui.graphics import GraphScene
 from src.app.state import Context, Selection, SelectionType
 
 
@@ -19,6 +19,8 @@ class MiniViewController:
         self.activeParent = None
 
         self.model.nodeUpdated.connect(self.hydrateViewModel)
+        self.viewModel.modelCleared.connect(self.resetState)
+        self.viewModel.modelLoaded.connect(self.loadState)
 
         self.scene.nodeCreated.connect(self.onNodeCreate)
         self.scene.edgeCreated.connect(self.onEdgeCreate)
@@ -105,4 +107,7 @@ class MiniViewController:
 
     def resetState(self):
         self._updatingSelection = False
-        self.view.clearState()
+        self.activeParent = None
+
+    def loadState(self):
+        self.activeParent = self.model.root

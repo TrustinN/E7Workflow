@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (
     QAction,
     QApplication,
     QHBoxLayout,
-    QPushButton,
     QTabWidget,
     QVBoxLayout,
     QWidget,

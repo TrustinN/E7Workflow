@@ -1,5 +1,5 @@
 from src.app.components.graph.model import GraphModel, GraphViewState, NodeType
-from src.app.components.graph.ui.scene import GraphScene
+from src.app.components.graph.ui.graphics import GraphScene
 from src.app.state import Context, Selection, SelectionType
 
 

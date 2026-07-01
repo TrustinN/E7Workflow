@@ -8,9 +8,7 @@ from src.app.components.graph.model import GraphDocument, GraphModel, GraphViewS
 from src.app.state import Context
 
 from .controllers import FullViewController, MiniViewController
-from .scene import GraphScene
-from .view import GraphView
-from .viewmodel import GraphViewModel
+from .graphics import GraphScene, GraphView, GraphViewModel
 
 
 class GraphViewport:

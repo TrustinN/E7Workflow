@@ -113,6 +113,7 @@ class GraphModel(QObject):
         self.adjacency: dict[str, set] = defaultdict(set)
         self.adjacencyC: dict[str, set] = defaultdict(set)
 
+        self.root: str = None
         self.parent: dict[str, str] = {}
         self.children: dict[str, set[str]] = defaultdict(set)
 
@@ -148,6 +149,8 @@ class GraphModel(QObject):
         self.parent[id] = parentID
         if parentID:
             self.children[parentID].add(id)
+        else:
+            self.root = id
 
         self.nodeCreated.emit(id)
 
@@ -245,6 +248,8 @@ class GraphModel(QObject):
         for child, parent in self.parent.items():
             if parent is not None:
                 self.children[parent].add(child)
+            else:
+                self.root = child
 
         self.modelLoaded.emit()
 
@@ -255,6 +260,7 @@ class GraphModel(QObject):
         self.adjacencyC.clear()
         self.parent.clear()
         self.children.clear()
+        self.root = None
 
         self.modelCleared.emit()
 

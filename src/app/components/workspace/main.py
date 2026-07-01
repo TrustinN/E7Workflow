@@ -106,7 +106,7 @@ class WorkspaceComponent(Node):
     def showAllWorkspaces(self, data):
         ids = self.model.workspaces()
         for id in ids:
-            self.model.updateItem(id, {"visible": True, "locked": False})
+            self.model.updateItem(id, {"visible": True})
 
     def saveState(self, data):
         path = data["path"]

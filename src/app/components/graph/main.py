@@ -27,7 +27,7 @@ class GraphComponent(Node):
         self.client = Client("Graph Client", dispatcher)
         self.service = GraphService(self.model, dispatcher)
 
-        self.editor = GraphEditor(self.context, actions)
+        self.editor = GraphEditor(self.context, self.model, actions)
         self.display = GraphDisplay(self.context, self.model)
 
         self.model.edgeDeleted.connect(

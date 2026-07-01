@@ -1,11 +1,14 @@
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from src.app.actions import ActionRegistry
+from src.app.components.graph.model import GraphModel
 from src.app.state import Context, SelectionType
+
+from .inspector import Inspector
 
 
 class GraphEditor(QWidget):
-    def __init__(self, context: Context, actions: ActionRegistry):
+    def __init__(self, context: Context, model: GraphModel, actions: ActionRegistry):
         super().__init__()
 
         self.layout = QVBoxLayout(self)
@@ -27,10 +30,13 @@ class GraphEditor(QWidget):
         self.deleteBtn = QPushButton(actions.displayText("Delete Edge"))
         self.deleteBtn.clicked.connect(action.trigger)
 
+        self.inspector = Inspector(self.context, model)
+
         self.layout.addWidget(self.e1Btn)
         self.layout.addWidget(self.e2Btn)
         self.layout.addWidget(self.edgeBtn)
         self.layout.addWidget(self.deleteBtn)
+        self.layout.addWidget(self.inspector)
         self.layout.addStretch()
 
         self.e1 = None

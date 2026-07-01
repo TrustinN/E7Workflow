@@ -1,4 +1,5 @@
 import os
+import time
 
 from src.app.actions import ActionRegistry
 from src.app.events import Node
@@ -26,8 +27,8 @@ class RunnerComponent(Node):
         self.executionController.executionFinished.connect(
             lambda: self.publish("/Runner/Execute/Finished")
         )
-        self.manager = RunnerManager(self.model, self.client)
 
+        self.manager = RunnerManager(self.model, self.client)
         self.editor = RunnerEditor(self.context, self.model, actions)
 
         self.subscribe("/App/Export", self.saveState)
@@ -106,6 +107,7 @@ class RunnerComponent(Node):
 
     def handleExecuteRequest(self, data):
         self.publish("/Runner/Execute/Prepare")
+        time.sleep(0.3)
 
         context = self.builder.getContext()
         graph = self.builder.createGraph()
