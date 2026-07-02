@@ -8,8 +8,6 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from src.app.components.action.service import ActionRoute
 from src.app.components.runtime.service import RuntimeRoute
 from src.app.components.script.service import ScriptRoute
-from src.app.components.workspace.model import WorkspaceSchema
-from src.app.components.workspace.service import WorkspaceRoute
 from src.router.routing import Client, Link
 
 
@@ -44,35 +42,20 @@ class ExecutionNode:
         actionID: str,
         preAction: str,
         postAction: str,
+        actionParams: dict,
         client: Client,
     ):
         self.nodeID = nodeID
         self.actionID = actionID
         self.preAction = preAction
         self.postAction = postAction
+        self.actionParams = actionParams
         self.client = client
-
-    def createActionParams(self):
-        resp = self.client.get(
-            Link(WorkspaceRoute.NAME, WorkspaceRoute.WORKSPACE, self.nodeID)
-        )
-        schema = WorkspaceSchema.fromData(resp)
-        geometry = schema.geometry
-        data = {
-            "systemParams": {
-                "tl": (geometry.x, geometry.y),
-                "br": (
-                    geometry.x + geometry.width - 1,
-                    geometry.y + geometry.height - 1,
-                ),
-            }
-        }
-        return data
 
     def executeAction(self):
         return self.client.post(
             Link(ActionRoute.NAME, ActionRoute.ACTION, self.actionID),
-            self.createActionParams(),
+            self.actionParams,
         )
 
     def executePreAction(self, context: dict):

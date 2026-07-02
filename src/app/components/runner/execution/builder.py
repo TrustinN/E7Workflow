@@ -3,6 +3,8 @@ from src.app.components.graph.service import GraphRoute
 from src.app.components.runner.model import RunnerModel
 from src.app.components.runtime.model import RuntimeSchema
 from src.app.components.runtime.service import RuntimeRoute
+from src.app.components.workspace.model import WorkspaceSchema
+from src.app.components.workspace.service import WorkspaceRoute
 from src.router.routing import Client, Link
 
 from .execution import ExecutionEdge, ExecutionGraph, ExecutionNode
@@ -18,11 +20,28 @@ class ExecutionBuilder:
         if node is None:
             return None
 
+        resp = self.client.get(
+            Link(WorkspaceRoute.NAME, WorkspaceRoute.WORKSPACE, nodeID)
+        )
+        schema = WorkspaceSchema.fromData(resp)
+        geometry = schema.geometry
+        actionParams = {
+            "systemParams": {
+                "tl": (geometry.x, geometry.y),
+                "br": (
+                    geometry.x + geometry.width - 1,
+                    geometry.y + geometry.height - 1,
+                ),
+                "speed": self.model.speed,
+            }
+        }
+
         return ExecutionNode(
             nodeID=nodeID,
             actionID=node.actionID,
             preAction=node.preAction,
             postAction=node.postAction,
+            actionParams=actionParams,
             client=self.client,
         )
 

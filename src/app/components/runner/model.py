@@ -63,6 +63,7 @@ class RunnerModel(QObject):
         self.edges: dict[str, RunnerEdgeSchema] = {}
 
         self.entry: Optional[str] = None
+        self.speed: float = 1.0
 
     def setNode(self, nodeID: str, schema: RunnerNodeSchema):
         self.nodes[nodeID] = schema
@@ -107,17 +108,25 @@ class RunnerModel(QObject):
     def getEntry(self) -> Optional[str]:
         return self.entry
 
+    def setSpeed(self, value: float):
+        self.speed = value
+
+    def getSpeed(self):
+        return self.speed
+
     def toData(self):
         return {
             "nodes": {k: v.toData() for k, v in self.nodes.items()},
             "edges": {k: v.toData() for k, v in self.edges.items()},
             "entry": self.entry,
+            "speed": self.speed,
         }
 
     def fromData(self, data):
         self.nodes = {k: RunnerNodeSchema.fromData(v) for k, v in data["nodes"].items()}
         self.edges = {k: RunnerEdgeSchema.fromData(v) for k, v in data["edges"].items()}
         self.entry = data["entry"]
+        self.speed = data["speed"]
 
         self.modelLoaded.emit()
 
@@ -125,5 +134,6 @@ class RunnerModel(QObject):
         self.nodes.clear()
         self.edges.clear()
         self.entry = None
+        self.speed = 1.0
 
         self.modelCleared.emit()

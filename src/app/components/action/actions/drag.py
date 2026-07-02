@@ -17,6 +17,7 @@ class DragAction(Action):
             "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
+                "speed": {"type": "float"},
             },
             "userParams": {
                 "dir": {
@@ -67,6 +68,6 @@ class DragAction(Action):
         pyautogui.moveTo(*start)
         pyautogui.dragTo(*end, scrollTime, scrollAnim, button=scrollClick)
 
-        time.sleep(userParams["sleep"])
+        time.sleep(userParams["sleep"] * 1.0 / systemParams["speed"])
 
         return {}

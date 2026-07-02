@@ -85,6 +85,7 @@ class Workspace(WindowHierarchy):
         visible = data.get("visible")
         locked = data.get("locked")
 
+        self.setUpdatesEnabled(False)
         if name is not None:
             self.setName(name)
 
@@ -121,6 +122,7 @@ class Workspace(WindowHierarchy):
         if locked is not None:
             self.fixed = locked
 
+        self.setUpdatesEnabled(True)
         self.update()
 
     def paintEvent(self, event):
@@ -156,4 +158,4 @@ class Workspace(WindowHierarchy):
             self.icon.render(painter, target)
             painter.restore()
 
-        super().paintEvent(event)
+        super().paintWindow(painter)

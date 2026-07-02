@@ -18,6 +18,7 @@ class CaptureAction(Action):
             "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
+                "speed": {"type": "float"},
             },
             "userParams": {
                 "sleep": {"type": "float"},
@@ -47,5 +48,5 @@ class CaptureAction(Action):
             img = img[:, :, [2, 1, 0]]
             img = np.ascontiguousarray(img)
 
-            time.sleep(userParams["sleep"])
+            time.sleep(userParams["sleep"] * 1.0 / systemParams["speed"])
             return {"capture": img.astype(np.uint8)}

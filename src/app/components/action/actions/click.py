@@ -18,6 +18,7 @@ class ClickAction(Action):
             "systemParams": {
                 "tl": {"type": "point"},
                 "br": {"type": "point"},
+                "speed": {"type": "float"},
             },
             "userParams": {
                 "sleep": {"type": "float"},
@@ -34,5 +35,5 @@ class ClickAction(Action):
         mid = (np.array(tl) + np.array(br)) / 2
         pyautogui.click(int(mid[0]), int(mid[1]))
 
-        time.sleep(userParams["sleep"])
+        time.sleep(userParams["sleep"] * 1.0 / systemParams["speed"])
         return {}

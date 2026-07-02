@@ -42,7 +42,7 @@ class Window(QWidget):
 
     def setSelected(self, selected: bool):
         self.selected = selected
-        self.repaint()
+        self.update()
 
     def grabMouse(self) -> bool:
         if not self.canMove():
@@ -133,7 +133,7 @@ class Window(QWidget):
     def setColor(self, color, borderColor):
         self.color = color
         self.borderColor = borderColor
-        self.repaint()
+        self.update()
 
     def setPadding(self, padding):
         prevPadding = self.padding
@@ -157,14 +157,7 @@ class Window(QWidget):
     def canMove(self):
         return not self.fixed
 
-    def resizeEvent(self, event):
-        maskedRegion = QRegion(
-            self.rect(),
-            QRegion.RegionType.Rectangle,
-        )
-        self.setMask(maskedRegion)
-
-    def paintEvent(self, event):
+    def paintWindow(self, painter):
         color = self.color
         borderColor = self.borderColor
 
@@ -172,8 +165,6 @@ class Window(QWidget):
             color = self.selectionColor
             borderColor = self.selectionBorderColor
 
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
         brush = QBrush(color)
         painter.setBrush(brush)
 
@@ -182,3 +173,8 @@ class Window(QWidget):
 
         rect = self.rect()
         painter.drawRect(rect.adjusted(1, 1, -1, -1))
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        self.paintWindow(painter)
