@@ -3,13 +3,7 @@
 E7Workflow is an automation tool that allows users to create workflows by assigning actions to screen regions and connecting them with an execution graph.
 
 ## Demo
-<video src=https://github.com/TrustinN/E7Workflow/releases/download/v0.1.0-demo/demo.mp4
-       controls
-       autoplay
-       loop
-       muted
-       width="800">
-</video>
+https://github.com/TrustinN/E7Workflow/releases/download/v0.1.0-demo/demo.mp4
 
 ## Usage
 
